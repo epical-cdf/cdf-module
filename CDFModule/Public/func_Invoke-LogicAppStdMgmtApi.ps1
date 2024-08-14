@@ -1,4 +1,4 @@
-
+﻿
 Function Invoke-LogicAppStdMgmtApi {
     [CmdletBinding()]
     Param(
@@ -34,7 +34,7 @@ Function Invoke-LogicAppStdMgmtApi {
         $subscriptionId = $CdfConfig.Platform.Env.subscriptionId
         $serviceRG = $CdfConfig.Domain.ResourceNames.domainResourceGroupName
         $serviceName = $CdfConfig.Service.ResourceNames.logicAppName
-                
+
         $logicAppUri = "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$serviceRG/providers/Microsoft.Web/sites/$serviceName/hostruntime"
         $apiUrl = $logicAppUri + $logicAppMgmtPath + $Uri + "?api-version=" + $ApiVersion
         Write-Verbose "Invoke-AzRestMethod -Method $Method -Uri $apiUrl"

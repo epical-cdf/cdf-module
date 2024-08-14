@@ -1,4 +1,4 @@
-Function Build-ApimGlobalPolicies {
+﻿Function Build-ApimGlobalPolicies {
     <#
     .SYNOPSIS
 
@@ -19,7 +19,7 @@ Function Build-ApimGlobalPolicies {
 
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-    
+
     .PARAMETER ServicePath
     File system root path to the service's implementation folder, defaults to CWD.
 
@@ -109,7 +109,7 @@ Function Build-ApimGlobalPolicies {
         [string] $ServicePath = '.',
         [Parameter(Mandatory = $false)]
         [string] $OutputPath = 'tmp'
-       
+
     )
 
     $PolicyTypes = $ServiceType.Split('_')
@@ -119,11 +119,11 @@ Function Build-ApimGlobalPolicies {
         Write-Host "Could not find application policy at path: $GlobalPolicyPath"
         return 1
     }
-   
+
     Write-Verbose "Build-ApimGlobalPolicies - GlobalPolicyPath: $GlobalPolicyPath"
     Write-Verbose "Build-ApimGlobalPolicies - ServicePoliciesPath: $ServicePath/policies"
-   
-    $PolicyFiles = Get-ChildItem -Path (Resolve-Path -Path "$ServicePath/policies") -Include 'global-*.xml' -File -Name 
+
+    $PolicyFiles = Get-ChildItem -Path (Resolve-Path -Path "$ServicePath/policies") -Include 'global-*.xml' -File -Name
     foreach ($PolicyFile in $PolicyFiles) {
         [xml]$PAppGlobal = Get-Content -Path $GlobalPolicyPath
         $PAppGlobal.PreserveWhitespace = true
@@ -134,7 +134,7 @@ Function Build-ApimGlobalPolicies {
         Write-Host "Path: $PolicyFilePath"
         [xml]$ServicePolicy = Get-Content -Path $PolicyFilePath
 
-        # Add policy header comment with service identity 
+        # Add policy header comment with service identity
         $PAppGlobal.InsertBefore( $PAppGlobal.CreateComment(" cdf: Begin Global policy ($(Split-Path $GlobalPolicyPath -leaf)) "), $PAppGlobal.policies) | Out-Null
         $PAppGlobal.InsertBefore( $PAppGlobal.CreateComment(" cdf: DateTime Created: $(Get-Date -Format o) "), $PAppGlobal.policies) | Out-Null
         $PAppGlobal.InsertBefore( $PAppGlobal.CreateComment(' cdf: Domain Name:      #{DomainName}# '), $PAppGlobal.policies) | Out-Null
@@ -315,7 +315,7 @@ Function Build-ApimGlobalPolicies {
 
         # Save the new service policy XML to file
         $PAppGlobal.PreserveWhitespace = true
-        $PAppGlobal.Save("$OutputPath/policies/$PolicyFile") | Out-Null 
+        $PAppGlobal.Save("$OutputPath/policies/$PolicyFile") | Out-Null
 
     }
 }

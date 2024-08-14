@@ -1,4 +1,4 @@
-
+﻿
 Function Build-ApimDomainNamedValuesTemplate {
     <#
     .SYNOPSIS
@@ -7,7 +7,7 @@ Function Build-ApimDomainNamedValuesTemplate {
 
     .DESCRIPTION
     TBD
-      
+
     .PARAMETER CdfConfig
     Instance config
 
@@ -16,7 +16,7 @@ Function Build-ApimDomainNamedValuesTemplate {
 
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-    
+
     .PARAMETER DomainPath
     File system root path to the service's domain repository contents
 
@@ -60,7 +60,7 @@ Function Build-ApimDomainNamedValuesTemplate {
         Write-Verbose "No domain named values configuration - returning"
         return
     }
-    
+
     # Setup named values "build" folder.
     New-Item -Force -Type Directory "$BuildPath" | Out-Null
 
@@ -89,7 +89,7 @@ Function Build-ApimDomainNamedValuesTemplate {
             }
         }
       }
-"@ 
+"@
     $domainNamedValuesParams = ConvertFrom-Json $DomainNamedValuesParamJson -AsHashtable
     # Create a dynamic array using ArrayList
     $paramNamedValues = New-Object System.Collections.ArrayList
@@ -97,13 +97,13 @@ Function Build-ApimDomainNamedValuesTemplate {
     if (!$null -eq $ConstantsFile) {
         $Constants = Get-Content -Path $ConstantsFile | ConvertFrom-Json -AsHashtable
 
-        foreach ($NamedValue in $Constants) {        
+        foreach ($NamedValue in $Constants) {
             Write-Host "Build named value constant with keyvault name: $($NamedValue.kvSecretName)"
             if (!$NamedValue.kvSecretName.StartsWith("$DomainName-", 'CurrentCultureIgnoreCase')) {
                 Write-Error 'Domain constants must have keyvault secret names starting with domain name. <domain name>-<name>'
                 return 1
             }
-            $paramNamedValues.Add(@{ 
+            $paramNamedValues.Add(@{
                     'name'       = $NamedValue.name
                     'secretName' = $NamedValue.kvSecretName
                 }) | Out-Null
@@ -114,13 +114,13 @@ Function Build-ApimDomainNamedValuesTemplate {
     if (!$null -eq $VariablesFile) {
         $Variables = Get-Content -Path $VariablesFile | ConvertFrom-Json -AsHashtable
 
-        foreach ($NamedValue in $Variables) {        
+        foreach ($NamedValue in $Variables) {
             Write-Host "Build named value variable with keyvault name: $($NamedValue.kvSecretName)"
             if (!$NamedValue.kvSecretName.StartsWith("$DomainName-", 'CurrentCultureIgnoreCase')) {
                 Write-Error 'Domain env-variables must have keyvault secret names starting with domain name. <domain name>-<name>'
                 return 1
             }
-            $paramNamedValues.Add(@{ 
+            $paramNamedValues.Add(@{
                     'name'       = $NamedValue.name
                     'secretName' = $NamedValue.kvSecretName
                 }) | Out-Null
@@ -131,13 +131,13 @@ Function Build-ApimDomainNamedValuesTemplate {
     if (!$null -eq $SecretsFile) {
         $Secrets = Get-Content -Path $SecretsFile | ConvertFrom-Json -AsHashtable
 
-        foreach ($NamedValue in $Secrets) {        
+        foreach ($NamedValue in $Secrets) {
             Write-Host "Build named value secret with keyvault name: $($NamedValue.kvSecretName)"
             if (!$NamedValue.kvSecretName.StartsWith("$DomainName-", 'CurrentCultureIgnoreCase')) {
                 Write-Error 'Domain env-secrets must have keyvault secret name starting with domain name. <domain name>-<name>'
                 return 1
             }
-            $paramNamedValues.Add(@{ 
+            $paramNamedValues.Add(@{
                     'name'       = $NamedValue.name
                     'secretName' = $NamedValue.kvSecretName
                 }) | Out-Null
@@ -147,9 +147,9 @@ Function Build-ApimDomainNamedValuesTemplate {
     # Create template parameters json file
     $domainNamedValuesParams.parameters.domainNamedValues.Add('value', $paramNamedValues.ToArray())
     $domainNamedValuesParams | ConvertTo-Json -Depth 10 | Set-Content -Path "$BuildPath/namedvalues.domain.params.json"
-    
-    # Copy bicep template with type name 
-    Copy-Item -Force -Path "$SharedPath/resources/namedvalues.domain.bicep" -Destination "$BuildPath/namedvalues.domain.bicep" | Out-Null     
+
+    # Copy bicep template with type name
+    Copy-Item -Force -Path "$SharedPath/resources/namedvalues.domain.bicep" -Destination "$BuildPath/namedvalues.domain.bicep" | Out-Null
 
     # Copy domain named values files
     Copy-Item -Force -Path "$ConstantsFile" -Destination "$BuildPath/constants.json" | Out-Null

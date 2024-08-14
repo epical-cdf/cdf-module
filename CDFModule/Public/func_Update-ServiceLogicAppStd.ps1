@@ -1,11 +1,11 @@
-Function Update-ServiceLogicAppStd {
+﻿Function Update-ServiceLogicAppStd {
     <#
       .SYNOPSIS
       Create a new Logic App service
-    
+
       .DESCRIPTION
       Setup the configuration for a new platform instance in output files stored at SourceDir using template.
-      
+
       .PARAMETER ServiceName
       Design-time name of the service
 
@@ -14,39 +14,39 @@ Function Update-ServiceLogicAppStd {
 
       .PARAMETER ServiceType
       Type of service aka service design-time template
-      
+
       .PARAMETER ServiceTemplate
       CDF infrastructure template of the service implementation
-      
+
       .PARAMETER ServicePath
       Type of service aka service design-time template
 
       .PARAMETER CdfInfraSourcePath
       Path to the platform instance source directory. Defaults to "../../cdf-infra/src".
-          
+
       .PARAMETER CdfSharedPath
       Path to the shared repository root dir. Defaults to "../../shared-infra".
 
       .PARAMETER SharedTemplatePath
       Path to the platform template root dir. Defaults to "$CdfSharedPath/templates".
-  
+
       .INPUTS
       None.
-    
+
       .OUTPUTS
       None.
-    
+
       .EXAMPLE
-     
-    
+
+
       .LINK
       Get-CdfConfigPlatform
       Get-CdfConfigApplication
       Get-CdfConfigDomain
       Get-CdfConfigService
-     
+
       #>
-  
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -116,13 +116,13 @@ Function Update-ServiceLogicAppStd {
         Write-Error "Please make sure you have the correct path to shared templates and have given a correct service type reference."
         Throw "Could not find service type [$ServiceType] at the CDF service templates path [$SharedTemplatePath]"
     }
-    
+
     if (!(Test-Path $SharedTemplatePath/la-base)) {
         Write-Error "Could not find base service type [la-base] at the CDF service templates path [$SharedTemplatePath]"
         Write-Error "Please make sure you have the correct path to shared templates and using CDF version 1.1."
         Throw "Could not find base service type [la-base] at the CDF service templates path [$SharedTemplatePath]"
     }
-    
+
     if (!$CdfConfig) {
         Write-Host "Get Platform Config [$PlatformId$PlatformInstance]"
         $CdfConfig = Get-CdfConfigPlatform `
@@ -151,21 +151,21 @@ Function Update-ServiceLogicAppStd {
             -Deployed -ErrorAction Continue
 
     }
- 
+
     #############################################################
     # Get current service configurations
     #############################################################
 
-    $configJson = Get-Content -Raw "$ServicePath/cdf-config.json" 
+    $configJson = Get-Content -Raw "$ServicePath/cdf-config.json"
     if (!(Test-Json -SchemaFile "$CdfSharedPath/schemas/cdf-config.schema.json" -Json $configJson)) {
         throw "Service configuration file did not validate. Please check errors above and correct."
     }
-    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable 
+    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable
 
     # Update app setting with "local" then "app"
     if (Test-Path "$ServicePath/local.settings.json") {
         Write-Host "Loading settings from local.settings.json"
-        $appSettings = Get-Content -Raw "$ServicePath/local.settings.json" | ConvertFrom-Json -AsHashtable  
+        $appSettings = Get-Content -Raw "$ServicePath/local.settings.json" | ConvertFrom-Json -AsHashtable
     }
     else {
         $appSettings = [ordered] @{
@@ -206,13 +206,13 @@ Function Update-ServiceLogicAppStd {
     $ServiceType = $ServiceType ? $ServiceType : $svcConfig.ServiceDefaults.ServiceType
     $ServiceTemplate = $ServiceTemplate ? $ServiceTemplate : $svcConfig.ServiceDefaults.ServiceTemplate
 
-    $CdfConfig.Service = [ordered] @{ 
+    $CdfConfig.Service = [ordered] @{
         "Config" = @{
             ServiceName     = $ServiceName
             ServiceGroup    = $ServiceGroup
             ServiceType     = $ServiceType
             ServiceTemplate = $ServiceTemplate
-        } 
+        }
         "Tags"   = @{
             BuildRun         = "456123789"
             BuildRepo        = "local"
@@ -222,8 +222,8 @@ Function Update-ServiceLogicAppStd {
             TemplateName     = $CdfConfig.Domain.Tags.TemplateName
             TemplateVersion  = $CdfConfig.Domain.Tags.TemplateVersion
             TemplateInstance = $CdfConfig.Domain.Tags.TemplateInstance
-        } 
-    } 
+        }
+    }
 
     #############################################################
     # Update the service CDF Config file
@@ -256,7 +256,7 @@ Function Update-ServiceLogicAppStd {
         -ServiceConfig $serviceConfig `
         -Parameters $parameters
 
-    $parameters.Environment.value = [ordered] @{ 
+    $parameters.Environment.value = [ordered] @{
         definitionId   = $CdfConfig.Application.Env.definitionId
         nameId         = $CdfConfig.Application.Env.nameId
         name           = $CdfConfig.Application.Env.name
@@ -282,7 +282,7 @@ Function Update-ServiceLogicAppStd {
         -StartTokenPattern "{{" `
         -EndTokenPattern "}}" `
         -NoWarning `
-        -WarningAction:SilentlyContinue 
+        -WarningAction:SilentlyContinue
 
     Write-Debug "Parameters: $($parameters | ConvertTo-Json -Depth 5 | Out-String)"
     Write-Host "Wrote updated parameters.json"
@@ -424,7 +424,7 @@ Function Update-ServiceLogicAppStd {
         $definition = $connectionDefinitions[$connectionName]
         if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
             Write-Host "`t$connectionName"
-           
+
             # Add ServiceProviderConnection
             Add-LogicAppServiceProviderConnection `
                 -UseCS `
@@ -491,7 +491,7 @@ Function Update-ServiceLogicAppStd {
                 -Config $CdfConfig[$definition.Scope] `
                 -ConnectionName $connectionName `
                 -ParameterName $definition.ConnectionKey `
-                -ServiceProvider $definition.ServiceProvider 
+                -ServiceProvider $definition.ServiceProvider
         }
     }
 

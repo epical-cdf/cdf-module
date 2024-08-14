@@ -1,19 +1,19 @@
-Function Get-GitHubConfigApplication {
+﻿Function Get-GitHubConfigApplication {
     <#
     .SYNOPSIS
     Get application deployment config artifact from GitHub.
 
     .DESCRIPTION
-    Deployment workflow saves deployment configuration for each environment as an artifact. 
+    Deployment workflow saves deployment configuration for each environment as an artifact.
     This cmdlet tries to download the configuration for all enabled envrionments and update application input file.
     The updated input file configration can then be compared with application configuration files and optionally have them updated.
-       
+
     .PARAMETER CdfConfig
     Instance config
-    
+
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-    
+
     .PARAMETER OutputPath
     Optional output path for artifact download. Defaults to "./tmp/artifacts"
 
@@ -26,7 +26,7 @@ Function Get-GitHubConfigApplication {
     .EXAMPLE
     Get-CdfGitHubConfigApplication `
         -CdfConfig $config
-        
+
     .EXAMPLE
     Get-CdfGitHubConfigApplication `
         -CdfConfig $config `
@@ -47,9 +47,9 @@ Function Get-GitHubConfigApplication {
         [Parameter(Mandatory = $false)]
         [string] $SourceDir = "./src",
         [Parameter(Mandatory = $false)]
-        [string]$OutputPath = "./tmp/artifacts"  
+        [string]$OutputPath = "./tmp/artifacts"
     )
-    
+
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.platformInstanceId)"
     $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.platformInstanceId)"
     $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)"
@@ -84,5 +84,5 @@ Function Get-GitHubConfigApplication {
                 -Destination $sourcePath/application
         }
     }
-    
+
 }

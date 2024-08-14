@@ -1,17 +1,17 @@
-Function Remove-TemplateApplication {
+﻿Function Remove-TemplateApplication {
     <#
         .SYNOPSIS
         Removes a application runtime instance.
-    
+
         .DESCRIPTION
         Remove Azure resources for a CDF template application.
-        
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application)
-        
+
         .PARAMETER DryRun
         Shows what resources would be removed when command is run.
-    
+
         .INPUTS
         CDFConfig
 
@@ -21,18 +21,18 @@ Function Remove-TemplateApplication {
             -CdfConfig $config `
             -DryRun
         PS> Remove-CdfTemplateApplication `
-            -CdfConfig $config 
-      
+            -CdfConfig $config
+
         .LINK
         Get-CdfConfigPlatform
         Get-CdfConfigApplication
         Deploy-CdfTemplatePlatform
         Deploy-CdfTemplateApplication
         Remove-CdfTemplatePlatform
-    
+
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -40,12 +40,12 @@ Function Remove-TemplateApplication {
         [Parameter(Mandatory = $false)]
         [switch] $Purge = $true,
         [Parameter(Mandatory = $false)]
-        [switch] $DryRun 
+        [switch] $DryRun
     )
-    
+
     Begin {
     }
-    Process { 
+    Process {
         if ($CdfConfig.Platform.IsDeployed -eq $false -or $CdfConfig.Application.IsDeployed -eq $false) {
             $errMsg = 'Provided platform and application configurations are not deployed versions. Resources will be removed using template tags only.'
             Write-Warning -Message $errMsg
@@ -70,11 +70,11 @@ Function Remove-TemplateApplication {
         $cdfTagsWhereClause += "     and tags.TemplateInstance=~'$templateInstance' "
 
         $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-            
+
         Write-Host "Starting removal of application resources for '$templateInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
-        
+
         Write-Host "-- Begin Phase #0 (Resources requiring special attention) -----------------------"
-        
+
         # APIM Services tend to be sensitive to having its referenced resources removed before it is deleted.
         $query = "Resources "
         $query += " | where type =~ 'Microsoft.ApiManagement/service' "
@@ -122,7 +122,7 @@ Function Remove-TemplateApplication {
         $allResources = $resourcesP1
 
         foreach ($resource in $resourcesP1) {
-           
+
             Write-Host "`tRemoving resource $($resource.Name)"
             if ($false -eq $DryRun) {
                 Write-Verbose " resource id: $($resource.Id)"
@@ -138,7 +138,7 @@ Function Remove-TemplateApplication {
         if ($azJobs.Length -gt 0) {
             if ($true -eq $DryRun) {
                 Write-Error "Dry-run, but still found jobs."
-            } 
+            }
 
             Write-Host -NoNewline "`tWaiting for jobs to complete"
             $azJobs | ForEach-Object {
@@ -168,7 +168,7 @@ Function Remove-TemplateApplication {
             if (!$locked) {
 
                 # Recovery Service Vault require specific removal procedures and will block resource group removal if not deleted.
-            
+
                 $query = "Resources "
                 $query += " | where type =~ 'Microsoft.RecoveryServices/vaults' "
                 $query += " | where resourceGroup =~'$resourceGroup.Name' "
@@ -207,18 +207,18 @@ Function Remove-TemplateApplication {
             # Get Network Configuration and clean up
             $vNetRGName = $CdfConfig.Platform.ResourceNames.networkingResourceGroupName
             $vNetName = $CdfConfig.Platform.ResourceNames.alzSpokeVNetName
-            if ($vNetRGName -and $vNetName) {     
+            if ($vNetRGName -and $vNetName) {
                 Write-Verbose "Phase #2 Begin (Networking)"
                 $vNet = Get-AzVirtualNetwork `
                     -DefaultProfile $azCtx `
                     -Name $vNetName `
                     -ResourceGroupName $vNetRGName
-                
+
                 if ($null -ne $vNet) {
                     # Remove subnets
-                    $CdfConfig.Application.ResourceNames.GetEnumerator()  | ? Key -like '*SubNetName*' | ForEach-Object -Process {
+                    $CdfConfig.Application.ResourceNames.GetEnumerator()  | Where-Object Key -like '*SubNetName*' | ForEach-Object -Process {
                         if ( ($vNet.Subnets | Foreach-Object -Process { $_.Name }).Contains($_.Value)) {
-                            Write-Host "`tRemoving Subnet [$($_.Value)] of vnet [$($vNet.Name)]"   
+                            Write-Host "`tRemoving Subnet [$($_.Value)] of vnet [$($vNet.Name)]"
                             if ($false -eq $DryRun) {
                                 Remove-AzVirtualNetworkSubnetConfig `
                                     -DefaultProfile $azCtx `
@@ -237,15 +237,15 @@ Function Remove-TemplateApplication {
         }
 
         # Remove resources in Phase #2 - those that were not removed in first run.
-      
+
         $query = "Resources "
         $query += $cdfTagsWhereClause
         $query += " | project id, name, resourceGroup, tags "
         $resourcesP2 = Search-AzGraph -DefaultProfile $azCtx  -Query $query
         $allResources += $resourcesP2
-        
+
         foreach ($resource in $resourcesP2) {
-           
+
             Write-Host "`tRemoving resource $($resource.Name)"
             if ($false -eq $DryRun) {
                 Write-Verbose " resource id: $($resource.Id)"
@@ -253,7 +253,7 @@ Function Remove-TemplateApplication {
                     -DefaultProfile $azCtx `
                     -ResourceId $resource.Id `
                     -Force  `
-                    -AsJob 
+                    -AsJob
             }
         }
 
@@ -267,11 +267,11 @@ Function Remove-TemplateApplication {
                 Remove-AzDeployment -DefaultProfile $azCtx -Name $deploymentName -ErrorAction SilentlyContinue
             }
         }
-        
+
         if ($azJobs.Length -gt 0) {
             if ($true -eq $DryRun) {
                 Write-Error "Dry-run, but still found jobs."
-            } 
+            }
 
             Write-Host -NoNewline "`tWaiting for jobs to complete"
             $azJobs | ForEach-Object {
@@ -281,7 +281,7 @@ Function Remove-TemplateApplication {
             Write-Host " Done."
         }
         Write-Host "-- End Phase #2"
-        
+
         if ($Purge) {
             Write-Host "-- Begin Phase #3 (Purging soft-deleted resources) -----------------------"
             # Remove any pending key vault and api mangement deletion
@@ -293,7 +293,7 @@ Function Remove-TemplateApplication {
                     Remove-AzKeyVault -DefaultProfile $azCtx -VaultName $_.VaultName -InRemovedState -Force -Location $CdfConfig.Platform.Env.region
                 }
             }
-            
+
             # TODO: Replace with Az Module commands once available.
             $config | Get-ApiManagementDeletedService | ForEach-Object -Process {
                 if ($allResources -and ($allResources | ForEach-Object -Process { $_.Name }).Contains($_.name)) {
@@ -307,6 +307,5 @@ Function Remove-TemplateApplication {
         Write-Host "Completed."
     }
     End {
-    }   
+    }
 }
-    

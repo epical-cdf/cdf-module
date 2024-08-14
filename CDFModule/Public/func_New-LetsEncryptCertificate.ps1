@@ -1,22 +1,22 @@
-Function New-LetsEncryptCertificate {
-    
+﻿Function New-LetsEncryptCertificate {
+
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [Object]$CdfConfig,
-        [Parameter(Mandatory = $true, HelpMessage = 'Certificate hostname, use "*" for wildcard certificate')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Certificate hostname, use "*" for wildcard certificate')]
         [string]$HostName,
-        [Parameter(Mandatory = $true, HelpMessage = 'Certificate domain name')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Certificate domain name')]
         [string]$DomainName,
-        [Parameter(Mandatory = $true, HelpMessage = 'Resource group name of DNS Zone. Used to add/remove TXT challenge record')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Resource group name of DNS Zone. Used to add/remove TXT challenge record')]
         [string]$DnsRG,
-        [Parameter(Mandatory = $true, HelpMessage = 'Email address of issuer - will receive expiration notices')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Email address of issuer - will receive expiration notices')]
         [string]$EmailAddress,
-        [Parameter(Mandatory = $true, HelpMessage = 'Key Vault to store issued certificate')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Key Vault to store issued certificate')]
         [string]$KeyVaultName,
-        [Parameter(Mandatory = $true, HelpMessage = 'Key Vault secret name for issued certificate')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Key Vault secret name for issued certificate')]
         [string]$CertName,
-        [Parameter(Mandatory = $false, HelpMessage = 'Indicate use of staging or live services. Set to "LetsEncrypt" to issue live certificates. Default is staging certs.')] 
-        [string]$ServiceName = 'LetsEncrypt-Staging' # 'LetsEncrypt' for live certs 
+        [Parameter(Mandatory = $false, HelpMessage = 'Indicate use of staging or live services. Set to "LetsEncrypt" to issue live certificates. Default is staging certs.')]
+        [string]$ServiceName = 'LetsEncrypt-Staging' # 'LetsEncrypt' for live certs
     )
 
     Import-Module DnsClient-PS -ErrorAction:Stop
@@ -147,8 +147,8 @@ Function New-LetsEncryptCertificate {
             $password | Add-Member `
                 -MemberType ScriptProperty `
                 -Name 'Password' `
-                -Value { 
-                ('!@#$%^&*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'.tochararray() | Sort-Object { Get-Random })[0..30] -join '' 
+                -Value {
+                ('!@#$%^&*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'.tochararray() | Sort-Object { Get-Random })[0..30] -join ''
             }
             $securePassword = ConvertTo-SecureString -String $password.Password.ToString() -Force -AsPlainText
             $certPw = Set-AzKeyVaultSecret -VaultName $KeyVaultName -Name "Cert-Password-$CertName" -SecretValue $securePassword -ContentType 'text/plain'
@@ -176,10 +176,10 @@ Function New-LetsEncryptCertificate {
             $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
             $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
             $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
-            
+
             $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName
             $keyVault | ConvertTo-Json -Depth 5
-            
+
             $appServicePlan = Get-AzAppServicePlan -Name $CdfConfig.Application.ResourceNames.laAppServicePlanName
             $appServicePlan | ConvertTo-Json -Depth 5
 
@@ -189,15 +189,15 @@ Function New-LetsEncryptCertificate {
                 keyVaultSecretName = $CertName
             }
             $certProperties | ConvertTo-Json -Depth 5
-       
+
             New-AzResource `
                 -Location $region `
                 -ResourceName "$platformEnvKey-$applicationEnvKey-certificate" `
                 -ResourceType "Microsoft.Web/certificates" `
                 -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
                 -Properties $certProperties -Force
-       
-            # // Setup certificate in the application 
+
+            # // Setup certificate in the application
             # resource logicAppWildCardCert 'Microsoft.Web/certificates@2023-12-01' = {
             #   name: '${platformEnvKey}-${applicationEnvKey}-certificate'
             #   location: location
@@ -226,8 +226,8 @@ Function New-LetsEncryptCertificate {
     }
 
     # Instance axlint03-dev
-    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint03.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint03-platform-dev-we' -KeyVaultName 'kvaxlint03devwe' -CertName 'wildcard-axlint03-dev-axlint-cloud' 
+    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint03.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint03-platform-dev-we' -KeyVaultName 'kvaxlint03devwe' -CertName 'wildcard-axlint03-dev-axlint-cloud'
     #
     # Instance axlint02-dev
-    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint02.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint02-platform-dev-we' -KeyVaultName 'kvaxlint02devwe' -CertName 'wildcard-axlint02-dev-axlint-cloud' 
+    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint02.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint02-platform-dev-we' -KeyVaultName 'kvaxlint02devwe' -CertName 'wildcard-axlint02-dev-axlint-cloud'
 }

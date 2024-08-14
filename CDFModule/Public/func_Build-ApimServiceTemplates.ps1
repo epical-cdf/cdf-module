@@ -1,4 +1,4 @@
-Function Build-ApimServiceTemplates {
+﻿Function Build-ApimServiceTemplates {
   <#
     .SYNOPSIS
 
@@ -6,8 +6,8 @@ Function Build-ApimServiceTemplates {
 
     .DESCRIPTION
 
-    This cmdlet builds bicep template and parameter file for an api and expects an "config.json" file to be found in the <SpecFolder>. 
-      
+    This cmdlet builds bicep template and parameter file for an api and expects an "config.json" file to be found in the <SpecFolder>.
+
     .PARAMETER CdfConfig
     Instance config
 
@@ -19,7 +19,7 @@ Function Build-ApimServiceTemplates {
 
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-    
+
     .PARAMETER ServicePath
     File system root path to the service's implementation folder, defaults to CWD.
 
@@ -35,7 +35,7 @@ Function Build-ApimServiceTemplates {
     .EXAMPLE
     PS> Build-ApimServiceTemplates `
         -ConfigFile "api-shaman/api.yaml"
-        
+
     PS> Build-ApimServiceTemplates `
         -ConfigFile "api-shaman/api.yaml"
         -Output "./api-arm-templates"
@@ -43,7 +43,7 @@ Function Build-ApimServiceTemplates {
     .LINK
     Build-ApimTemplates
     Build-ApimGlobalPolicies
-    Build-ApimOperationPolicies 
+    Build-ApimOperationPolicies
 
     #>
 
@@ -68,7 +68,7 @@ Function Build-ApimServiceTemplates {
     [Parameter(Mandatory = $false)]
     [string] $BuildPath = "../tmp/build"
   )
-    
+
   # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precendens
   if (Test-Path "$ServicePath/cdf-config.json") {
     Write-Host "Loading service settings from cdf-config.json"
@@ -93,11 +93,11 @@ Function Build-ApimServiceTemplates {
   # New-Item -Force -Type Directory $BuildPath/$ServiceName -ErrorAction SilentlyContinue | Out-Null
   # $outputPath = (Resolve-Path -Path $BuildPath/$ServiceName).Path
   $outputPath = (Resolve-Path -Path $BuildPath).Path
-    
+
   # Setup api "build" folder. Excluding the policies as these will be generated from <SpecFolder> below
   New-Item -Force -Type Directory "$outputPath/policies" | Out-Null
   Copy-Item -Force -Path "$ServicePath/*" -Destination "$outputPath" -Recurse -Exclude 'policies' | Out-Null
-  
+
   # Build policies
   Build-ApimGlobalPolicies `
     -DomainName $DomainName `
@@ -175,10 +175,10 @@ Function Build-ApimServiceTemplates {
               }
 "@
   $apiParams = ConvertFrom-Json $apiBaseParams -AsHashtable
-  $apiParams.parameters.Add('apiProtocols', @{ 'value' = @( $($svcConfig.ServiceSettings.protocols ?? @()) ) })        
+  $apiParams.parameters.Add('apiProtocols', @{ 'value' = @( $($svcConfig.ServiceSettings.protocols ?? @()) ) })
   $apiParams.parameters.Add('apiProductNames', @{ 'value' = @( $($svcConfig.ServiceSettings.products ?? @()) ) })
   $apiParams.parameters.Add('apiNamedValues', @{ 'value' = @( $($svcConfig.ServiceSettings.namedValues ?? @()) ) })
-    
+
   $parTags = @{}
   $parTags.BuildCommit = $env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git rev-parse --short HEAD)
   $parTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
@@ -188,7 +188,7 @@ Function Build-ApimServiceTemplates {
 
   $PolicyXML = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.policy)"
   $apiParams.parameters.Add('apiPolicy', @{ 'value' = $PolicyXML | Join-String })
-        
+
   # From here are api type specific parameters for the bicep template in use
   switch ($ServiceTemplate) {
     'api-internal-passthrough-wsdl' {
@@ -207,7 +207,7 @@ Function Build-ApimServiceTemplates {
       else {
         # Add object to array
         Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })   
+        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
       }
     }
     'api-internal-passthrough-v1' {
@@ -226,14 +226,14 @@ Function Build-ApimServiceTemplates {
       else {
         # Add object to array
         Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })   
+        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
       }
     }
     'api-internal-openapi-yaml' {
       Write-Host "OpenAPI YAML spec   : $($svcConfig.ServiceSettings.openApiSpec)"
       $OpenAPISpecDoc = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-   
-    
+
+
       $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
 
       foreach ($operations in $svcConfig.ServiceSettings.operations) {
@@ -248,14 +248,14 @@ Function Build-ApimServiceTemplates {
       else {
         # Add object to array
         Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })   
+        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
       }
-              
+
     }
-    'api-internal-openapi-json' { 
+    'api-internal-openapi-json' {
       Write-Host "OpenAPI JSON spec   : $($svcConfig.ServiceSettings.openApiSpec)"
       $OpenAPISpecDoc = Get-Content -Path  "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-                
+
       $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
 
       foreach ($operations in $svcConfig.ServiceSettings.operations) {
@@ -270,7 +270,7 @@ Function Build-ApimServiceTemplates {
       else {
         # Add object to array
         Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })   
+        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
       }
     }
     Default {
@@ -282,6 +282,6 @@ Function Build-ApimServiceTemplates {
   # Create template parameters json file
   $apiParams | ConvertTo-Json -Depth 50 | Set-Content -Path "$outputPath/$ServiceName.params.json"
 
-  # Copy bicep template with type name 
-  Copy-Item -Force -Path "$SharedPath/resources/$($svcConfig.ServiceDefaults.ServiceTemplate).bicep" -Destination "$outputPath/$ServiceName.bicep" | Out-Null     
+  # Copy bicep template with type name
+  Copy-Item -Force -Path "$SharedPath/resources/$($svcConfig.ServiceDefaults.ServiceTemplate).bicep" -Destination "$outputPath/$ServiceName.bicep" | Out-Null
 }

@@ -1,4 +1,4 @@
-Function Set-ServiceSecret {
+﻿Function Set-ServiceSecret {
     <#
     .SYNOPSIS
     Set parameter values for service in domain keyvault
@@ -17,10 +17,10 @@ Function Set-ServiceSecret {
 
     .PARAMETER Internal
     Selects the scope of the parameter, cannot be used with External
-    
+
     .PARAMETER External
     Selects the scope of the parameter, cannot be used with Internal
-    
+
 
     .EXAMPLE
     $config | Set-CdfServiceSecret -External -ParameterName MySecret -ParameterValue my-secret-value `
@@ -47,8 +47,8 @@ Function Set-ServiceSecret {
     # Get current service configurations
     #############################################################
 
-    $configJson = Get-Content -Raw "cdf-config.json" 
-    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable 
+    $configJson = Get-Content -Raw "cdf-config.json"
+    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable
     $azCtx = Get-AzureContext -Subscription $CdfConfig.Platform.Env.subscriptionId
     if ($Internal) {
         # Service internal settings

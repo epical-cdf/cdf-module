@@ -1,26 +1,26 @@
-Function New-ConfigPlatform {
+﻿Function New-ConfigPlatform {
   <#
     .SYNOPSIS
     Create a new configuration for a platform instance
-  
+
     .DESCRIPTION
     Setup the configuration for a new platform instance in output files stored at SourceDir using template.
-    
+
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER TemplateName
     Platform template name to be used for deployment
-    
+
     .PARAMETER TemplatVersion
     Platform template version to be used for deployment
-        
+
     .PARAMETER Region
     The target Azure Region/region for the deployment
-    
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER InstanceId
     Specific id of the platform instance
 
@@ -29,13 +29,13 @@ Function New-ConfigPlatform {
 
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-      
+
     .INPUTS
     None.
-  
+
     .OUTPUTS
     CdfConfig
-  
+
     .EXAMPLE
     New-CdfConfigPlatform `
       -Region "swedencentral" `
@@ -43,7 +43,7 @@ Function New-ConfigPlatform {
       -TemplateVersion "v1net" `
       -PlatformId "capim" `
       -InstanceId "01"
-    
+
     .EXAMPLE
     New-CdfConfigPlatform `
         -Region "northeurope" `
@@ -53,12 +53,12 @@ Function New-ConfigPlatform {
         -InstanceId "01" `
         -TemplateDir ../cdf-infra/templates `
         -SourceDir ../cdf-infra/instances
-  
+
     .LINK
     Get-CdfConfigPlatform
     .LINK
     Deploy-CdfTemplatePlatform
-  
+
     #>
 
   [CmdletBinding()]
@@ -83,29 +83,29 @@ Function New-ConfigPlatform {
   }
 
   Process {
-    
+
     # Fetch definitions
     $templatePath = "$TemplateDir/platform/$TemplateName/$TemplateVersion"
     $sourcePath = "$SourceDir/$PlatformId/$InstanceId"
-    
+
     if (Test-Path $sourcePath) {
       throw "Please make sure this is a new instance. A platform instance folder already exists at [$sourcePath]"
     }
-    
+
     Write-Information "Preparing platform instance at [$sourcePath]"
 
     # Setup platform instance folder and definitions
     New-Item -ItemType Directory -Path $sourcePath | Out-Null
     New-Item -ItemType Directory -Path "$sourcePath/platform" | Out-Null
-    Copy-Item -Path "$templatePath/templates/environments.json" "$sourcePath/platform/environments.json" 
-    Copy-Item -Path "$templatePath/templates/regionnames.json" "$sourcePath/platform/regionnames.json" 
-    Copy-Item -Path "$templatePath/templates/regioncodes.json" "$sourcePath/platform/regioncodes.json" 
+    Copy-Item -Path "$templatePath/templates/environments.json" "$sourcePath/platform/environments.json"
+    Copy-Item -Path "$templatePath/templates/regionnames.json" "$sourcePath/platform/regionnames.json"
+    Copy-Item -Path "$templatePath/templates/regioncodes.json" "$sourcePath/platform/regioncodes.json"
 
     # Load the newly setup definition files
     $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable
     $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
     $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json" | ConvertFrom-Json -AsHashtable
-   
+
     # Setup region mappings
     $regionCode = $regionCodes[$Region.ToLower()]
     $regionName = $regionNames[$regionCode]

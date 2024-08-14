@@ -1,4 +1,4 @@
-
+﻿
 Function Add-GitHubPlatformEnv {
     <#
     .SYNOPSIS
@@ -6,19 +6,19 @@ Function Add-GitHubPlatformEnv {
 
     .DESCRIPTION
     Configures GitHub platform Repository with environment secrets and variables.
-    
+
     .PARAMETER PlatformEnv
     Name of the environment configuration.
-    
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER PlatformInstanceId
     Specific id of the platform instance
 
     .PARAMETER Repository
     The GitHub Repository <account/org>/<Repository name>
-    
+
     .INPUTS
     None. You cannot pipe objects.
 

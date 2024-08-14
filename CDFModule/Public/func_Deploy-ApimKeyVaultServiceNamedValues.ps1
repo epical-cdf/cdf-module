@@ -1,4 +1,4 @@
-Function Deploy-ApimKeyVaultServiceNamedValues {
+﻿Function Deploy-ApimKeyVaultServiceNamedValues {
     <#
     .SYNOPSIS
 
@@ -8,13 +8,13 @@ Function Deploy-ApimKeyVaultServiceNamedValues {
 
     This cmdlet reads GitHub variables and secrets in the domain repository and stores them in the APIM domain keyvault as secrets.
     These keyvault secrets are referenced from the domain named values bicep templates.
-    
+
     .PARAMETER CdfConfig
     Instance config
-    
+
     .PARAMETER DomainName
     The domain name of the service as provided in workflow inputs
-    
+
     .PARAMETER ServiceName
     Name of the service as provided in workflow inputs
 
@@ -57,13 +57,13 @@ Function Deploy-ApimKeyVaultServiceNamedValues {
         Write-Verbose "No domain named values configuration - returning"
         return
     }
-    
+
     $cdfConfigFile = Resolve-Path "$ConfigPath/cdf-config.json"
 
     if (!$null -eq $cdfConfigFile) {
         $svcConfig = Get-Content -Path $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
-        foreach ($NamedValue in $svcConfig.ServiceSettings.namedValues) {        
+        foreach ($NamedValue in $svcConfig.ServiceSettings.namedValues) {
             Write-Host "Processing constant with keyvault name: $($NamedValue.secretName)"
             if (!$NamedValue.secretName.StartsWith("$DomainName-", 'CurrentCultureIgnoreCase')) {
                 Write-Error 'Domain constants must have keyvault secret names starting with domain name. [<DomainName>-<Some-Other-Names>]'
@@ -73,7 +73,7 @@ Function Deploy-ApimKeyVaultServiceNamedValues {
             Write-Host " - Current: '$CurrentSecret' new '$($NamedValue.value)'"
             if ($null -eq $CurrentSecret) {
                 Write-Host ' - Adding secret'
-                $SecretValue = ConvertTo-SecureString -String $NamedValue.value -AsPlainText -Force 
+                $SecretValue = ConvertTo-SecureString -String $NamedValue.value -AsPlainText -Force
                 $SetSecret = Set-AzKeyVaultSecret -VaultName $CdfConfig.Application.ResourceNames.keyVaultName -Name $NamedValue.secretName -SecretValue $SecretValue
                 #TODO: Handle error response
             }
@@ -82,7 +82,7 @@ Function Deploy-ApimKeyVaultServiceNamedValues {
             }
             else {
                 Write-Host ' - Existing, diff, update'
-                $SecretValue = ConvertTo-SecureString $NamedValue.value -AsPlainText -Force 
+                $SecretValue = ConvertTo-SecureString $NamedValue.value -AsPlainText -Force
                 $SetSecret = Set-AzKeyVaultSecret -VaultName $CdfConfig.Application.ResourceNames.keyVaultName -Name $NamedValue.secretName -SecretValue $SecretValue
                 #TODO: Handle error response
             }

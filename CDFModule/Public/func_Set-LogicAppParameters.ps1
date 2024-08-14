@@ -1,4 +1,4 @@
-Function Set-LogicAppParameters {
+﻿Function Set-LogicAppParameters {
     <#
     .SYNOPSIS
     Update logic app parameters for domain and environment
@@ -17,7 +17,7 @@ Function Set-LogicAppParameters {
     .EXAMPLE
     parameters.json:
     {
-       
+
     }
 
     $parameters = Get-Content "parameters.json" | ConvertFrom-Json -AsHashtable
@@ -25,8 +25,8 @@ Function Set-LogicAppParameters {
     Set-CdfLogicAppParameters `
         -CdfConfig $CdfConfig `
         -ServiceConfig $serviceConfig `
-        -Parameters $arameters 
- 
+        -Parameters $arameters
+
     $parameters | ConvertTo-Json -Depth 10 | Set-Content -Path "parameters.json"
 
     appsettings.json (result):
@@ -146,7 +146,7 @@ Function Set-LogicAppParameters {
             }
             "Setting" {
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-                
+
                 if ($setting.IsAppSetting) {
                     $appSettingKey = "External_$externalSettingKey"
                     $appsettings[$appSettingKey] = $value

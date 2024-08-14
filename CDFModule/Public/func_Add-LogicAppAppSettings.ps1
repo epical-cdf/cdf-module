@@ -1,16 +1,16 @@
-Function Add-LogicAppAppSettings {
+﻿Function Add-LogicAppAppSettings {
     <#
     .SYNOPSIS
     Update logic app parameters for domain and environment
 
     .DESCRIPTION
-    
+
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
-                
+
     .PARAMETER Config
     The Config object from the target scope (Platform, Application and Domain)
-                
+
     .PARAMETER SubscriptionId
     Platform subscriptionId
 
@@ -77,7 +77,7 @@ Function Add-LogicAppAppSettings {
     )
 
     $connectionParams = $Config.Config[$ParameterName]
-    
+
     $azCtx = Get-CdfAzureContext -SubscriptionId $SubscriptionId
 
     if ($UseCS) {
@@ -94,7 +94,7 @@ Function Add-LogicAppAppSettings {
                             -ResourceGroupName $connectionParams.resourceGroup `
                             -Name $connectionParams.name
                         $eventGridTopicKeys = Get-AzEventGridTopicKey $eventGridTopic
-                    
+
                         $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
                         $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
@@ -104,7 +104,7 @@ Function Add-LogicAppAppSettings {
                             -ResourceGroupName $connectionParams.resourceGroup `
                             -Name $connectionParams.name
                         $eventGridTopicKeys = Get-AzEventGridTopicKey $eventGridTopic
-                    
+
                         $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
                         $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
@@ -136,7 +136,7 @@ Function Add-LogicAppAppSettings {
                         -ResourceGroupName $connectionParams.resourceGroup `
                         -Name $connectionParams.name
                 ).Context
-                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString           
+                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
             }
             'azuretables' {
                 $storageContext = (
@@ -165,9 +165,9 @@ Function Add-LogicAppAppSettings {
     else {
         # Using managed identity
         switch ($ServiceProvider.ToLower()) {
-            'keyvault' { 
+            'keyvault' {
                 $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).vault.azure.net"
-            } 
+            }
             'eventgridpublisher' {
                 switch ($connectionParams.type) {
                     'EventGridTopic' {
@@ -180,7 +180,7 @@ Function Add-LogicAppAppSettings {
                             -SubscriptionId $azCtx.Subscription.Id `
                             -ResourceGroupName $connectionParams.resourceGroup `
                             -TopicName $eventGridTopic.name
-                    
+
                         $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
                         $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
@@ -194,17 +194,17 @@ Function Add-LogicAppAppSettings {
                             -SubscriptionId $azCtx.Subscription.Id `
                             -ResourceGroupName $connectionParams.resourceGroup `
                             -TopicName $eventGridTopic.name
-                    
-                    
+
+
                         $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
                         $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
                 }
-            } 
-            'servicebus' { 
+            }
+            'servicebus' {
                 $Settings["$($ConnectionName)_fullyQualifiedNamespace"] = "$($connectionParams.name).servicebus.windows.net"
             }
-            'azureblob' { 
+            'azureblob' {
                 $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).blob.core.windows.net"
             }
             'azurefile' {
@@ -231,16 +231,16 @@ Function Add-LogicAppAppSettings {
                 #     -StorageAccountRG $connectionParams.resourceGroup `
                 #     -StorageAccountName $connectionParams.name `
                 #     -ValidityDays 60
-            
+
                 $Settings["$($ConnectionName)_connectionString"] = "DefaultEndpointsProtocol=https;EndpointSuffix=$($storageContext.EndPointSuffix);AccountName=$($connectionParams.name);AccountKey=$storageKey"
-            
+
                 # $Settings["$($ConnectionName)Uri"] = "FileEndpoint=https://$($connectionParams.name).file.core.windows.net;SharedAccessSignature=$sasToken"
                 # $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).file.core.windows.net$sasToken"
             }
-            'azuretables' { 
+            'azuretables' {
                 $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).table.core.windows.net"
             }
-            'azurequeues' { 
+            'azurequeues' {
                 $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).queue.core.windows.net"
             }
             default {

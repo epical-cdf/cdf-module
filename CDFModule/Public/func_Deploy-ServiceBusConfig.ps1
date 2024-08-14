@@ -1,19 +1,19 @@
-Function Deploy-ServiceBusConfig {
+﻿Function Deploy-ServiceBusConfig {
     <#
     .SYNOPSIS
     Deploy service bus queues, topics and subscriptions
-    
+
     .DESCRIPTION
     The cmdlet makes token substitution for the Platform config environment.
     Then deploys the service bus queues, topics and subscriptions for the service bus resource.
-    
+
     .PARAMETER CdfConfig
     The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
     .PARAMETER InputPath
     The deployment package path, where servicebus.config.json is located.
     Optional, defaults to "./build"
-    
+
     .PARAMETER OutputPath
     Output path for the environment specific config file servicebus.config.<env nameId>.json
     Optional, defaults to "./build"
@@ -71,7 +71,7 @@ Function Deploy-ServiceBusConfig {
     }
     Process {
         Write-Host "Preparing Service Bus configuration deployment."
-  
+
         # Substitute Tokens for the config file
         $tokenValues = $CdfConfig | Get-TokenValues
         Update-ConfigFileTokens `
@@ -81,7 +81,7 @@ Function Deploy-ServiceBusConfig {
             -StartTokenPattern '{{' `
             -EndTokenPattern '}}' `
             -NoWarning `
-            -WarningAction:SilentlyContinue 
+            -WarningAction:SilentlyContinue
 
         # TODO: Validate/normalize names e.g. queus and topic names to make sure naming conventions are followed
 
@@ -102,7 +102,7 @@ Function Deploy-ServiceBusConfig {
             $serviceBusConfig = Get-Content -Path "$OutputPath/servicebus.config.json" | ConvertFrom-Json -AsHashtable
         }
         switch ($serviceBusConfig.scope) {
-           
+
             'platform' {
                 $serviceBusRG = $CdfConfig.Platform.Config.platformServiceBus.resourceGroup
                 $serviceBusName = $CdfConfig.Platform.Config.platformServiceBus.name
@@ -130,7 +130,7 @@ Function Deploy-ServiceBusConfig {
         $templateParams.serviceName = $CdfConfig.Service.Config.serviceName
         $templateParams.serviceBusName = $serviceBusName
         # Could use default parameter in bicep template, but this construct allows for programatic configuration changes.
-        $templateParams.serviceBusConfig = $serviceBusConfig 
+        $templateParams.serviceBusConfig = $serviceBusConfig
 
         $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "sb-cfg-$($CdfConfig.Service.Config.serviceName)-$($CdfConfig.Domain.Config.domainName)-$serviceBusName-$applicationEnvKey-$($CdfConfig.Application.Env.regionCode)"

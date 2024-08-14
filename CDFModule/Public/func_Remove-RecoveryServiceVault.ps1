@@ -1,4 +1,4 @@
-Function Remove-RecoveryServicesVault {
+﻿Function Remove-RecoveryServicesVault {
     <#
         .SYNOPSIS
         Removes a Recovery Services Vault for Azure Backup.
@@ -9,13 +9,13 @@ Function Remove-RecoveryServicesVault {
 
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application)
-        
+
         .PARAMETER VaultName
         The name of the recovery services vault
 
         .PARAMETER ResourceGroup
         The resource group of the vault
-    
+
         .INPUTS
         CDFConfig
 
@@ -25,13 +25,13 @@ Function Remove-RecoveryServicesVault {
             -CdfConfig $config `
             -VaultName test `
             -ResourceGroup rg-test
-            
+
         .LINK
         https://learn.microsoft.com/en-us/azure/backup/scripts/delete-recovery-services-vault
 
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]

@@ -1,5 +1,5 @@
-function Get-LogicAppStdWorkflow {
-   
+﻿function Get-LogicAppStdWorkflow {
+
     Param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $false, HelpMessage = "CDF Configuration hashtable")]
         [hashtable]$CdfConfig,
@@ -16,7 +16,7 @@ function Get-LogicAppStdWorkflow {
     )
 
     if ($null -eq $Local -and ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed )) {
-        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"        
+        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"
     }
 
     if ($Download -and $WorkflowName) {
@@ -30,7 +30,7 @@ function Get-LogicAppStdWorkflow {
         }
         $result
         throw "HTTP Status [$($result.StatusCode)] - did not fetch workflow definition [$WorkflowName]"
-        
+
     }
 
     # if ($Upload -and $WorkflowName -and $FilePath) {
@@ -53,7 +53,7 @@ function Get-LogicAppStdWorkflow {
     #         throw "Could not find file path [$FilePath] for workflow definition [$WorkflowName]."
 
     #     }
-        
+
     # }
 
     $result = Invoke-LogicAppStdMgmtApi -CdfConfig $CdfConfig -Local:$Local /workflows/$WorkflowName
@@ -65,7 +65,7 @@ function Get-LogicAppStdWorkflow {
                 return (Format-LogicAppStdWorkflowRecord $workflows.value)
                 #return $workflows.value
             }
-            
+
             $out = @()
             foreach ($entry in $workflows) {
                 $out += (Format-LogicAppStdWorkflowRecord $entry)
@@ -84,10 +84,10 @@ Function Format-LogicAppStdWorkflowRecord {
         [Parameter(Mandatory = $true, Position = 0, HelpMessage = "Logic App Standard workflow record.")]
         $Entry
     )
-    
+
     $triggers = @()
     foreach ($trigger in $Entry.triggers) {
-        $triggerName = $trigger.PSObject.Properties.Name 
+        $triggerName = $trigger.PSObject.Properties.Name
         $triggerType = $trigger.PSObject.Properties.Value.type
         $triggerKind = $trigger.PSObject.Properties.Value.kind
         $triggers += [ordered] @{
@@ -96,7 +96,7 @@ Function Format-LogicAppStdWorkflowRecord {
             Kind = $triggerKind
         }
     }
-    
+
     $props = [ordered] @{
         Name        = $Entry.name
         Kind        = $Entry.kind
@@ -105,7 +105,7 @@ Function Format-LogicAppStdWorkflowRecord {
         TriggerType = $triggers.Length -gt 0 ? $triggers[0].Type: ''
         IsEnabled   = !$Entry.isDisabled
         State       = $Entry.health.state;
-        
+
     }
 
     $DefaultProps = @("Name", "TriggerName", "TriggerType", "IsEnabled")
@@ -113,6 +113,6 @@ Function Format-LogicAppStdWorkflowRecord {
     $PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($DefaultDisplay)
     $nvPair = [PSCustomObject] $props
     $nvPair | Add-Member MemberSet PSStandardMembers $PSStandardMembers
-    
+
     return $nvPair
 }

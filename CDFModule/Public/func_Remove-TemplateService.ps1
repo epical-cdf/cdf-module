@@ -1,32 +1,32 @@
-
+﻿
 Function Remove-TemplateService {
     <#
         .SYNOPSIS
         Removes a service runtime instance.
-    
+
         .DESCRIPTION
         Remove Azure resources for a CDF template service.
-        
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application, Domain and Service)
-        
+
         .PARAMETER DryRun
         Shows what resources would be removed when command is run.
-    
+
         .INPUTS
         CDFConfig
-    
+
         .OUTPUTS
         None.
-    
+
         .EXAMPLE
         PS> $config = Get-CdfConfigApplication
         PS> Remove-CdfTemplateApplication `
             -CdfConfig $config `
             -DryRun
         PS> Remove-CdfTemplateApplication `
-            -CdfConfig $config 
-      
+            -CdfConfig $config
+
         .LINK
         Deploy-CdfTemplatePlatform
         Deploy-CdfTemplateApplication
@@ -36,21 +36,21 @@ Function Remove-TemplateService {
         Remove-CdfTemplateApplication
         Remove-CdfTemplateDomain
         Remove-CdfTemplateService
-    
+
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [Object]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [switch] $DryRun 
+        [switch] $DryRun
     )
-    
+
     Begin {
     }
-    Process { 
+    Process {
         if ($CdfConfig.Platform.IsDeployed -eq $false -or $CdfConfig.Application.IsDeployed -eq $false -or $CdfConfig.Domain.IsDeployed -eq $false -or $CdfConfig.Service.IsDeployed -eq $false) {
             $errMsg = 'Provided platform, application, domain and service configurations are not deployed versions.'
             Write-Error -Message $errMsg
@@ -66,11 +66,11 @@ Function Remove-TemplateService {
         $templateInstance = "$platformKey-$applicationKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName)-$regionCode"
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName)-$regionCode"
         $deploymentName = "service-$templateEnvInstance"
-    
+
         $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-            
+
         Write-Host "Starting removal of service resources for '$templateEnvInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
-        
+
         $azJobs = @()
 
         # TODO: Add optional removal of storage fileshares etc that belong to the domain?
@@ -103,7 +103,7 @@ Function Remove-TemplateService {
                 $query += " | where type=~'Microsoft.Web/connections' "
                 $query += "     and resourceGroup=='$($CdfConfig.Platform.ResourceNames.apiConnResourceGroupName)' "
                 $query += " | project id, name, tags "
-    
+
                 Write-Verbose "Executing: Search-AzGraph -DefaultProfile <azCtx>  -Query $query"
                 $apiConnections = Search-AzGraph -DefaultProfile $azCtx  -Query $query
                 foreach ($api in $apiConnections) {
@@ -117,7 +117,7 @@ Function Remove-TemplateService {
                             -DefaultProfile $azCtx `
                             -ResourceId $_.ResourceId `
                             -Force `
-                            -AsJob 
+                            -AsJob
                     }
                 }
             }
@@ -132,7 +132,7 @@ Function Remove-TemplateService {
             Write-Verbose "Executing: Search-AzGraph -DefaultProfile <azCtx>  -Query $query"
             $resources = Search-AzGraph -DefaultProfile $azCtx  -Query $query
             foreach ($resource in $resources) {
-           
+
                 Write-Host "Removing resource $($resource.Name)"
                 if ($false -eq $DryRun) {
                     Write-Verbose " resource id: $($resource.Id)"
@@ -140,7 +140,7 @@ Function Remove-TemplateService {
                         -DefaultProfile $azCtx `
                         -ResourceId $resource.Id `
                         -Force  `
-                        -AsJob 
+                        -AsJob
                 }
             }
 
@@ -150,7 +150,7 @@ Function Remove-TemplateService {
                         -ErrorAction SilentlyContinue `
                         -DefaultProfile $azCtx `
                         -Name  $CdfConfig.Domain.ResourceNames[$resourceNameKey]
-                
+
                     if ($null -ne $resourceGroup -And $resourceGroup.ResourceGroupName -eq $CdfConfig.Service.ResourceNames[$resourceNameKey]) {
                         Write-Host "Removing resource group $($resourceGroup.ResourceGroupName)"
                         if ($false -eq $DryRun) {
@@ -170,12 +170,12 @@ Function Remove-TemplateService {
 
                 # Remove subnet
                 # $subNetName = $appResourceNames["appSubnetName"]
-            
+
                 # $vNet = Get-AzVirtualNetwork `
                 #     -DefaultProfile $azCtx `
                 #     -Name $vNetName `
                 #     -ResourceGroupName $vNetRGName
-            
+
                 # if ($null -ne $vNet) {
                 #     Write-Host "Removing subnet [$subNetName] from vNet [$($vNet.Name)]"
                 #     if ($false -eq $DryRun) {
@@ -191,7 +191,7 @@ Function Remove-TemplateService {
             if ($azJobs.Length -gt 0) {
                 if ($true -eq $DryRun) {
                     Write-Error "Dry-run, but still found jobs."
-                } 
+                }
 
                 Write-Host -NoNewline "Waiting for long running jobs such as removing resource groups to complete "
                 $azJobs | ForEach-Object {
@@ -217,6 +217,5 @@ Function Remove-TemplateService {
         }
     }
     End {
-    }   
+    }
 }
-    

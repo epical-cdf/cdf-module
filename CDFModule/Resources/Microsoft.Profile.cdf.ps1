@@ -1,4 +1,4 @@
-#region Prompt
+﻿#region Prompt
 Write-Verbose "Loading CDF PowerShell prompt."
 $Global:CdfPromptEnabled = $true
 if (!$Global:CdfPromptBackup) {
@@ -28,7 +28,7 @@ Function Global:Prompt {
     #>
 
     # Powershell Version
-    $PSVersion = $PSVersionTable.PSVersion.ToString() 
+    $PSVersion = $PSVersionTable.PSVersion.ToString()
     Write-Host "PowerShell " -ForegroundColor Blue -NoNewLine
     Write-Host "v$PSVersion" -ForegroundColor White -NoNewLine
 

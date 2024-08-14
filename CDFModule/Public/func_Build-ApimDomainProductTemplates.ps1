@@ -1,4 +1,4 @@
-
+﻿
 Function Build-ApimDomainProductTemplates {
     <#
     .SYNOPSIS
@@ -6,8 +6,8 @@ Function Build-ApimDomainProductTemplates {
     Builds ARM templates for domain products
 
     .DESCRIPTION
-    This cmdlet builds ARM templates for domain product specifications found in the <DomainPath>/domain-products. 
-      
+    This cmdlet builds ARM templates for domain product specifications found in the <DomainPath>/domain-products.
+
     .PARAMETER CdfConfig
     Instance config
 
@@ -16,7 +16,7 @@ Function Build-ApimDomainProductTemplates {
 
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-    
+
     .PARAMETER DomainPath
     File system root path to the service's domain repository contents
 
@@ -61,11 +61,11 @@ Function Build-ApimDomainProductTemplates {
         Write-Verbose "No domain products configuration - returning"
         return
     }
-    
+
     # Setup products "build" folder.
     New-Item -Force -Type Directory "$BuildPath" | Out-Null
 
-    $DomainProducts = Get-ChildItem -Path "$DomainPath/domain-products" -Include '*.json' -File -Name 
+    $DomainProducts = Get-ChildItem -Path "$DomainPath/domain-products" -Include '*.json' -File -Name
     foreach ($DomainProduct in $DomainProducts) {
 
         $ProductConfigFile = Resolve-Path "$DomainPath/domain-products/$DomainProduct"
@@ -123,8 +123,8 @@ Function Build-ApimDomainProductTemplates {
         }
         # Create template parameters json file
         $BicepParams | ConvertTo-Json -Depth 5 | Set-Content -Path "$BuildPath/product.$($Product.type).$($Product.name).params.json"
-        
-        # Copy bicep template with type name 
-        Copy-Item -Force -Path "$SharedPath/resources/product.$($Product.type).bicep" -Destination "$BuildPath/product.$($Product.type).$($Product.name).bicep" | Out-Null         
+
+        # Copy bicep template with type name
+        Copy-Item -Force -Path "$SharedPath/resources/product.$($Product.type).bicep" -Destination "$BuildPath/product.$($Product.type).$($Product.name).bicep" | Out-Null
     }
 }

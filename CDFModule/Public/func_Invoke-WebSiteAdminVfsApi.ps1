@@ -1,4 +1,4 @@
-
+﻿
 Function Invoke-WebSiteAdminVfsApi {
     [CmdletBinding()]
     Param(
@@ -19,7 +19,7 @@ Function Invoke-WebSiteAdminVfsApi {
     $subscriptionId = $CdfConfig.Platform.Env.subscriptionId
     $serviceRG = $CdfConfig.Domain.ResourceNames.domainResourceGroupName
     $serviceName = $CdfConfig.Service.ResourceNames.logicAppName
-    
+
     $webAppUri = "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$serviceRG/providers/Microsoft.Web/sites/$serviceName"
     $vfsPath = "/hostruntime/admin/vfs"
     $apiUrl = $webAppUri + $vfsPath + $Uri + "?api-version=" + $ApiVersion

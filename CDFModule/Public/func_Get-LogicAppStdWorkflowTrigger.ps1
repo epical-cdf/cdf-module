@@ -1,5 +1,5 @@
-function Get-LogicAppStdWorkflowTrigger {
-   
+﻿function Get-LogicAppStdWorkflowTrigger {
+
     Param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $false, HelpMessage = "CDF Configuration hashtable")]
         [hashtable]$CdfConfig,
@@ -26,7 +26,7 @@ function Get-LogicAppStdWorkflowTrigger {
     )
 
     if ($null -eq $Local -and ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed )) {
-        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"        
+        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"
     }
     if ($History -and !$TriggerName) {
         Write-Warning "Trigger name is required for -History, listing triggers."
@@ -54,7 +54,7 @@ function Get-LogicAppStdWorkflowTrigger {
             if ($result.Content) {
                 $url = ($result.Content | ConvertFrom-Json).value
                 $traceparent = New-CdfTraceParent
-                $result = Invoke-RestMethod -Headers @{ traceparent = $traceparent } -SkipHttpErrorCheck -Method $Method -Uri $url -Body $Body -ContentType $ContentType 
+                $result = Invoke-RestMethod -Headers @{ traceparent = $traceparent } -SkipHttpErrorCheck -Method $Method -Uri $url -Body $Body -ContentType $ContentType
                 if ($result.StatusCode -lt 400) {
                     if ($result.Content) {
                         $triggers = ConvertFrom-Json -InputObject $result.Content
@@ -108,7 +108,7 @@ function Get-LogicAppStdWorkflowTrigger {
                 if ($histories.GetType().Name -eq "PSCustomObject" -and $histories.error) {
                     return $histories.error
                 }
-                
+
                 Write-Verbose "Returning list of objects"
                 $out = @()
                 foreach ($entry in $histories.value) {
@@ -118,8 +118,8 @@ function Get-LogicAppStdWorkflowTrigger {
                 return $out
             }
         }
-    } 
-    
+    }
+
     $result = Invoke-LogicAppStdMgmtApi -CdfConfig $CdfConfig -Local:$Local /workflows/$workflowName/triggers
     if ($result.StatusCode -lt 400) {
         if ($Local) {
@@ -127,7 +127,7 @@ function Get-LogicAppStdWorkflowTrigger {
         }
         else {
             $triggers = ConvertFrom-Json -InputObject $result.Content
-              
+
         }
         if ($triggers.GetType().Name -eq "PSCustomObject" -and $triggers.error) {
             return $triggers.error
@@ -154,7 +154,7 @@ Function Format-LogicAppStdTriggerRecord {
     # Write-Host $Entry
     $culture = Get-Culture
     $dtFormat = $culture.DateTimeFormat.ShortDateTimePattern
-    
+
     $createdTime = [datetime]$Entry.properties.createdTime
     $changedTime = [datetime]$Entry.properties.changedTime
 
@@ -173,7 +173,7 @@ Function Format-LogicAppStdTriggerRecord {
     $PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($DefaultDisplay)
     $nvPair = [PSCustomObject] $props
     $nvPair | Add-Member MemberSet PSStandardMembers $PSStandardMembers
-         
+
     return $nvPair
 }
 
@@ -185,7 +185,7 @@ Function Format-LogicAppStdHistoryRecord {
     )
     $culture = Get-Culture
     $dtFormat = $culture.DateTimeFormat.ShortDateTimePattern
-    
+
     $startTime = [datetime]$Entry.properties.startTime
     $endTime = [datetime]$Entry.properties.endTime
 
@@ -199,7 +199,7 @@ Function Format-LogicAppStdHistoryRecord {
     else {
         $durationText = (([math]::Round($duration.TotalMilliseconds, 2)).ToString()) + ' ms'
     }
-    
+
     $props = [ordered] @{
         RunId           = $Entry.name
         Status          = $Entry.properties.status
@@ -209,7 +209,7 @@ Function Format-LogicAppStdHistoryRecord {
         Duration        = $durationText
         WorkflowVersion = $Entry.properties.workflow.name
         OutputsLinkUri  = $entry.properties.outputsLink.uri
-    }   
+    }
 
     # Few properties - adding all as default
     $DefaultProps = @("RunId", "Status", "CorrelationId", "StartTime", "Duration")

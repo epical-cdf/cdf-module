@@ -1,28 +1,28 @@
-Function Get-GitHubMatrix {
+﻿Function Get-GitHubMatrix {
     <#
     .SYNOPSIS
     Get GitHub actions matrix for environment.
 
     .DESCRIPTION
     GitHub deployment workflows can make use of matrix for deployment to target environments. This cmdlet provides a hashtable object that can be used as matrix json.
-    It contains the dependant environments. For instance if CdfConfig parameter has Domain config with environment, 
+    It contains the dependant environments. For instance if CdfConfig parameter has Domain config with environment,
     then it will provide the Domain env settings with dependent Application env and dependent Platform Env for the Application.
-           
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER PlatformInstance
     Instance id for the platform
 
     .PARAMETER ApplicationId
     Name of the application instance
-    
+
     .PARAMETER ApplicationInstance
     Instance id for the application
 
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-    
+
     .INPUTS
     No piped input processed
 
@@ -35,7 +35,7 @@ Function Get-GitHubMatrix {
         -PlatformInstance 01 `
         -ApplicationId capim `
         -ApplicationInstance 01
-        
+
     .EXAMPLE
     Get-CdfGitHubMatrix `
         -PlatformId api `
@@ -67,7 +67,7 @@ Function Get-GitHubMatrix {
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src'
     )
     $sourcePath = "$SourceDir/$PlatformId/$PlatformInstance"
-    $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable  
+    $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable
     $platformKey = "$PlatformId$PlatformInstance"
     $applicationKey = "$ApplicationId$ApplicationInstance"
     $matrix = @()
@@ -75,7 +75,7 @@ Function Get-GitHubMatrix {
     if (Test-Path "$sourcePath/application/environments.$applicationKey.json" ) {
         $applicationEnvs = Get-Content -Raw "$sourcePath/application/environments.$applicationKey.json" | ConvertFrom-Json -AsHashtable
     }
-    
+
     if ($ApplicationId -and $ApplicationInstance -and $applicationEnvs ) {
         Write-Verbose "Processing platform [$platformKey] application [$applicationKey]"
         foreach ($envKey in  $applicationEnvs.Keys) {
@@ -91,7 +91,7 @@ Function Get-GitHubMatrix {
                     cdfInfraDeployerAppId         = $platformEnv.cdfInfraDeployerAppId
                     cdfSolutionDeployerName       = $platformEnv.cdfSolutionDeployerName
                     cdfSolutionDeployerAppId      = $platformEnv.cdfSolutionDeployerAppId
-    
+
                     platformEnvKey                = "$platformKey$($platformEnv.nameId)"
                     platformEnvDefinitionId       = $platformEnv.definitionId
                     platformEnvNameId             = $platformEnv.nameId
@@ -101,7 +101,7 @@ Function Get-GitHubMatrix {
                     platformEnvQuality            = $platformEnv.quality
                     platformEnvPurpose            = $platformEnv.purpose
                     platformEnvReleaseApproval    = $platformEnv.releaseApproval
-                    
+
                     applicationEnvKey             = "$applicationKey$($applicationEnv.nameId)"
                     applicationEnvDefinitionId    = $applicationEnv.definitionId
                     applicationEnvNameId          = $applicationEnv.nameId
@@ -139,7 +139,7 @@ Function Get-GitHubMatrix {
                     platformEnvQuality         = $platformEnv.quality
                     platformEnvPurpose         = $platformEnv.purpose
                     platformEnvReleaseApproval = $platformEnv.releaseApproval
-                
+
                 }
                 $matrix += $env
             } else {

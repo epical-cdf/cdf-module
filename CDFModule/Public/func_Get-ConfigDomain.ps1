@@ -1,20 +1,20 @@
-Function Get-ConfigDomain {
+﻿Function Get-ConfigDomain {
   <#
     .SYNOPSIS
     Get configuration for a deployed application instance for given platform instance.
 
     .DESCRIPTION
     Retrieves the configuration for a deployed application instance from output files stored at SourceDir for the platform instance.
-      
+
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER DomainName
     Name of the domain
 
     .PARAMETER SourceDir
     Path to the platform source directory. Defaults to "./src".
-      
+
     .INPUTS
     CdfPlatform
 
@@ -25,7 +25,7 @@ Function Get-ConfigDomain {
     $config | Get-CdfConfigDomain `
       -DomainName "ops" `
       -EnvDefinitionId "intg-dev"
-    
+
     .EXAMPLE
     $config = Get-CdfConfigDomain ...
     Get-CdfConfigDomain `
@@ -87,7 +87,7 @@ Function Get-ConfigDomain {
     else {
       Write-Warning "No domain configuration file found '$DomainName' with platform key '$platformEnvKey', application key '$applicationEnvKey' and region code '$regionCode'."
       $CdfDomain = [ordered] @{
-        IsDeployed = $false 
+        IsDeployed = $false
         Env        = [ordered] @{}
         Config     = [ordered] @{}
         Features   = [ordered] @{}
@@ -100,16 +100,16 @@ Function Get-ConfigDomain {
 
       $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
       Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-      
+
       $result = Get-AzSubscriptionDeployment  `
         -DefaultProfile $azCtx `
         -Name "$deploymentName" `
         -ErrorAction SilentlyContinue
-      
+
       if ($result -and $result.ProvisioningState -eq 'Succeeded') {
         # Setup domain definitions
         $CdfDomain = [ordered] @{
-          IsDeployed    = $true 
+          IsDeployed    = $true
           Env           = $result.Outputs.domainEnv.Value
           Tags          = $result.Outputs.domainTags.Value
           Config        = $result.Outputs.domainConfig.Value
@@ -140,7 +140,7 @@ Function Get-ConfigDomain {
     $CdfDomain.Config.domainName = $DomainName
     $CdfDomain.Config.templateScope = 'domain'
     $CdfDomain | ConvertTo-Json -Depth 10 | Write-Verbose
-       
+
     $CdfConfig.Domain = $CdfDomain
     return $CdfConfig
   }

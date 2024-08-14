@@ -1,25 +1,25 @@
-Function Reset-AzureSubscription {
+﻿Function Reset-AzureSubscription {
     <#
     .SYNOPSIS
-    Removes all resources and deployments from subscription. 
+    Removes all resources and deployments from subscription.
 
     .DESCRIPTION
     Deploy Azure resources for a platform template and configuration.
 
     .PARAMETER CdfConfig
     Instance configuration
-            
+
     .PARAMETER Purge
     Enables purging for resources with soft-delete (KeyVaults and API Management instances)
-            
+
     .PARAMETER IncludeRoles
     Enables removal of role assignments on the subscription. Be careful and ensure there is access through mgmt group.
-      
+
     .EXAMPLE
     Reset-CdfAzureSubscription 41bd7a49-5748-438d-b225-d2c2763406c5 -SubscriptionId  -Purge
-    
+
     #>
-    
+
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
@@ -51,7 +51,7 @@ Function Reset-AzureSubscription {
             Write-Host "Adding job for purging removed KeyVault: $($_.VaultName)"
             $jobs += Remove-AzKeyVault -DefaultProfile $azSubCtx -InRemovedState -Name $_.VaultName -Location $_.Location -Force -AsJob
         }
-    
+
         # Purge removed APIM instances
         Get-AzApiManagementDeletedServices -DefaultProfile $azSubCtx | ForEach-Object {
             if ($null -ne $_.name -and '' -ne $_.name ) {
@@ -61,7 +61,7 @@ Function Reset-AzureSubscription {
         }
     }
 
-    # Remove history of old deployments 
+    # Remove history of old deployments
     Get-AzSubscriptionDeployment -DefaultProfile $azSubCtx | ForEach-Object {
         Write-Host "Adding job for removing deployment: $($_.DeploymentName)"
         $jobs += Remove-AzSubscriptionDeployment -DefaultProfile $azSubCtx -Name $_.DeploymentName -AsJob
@@ -90,13 +90,13 @@ function Get-AzApiManagementDeletedServices {
 
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false, HelpMessage = 'Azure Context')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'Azure Context')]
         [System.Management.Automation.PSObject]
         $DefaultProfile,
-        [Parameter(Mandatory = $false, HelpMessage = 'APIM API Version')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'APIM API Version')]
         [string] $APIVersion = '2023-03-01-preview'
     )
-  
+
     if ($DefaultProfile) {
         $azContext = $DefaultProfile
     }
@@ -110,7 +110,7 @@ function Get-AzApiManagementDeletedServices {
     }
     $baseUri = "https://management.azure.com/subscriptions/$($azContext.Subscription)/providers/Microsoft.ApiManagement"
     $apiVersionQuery = "?api-version=$APIVersion"
-  
+
     $restUri = "${baseUri}/deletedservices${apiVersionQuery}"
     try {
         $result = Invoke-RestMethod -ErrorAction SilentlyContinue -Uri $restUri -Method GET -Header $authHeader
@@ -119,29 +119,29 @@ function Get-AzApiManagementDeletedServices {
     catch {}
     return $null
 }
-  
+
 function Remove-AzApiManagementDeletedService {
-  
+
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true, HelpMessage = 'APIM Instance Name')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'APIM Instance Name')]
         [string] $Name,
-        [Parameter(Mandatory = $true, HelpMessage = 'APIM Instance Location')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'APIM Instance Location')]
         [string] $Location,
-        [Parameter(Mandatory = $false, HelpMessage = 'Azure Context')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'Azure Context')]
         [System.Management.Automation.PSObject]
         $DefaultProfile,
-        [Parameter(Mandatory = $false, HelpMessage = 'APIM API Version')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'APIM API Version')]
         [string] $APIVersion = '2023-03-01-preview'
     )
-  
+
     if ($DefaultProfile) {
         $azContext = $DefaultProfile
     }
     else {
         $azContext = Get-AzContext
     }
-  
+
     $token = Get-AzAccessToken -DefaultProfile $azContext
     $authHeader = @{
         'Content-Type'  = 'application/json'
@@ -149,8 +149,7 @@ function Remove-AzApiManagementDeletedService {
     }
     $baseUri = "https://management.azure.com/subscriptions/$($azContext.Subscription)/providers/Microsoft.ApiManagement"
     $apiVersionQuery = "?api-version=$APIVersion"
-  
+
     $restUri = "${baseUri}/locations/${Location}/deletedservices/${Name}${apiVersionQuery}"
     Invoke-RestMethod -Uri $restUri -Method DELETE -Header $authHeader
 }
-  

@@ -1,7 +1,7 @@
-Function Show-Config {
+﻿Function Show-Config {
   [CmdletBinding()]
   Param(
-  
+
     [Parameter(Mandatory = $false)]
     [string] $Region = $env:CDF_REGION,
     [Parameter(Mandatory = $false)]
@@ -49,7 +49,7 @@ Function Show-Config {
   $platformKey = "$PlatformId$PlatformInstance"
   $applicationKey = "$ApplicationId$ApplicationInstance"
 
-  
+
   $sourcePath = "$CdfInfraSourcePath/$PlatformId/$PlatformInstance"
   if (!(Test-Path -Path $sourcePath )) {
     Write-Error -Message "Cannot find the instance configuration and give location [$sourcePath]"
@@ -60,7 +60,7 @@ Function Show-Config {
   $templatePathPlatform = "$CdfInfraTemplatePath/service/$($CdfConfig.Domain.Config.templateName)/$($CdfConfig.Domain.Config.templateVersion)"
   $templatePathApplication = "$CdfInfraTemplatePath/service/$($CdfConfig.Domain.Config.templateName)/$($CdfConfig.Domain.Config.templateVersion)"
   $templatePathDomain = "$CdfInfraTemplatePath/service/$($CdfConfig.Domain.Config.templateName)/$($CdfConfig.Domain.Config.templateVersion)"
-  
+
   $cdfModule = Get-Module -Name CDFModule
   if (!$cdfModule) {
     Write-Error "Unable get information for the CDFModule loaded. That's weird, how did you get to run this command?"
@@ -81,7 +81,7 @@ Function Show-Config {
     "PowerShell Version"   = $PSVersionTable.PSVersion
     "CDF Version"          = $cdfModule.Version.ToString() + ($cdfModule.PrivateData.PSData.Prerelease ? "-" + $cdfModule.PrivateData.PSData.Prerelease :'')
   }
-  
+
   Write-Host "CDF" -ForegroundColor Blue -NoNewLine
   Write-Host (" v" + $($cdfModule.Version)) -ForegroundColor White -NoNewLine
   if ($cdfModule.PrivateData.PSData.Prerelease ) {
@@ -93,7 +93,7 @@ Function Show-Config {
   Write-Host ""
   Write-Host -NoNewline "-------- | Installation | ------------------------------------------"
   $outputInstallation | Format-Table -HideTableHeaders
-  
+
 
   # Platform
   $outputPlatform = [ordered] @{
@@ -102,7 +102,7 @@ Function Show-Config {
     "Region"            = $Region
   }
 
-  if ($Load -or $Deployed) {   
+  if ($Load -or $Deployed) {
     $config = Get-ConfigPlatform `
       -Region $Region `
       -PlatformId $PlatformId `
@@ -110,9 +110,9 @@ Function Show-Config {
       -EnvDefinitionId $PlatformEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -ErrorAction SilentlyContinue
-    
+
     $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
-    
+
     # Continue Platform configuration
     $outputPlatform["Region Code"] = $config.Platform.Env.regionCode
     $outputPlatform["Region Name"] = $config.Platform.Env.regionName
@@ -132,8 +132,8 @@ Function Show-Config {
       -EnvDefinitionId $PlatformEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -Deployed -ErrorAction SilentlyContinue
-      
-    if ($config -and $config.Platform -and $config.Platform.ResourceNames) {  
+
+    if ($config -and $config.Platform -and $config.Platform.ResourceNames) {
       # Continue Platform runtime configuration
       $config.Platform.ResourceNames.Keys `
       | Where-Object -FilterScript { $_.Contains('ResourceGroupName') } `
@@ -142,14 +142,14 @@ Function Show-Config {
   }
   Write-Host -NoNewline "-------- | Platform | ----------------------------------------------"
   $outputPlatform | Format-Table -HideTableHeaders
-  
+
   # Application
   $outputApplication = [ordered] @{
     "Key"               = $applicationKey
     "Env Definition Id" = $ApplicationEnvId
     "Region"            = $Region
   }
-  
+
   if ($Load -or $Deployed) {
     $config = Get-ConfigApplication `
       -CdfConfig $config `
@@ -159,8 +159,8 @@ Function Show-Config {
       -EnvDefinitionId $ApplicationEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -WarningAction:SilentlyContinue `
-      -ErrorAction Stop 
- 
+      -ErrorAction Stop
+
     $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
 
     # Continue Application configuration
@@ -180,8 +180,8 @@ Function Show-Config {
       -SourceDir $CdfInfraSourcePath `
       -WarningAction:SilentlyContinue `
       -Deployed -ErrorAction Stop
-      
-    if ($config -and $config.Application -and $config.Application.ResourceNames) {  
+
+    if ($config -and $config.Application -and $config.Application.ResourceNames) {
       # Continue Application runtime configuration
       $config.Application.ResourceNames.Keys `
       | Where-Object -FilterScript { $_.Contains('ResourceGroupName') } `
@@ -190,7 +190,7 @@ Function Show-Config {
   }
   Write-Host -NoNewline "-------- | Application | -------------------------------------------"
   $outputApplication | Format-Table -HideTableHeaders
-  
+
   if ($DomainName) {
 
     # Domain
@@ -222,7 +222,7 @@ Function Show-Config {
     }
     Write-Host -NoNewline "-------- | Domain | ------------------------------------------------"
     $outputDomain | Format-Table -HideTableHeaders
-  
+
     # Service
     $outputService = [ordered] @{
       "Name"     = $ServiceName ?? ""
@@ -248,6 +248,6 @@ Function Show-Config {
     Write-Host -NoNewline "-------- | Service | ------------------------------------------------"
     $outputService | Format-Table -HideTableHeaders
 
-      
+
   }
 }

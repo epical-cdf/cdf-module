@@ -1,11 +1,11 @@
-Function Deploy-TemplateService {
+﻿Function Deploy-TemplateService {
     <#
         .SYNOPSIS
         Deploys Integration service template. The service requires the platform, application and domain to be in place.
-    
+
         .DESCRIPTION
         Deploy Azure resources for Integration domain.
-    
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
@@ -17,7 +17,7 @@ Function Deploy-TemplateService {
 
         .INPUTS
         CdfConfig
-    
+
         .OUTPUTS
         Updated CdfConfig and json config files at SourceDir
 
@@ -47,7 +47,7 @@ Function Deploy-TemplateService {
         Remove-CdfTemplateDomain
         Remove-TemplateService
         #>
-    
+
     [CmdletBinding()]
     Param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -68,16 +68,16 @@ Function Deploy-TemplateService {
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
         [Parameter(Mandatory = $false)]
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src'
-           
+
     )
-    
+
     # Fetch service definitions
     $templatePath = "$TemplateDir/service/$($CdfConfig.Domain.Config.templateName)/$($CdfConfig.Domain.Config.templateVersion)"
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
 
     # Setup deployment variables from configuration
     # Service uses application config for region
-    $region = $CdfConfig.Platform.Env.region.toLower() 
+    $region = $CdfConfig.Platform.Env.region.toLower()
     $regionCode = $CdfConfig.Platform.Env.regionCode
     $regionName = $CdfConfig.Platform.Env.regionName
 
@@ -86,7 +86,7 @@ Function Deploy-TemplateService {
     $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
 
     $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
-    
+
     # Setup platform parameters from envrionment and params file
     $templateParams = [ordered] @{}
 
@@ -107,7 +107,7 @@ Function Deploy-TemplateService {
     $templateParams.domainNetworkConfig = $CdfConfig.Domain.NetworkConfig
     $templateParams.domainAccessControl = $CdfConfig.Domain.AccessControl
     $templateParams.domainResourceNames = $CdfConfig.Domain.ResourceNames
-    
+
     $templateParams.serviceTags = @{} # TODO: Implement default configurable service tags or inherit domain default tags??
     $templateParams.serviceTags.BuildCommit = $env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)
     $templateParams.serviceTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
@@ -120,9 +120,9 @@ Function Deploy-TemplateService {
     $templateParams.serviceTemplate = $ServiceTemplate
 
     Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
- 
+
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-        
+
     Write-Host "Starting deployment of '$deploymentName' at '$Region' using subscription [$($AzCtx.Subscription.Name)]."
     $result = New-AzResourceGroupDeployment `
         -DefaultProfile $azCtx `
@@ -132,7 +132,7 @@ Function Deploy-TemplateService {
         -TemplateParameterObject $templateParams `
         -WarningAction:SilentlyContinue `
         -ErrorAction:Continue
-    
+
     $result | ConvertTo-Json -Depth 10 | Write-Verbose
 
     While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed')) {
@@ -163,13 +163,13 @@ Function Deploy-TemplateService {
         }
         throw "Deployment failed, see error output or deployment status on Azure Portal"
     }
-    
+
     if ($result.ProvisioningState = 'Succeeded') {
         Write-Host "Successfully deployed '$deploymentName' at '$Region'."
-        
+
         # Save deployment configuration for service
         $CdfService = [ordered] @{
-            IsDeployed    = $true 
+            IsDeployed    = $true
             Env           = $result.Outputs.serviceEnv.Value
             Tags          = $result.Outputs.serviceTags.Value
             Config        = $result.Outputs.serviceConfig.Value
@@ -189,7 +189,7 @@ Function Deploy-TemplateService {
         $configPath = $OutputDir ? $OutputDir : "$sourcePath/output"
         $configFileName = "service.$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode.json"
         $configOutput = Join-Path -Path $configPath -ChildPath $configFileName
-            
+
         if (!(Test-Path -Path $configPath)) {
             New-Item -Type Directory -Path  $configPath | Out-Null
         }
@@ -198,7 +198,7 @@ Function Deploy-TemplateService {
         $CdfService = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
         $CdfService | ConvertTo-Json -Depth 10 | Write-Verbose
 
-        $CdfConfig.Service = $CdfService 
+        $CdfConfig.Service = $CdfService
         return $CdfConfig
     }
     else {
@@ -206,4 +206,3 @@ Function Deploy-TemplateService {
         Throw "Deployment failed for '$deploymentName' at '$Region'. Please check the deployment status on azure portal for details."
     }
 }
-    

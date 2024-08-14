@@ -1,19 +1,19 @@
-Function Deploy-StorageAccountConfig {
+﻿Function Deploy-StorageAccountConfig {
     <#
         .SYNOPSIS
         Deploy storage account containers, file shares, queues and tables
-        
+
         .DESCRIPTION
         The cmdlet makes token substitution for the config scope environment.
         Then deploys the containers, file shares, queues and tables for the storage account resource.
-                
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
         .PARAMETER InputPath
         The deployment package path, where servicebus.config.json is located.
         Optional, defaults to "./build"
-        
+
         .PARAMETER OutputPath
         Output path for the environment specific config file servicebus.config.<env nameId>.json
         Optional, defaults to "./build"
@@ -75,7 +75,7 @@ Function Deploy-StorageAccountConfig {
             -StartTokenPattern '{{' `
             -EndTokenPattern '}}' `
             -NoWarning `
-            -WarningAction:SilentlyContinue 
+            -WarningAction:SilentlyContinue
 
         $storageAccountConfig = Get-Content -Path "$OutputPath/storageaccount.config.$($CdfConfig.Application.Env.nameId).json" | ConvertFrom-Json -AsHashtable
 
@@ -116,7 +116,7 @@ Function Deploy-StorageAccountConfig {
         $templateParams.serviceName = $CdfConfig.Service.Config.serviceName
         $templateParams.storageAccountName = $storageAccountName
         # Could use default parameter in bicep template, but this construct allows for programatic configuration changes.
-        $templateParams.storageAccountConfig = $storageAccountConfig 
+        $templateParams.storageAccountConfig = $storageAccountConfig
 
         $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "st-cfg-$($CdfConfig.Service.Config.serviceName)-$($CdfConfig.Domain.Config.domainName)-$storageAccountName-$applicationEnvKey-$($CdfConfig.Application.Env.regionCode)"
@@ -130,13 +130,13 @@ Function Deploy-StorageAccountConfig {
             -ResourceGroupName $storageAccountRG `
             -TemplateFile "$TemplateDir/main.bicep" `
             -TemplateParameterObject $templateParams `
-            -WarningAction:SilentlyContinue 
+            -WarningAction:SilentlyContinue
 
         if ( -not $? ) {
             $msg = $Error[0].Exception.Message
             throw "Encountered error during deployment. Error Message is $msg."
         }
-  
+
         if ($result.ProvisioningState = 'Succeeded') {
             Write-Host "Successfully deployed '$deploymentName' at resource group '$storageAccountRG'."
         }

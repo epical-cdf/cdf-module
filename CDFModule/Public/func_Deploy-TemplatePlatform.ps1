@@ -1,4 +1,4 @@
-Function Deploy-TemplatePlatform {
+﻿Function Deploy-TemplatePlatform {
     <#
     .SYNOPSIS
     Deploys a platform template for given instance configuration
@@ -8,16 +8,16 @@ Function Deploy-TemplatePlatform {
 
     .PARAMETER CdfConfig
     Instance configuration
-            
+
     .PARAMETER Deployed
-    Override check on configuration 'IsDeployed' to force deployment of deployed configuration 
+    Override check on configuration 'IsDeployed' to force deployment of deployed configuration
 
     .PARAMETER TemplateDir
     Path to the platform template root dir. Defaults to ".".
 
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-      
+
     .INPUTS
     CdfConfig
 
@@ -28,19 +28,19 @@ Function Deploy-TemplatePlatform {
     .EXAMPLE
     New-CdfConfigPlatform ... | Deploy-CdfTemplatePlatform `
         -CdfConfig $CdfConfig
-    
+
     .EXAMPLE
     $CdfConfig = Get-CdfConfigPlatform ...
     $UpdatedCdfConfig = Deploy-CdfTemplatePlatform `
         -CdfConfig $CdfConfig `
         -TemplateDir ../cdf-infra/templates `
         -SourceDir ../cdf-infra/instances
-    
+
     .LINK
     Deploy-CdfTemplateApplication
     .LINK
     Remove-CdfTemplatePlatform
-    
+
     #>
 
     [CmdletBinding()]
@@ -74,7 +74,7 @@ Function Deploy-TemplatePlatform {
         # TODO: replace with regionCode/regionName parameters, see below
         $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
         $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json" | ConvertFrom-Json -AsHashtable
-        
+
         # Setup deployment variables from configuration
         # TODO: Verify validitity of environment/EnvDefinitionId
         $region = $CdfConfig.Platform.Env.region.toLower()
@@ -98,12 +98,12 @@ Function Deploy-TemplatePlatform {
         $templateParams.platformTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
         $templateParams.platformTags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
         $templateParams.platformTags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
-    
+
         # Add settings from the enterprise configuration for the spoke network / landing zone
         if ( $CdfConfig.Platform.SpokeNetworkConfig ) { $templateParams.enterpriseSpokeConfig = $CdfConfig.Platform.SpokeNetworkConfig }
 
         # TODO: Standardize this ugly workaround to provide DevOps Build Env Token
-        if ( $env:PLATFORM_BUILDAGENT_PAT ) { 
+        if ( $env:PLATFORM_BUILDAGENT_PAT ) {
             $templateParams.platformEnv.platformDeploymentAccessToken = $env:PLATFORM_BUILDAGENT_PAT
         }
 
@@ -156,12 +156,12 @@ Function Deploy-TemplatePlatform {
         if ($result.ProvisioningState -eq 'Succeeded') {
             Write-Host "Successfully deployed '$deploymentName' at '$region '."
 
-            # Save deployment configuration output to file         
+            # Save deployment configuration output to file
             if (!(Test-Path -Path "$sourcePath/output")) {
                 New-Item -Type Directory -Path  "$sourcePath/output" | Out-Null
             }
             $CdfPlatform = [ordered] @{
-                IsDeployed    = $true 
+                IsDeployed    = $true
                 Env           = $result.Outputs.platformEnv.Value
                 Tags          = $result.Outputs.platformTags.Value
                 Config        = $result.Outputs.platformConfig.Value
@@ -170,12 +170,12 @@ Function Deploy-TemplatePlatform {
                 NetworkConfig = $result.Outputs.platformNetworkConfig.Value
                 AccessControl = $result.Outputs.platformAccessControl.Value
             }
-    
+
             # Save config file and load as resulting JSON
             $configPath = $OutputDir ? $OutputDir : "$sourcePath/output"
             $configFileName = "platform.$platformEnvKey-$regionCode.json"
             $configOutput = Join-Path -Path $configPath -ChildPath $configFileName
-            
+
             if (!(Test-Path -Path $configPath)) {
                 New-Item -Type Directory -Path  $configPath | Out-Null
             }
@@ -183,7 +183,7 @@ Function Deploy-TemplatePlatform {
             $CdfPlatform | ConvertTo-Json -depth 10 | Out-File $configOutput
             $CdfPlatform | ConvertTo-Json -Depth 10 | Write-Verbose
             $CdfPlatform = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
-                
+
             $CdfConfig = [ordered] @{
                 Platform = $CdfPlatform
             }

@@ -1,7 +1,7 @@
-Function Get-Config {
+﻿Function Get-Config {
   [CmdletBinding()]
   Param(
-  
+
     [Parameter(Mandatory = $false)]
     [string] $Region = $env:CDF_REGION,
     [Parameter(Mandatory = $false)]
@@ -53,7 +53,7 @@ Function Get-Config {
     Write-Error -Message 'Correct parameter "-CdfInfraSourcePath" or env var "$env:CDF_INFRA_SOURCE_PATH" is correct'
     throw "Cannot find the instance configuration and give location [$sourcePath]"
   }
-  
+
   $cdfModule = Get-Module -Name CDFModule
   if (!$cdfModule) {
     Write-Error "Unable get information for the CDFModule loaded. That's weird, how did you get to run this command?"
@@ -83,7 +83,7 @@ Function Get-Config {
       -EnvDefinitionId $PlatformEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -Deployed -ErrorAction SilentlyContinue
-      
+
   }
   else {
     $config = Get-ConfigPlatform `
@@ -93,7 +93,7 @@ Function Get-Config {
       -EnvDefinitionId $PlatformEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -ErrorAction SilentlyContinue
-  } 
+  }
 
   if ($Deployed) {
     $config = Get-ConfigApplication `
@@ -114,7 +114,7 @@ Function Get-Config {
       -EnvDefinitionId $ApplicationEnvId  `
       -SourceDir $CdfInfraSourcePath `
       -WarningAction:SilentlyContinue `
-      -ErrorAction Stop 
+      -ErrorAction Stop
   }
 
   if ($DomainName -and $config.Application.IsDeployed) {
@@ -127,7 +127,7 @@ Function Get-Config {
         -SourceDir $CdfInfraSourcePath `
         -WarningAction:SilentlyContinue `
         -Deployed -ErrorAction Stop
-     
+
     }
     else {
       $config = Get-ConfigDomain `
@@ -138,7 +138,7 @@ Function Get-Config {
         -ErrorAction Stop
       # Continue Domain configuration
     }
-    
+
     if ($ServiceName -and $Deployed -and $config.Domain.IsDeployed) {
       $config = Get-ConfigService `
         -CdfConfig $config `

@@ -1,4 +1,4 @@
-
+﻿
 Function Add-ManagedApiConnectionAccess {
     <#
     .SYNOPSIS
@@ -9,7 +9,7 @@ Function Add-ManagedApiConnectionAccess {
 
     .PARAMETER CdfConfig
     The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-    
+
     .PARAMETER ConnectionName
     The name of the managed API connection
 
@@ -51,11 +51,11 @@ Function Add-ManagedApiConnectionAccess {
         $apiConnection = Get-AzResource  `
             -DefaultProfile $azCtx `
             -ResourceId $apiConfig.connectionId
-        
+
         $managedIdentity = Get-AzResource  `
             -DefaultProfile $azCtx `
             -ResourceId $ManagedIdentityResourceId
-        
+
         if ($apiConnection -and $managedIdentity) {
             Write-Information "Validated, adding access for identity '$($managedIdentity.Name)'"
 

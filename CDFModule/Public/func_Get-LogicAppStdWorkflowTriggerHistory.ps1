@@ -1,5 +1,5 @@
-function Get-LogicAppStdWorkflowTriggerHistory {
-   
+﻿function Get-LogicAppStdWorkflowTriggerHistory {
+
     Param (
         [Parameter(ValueFromPipeline = $true, Mandatory = $false, HelpMessage = "CDF Configuration hashtable")]
         [hashtable]$CdfConfig,
@@ -16,9 +16,9 @@ function Get-LogicAppStdWorkflowTriggerHistory {
     )
 
     if ($null -eq $Local -and ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed )) {
-        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"        
+        throw "Function requires a CDF Config with deployed runtime details for Platform, Application, Domain and Service"
     }
-    
+
     if ($Output -and !$historyName) {
         Write-Warning "History name is required for -Output, listing runs history."
     }
@@ -33,7 +33,7 @@ function Get-LogicAppStdWorkflowTriggerHistory {
         }
         throw "Getting run [$historyName] was not successful HTTP Status [$($result.Status)]"
     }
-    
+
     $result = Invoke-LogicAppStdMgmtApi -CdfConfig $CdfConfig -Local:$Local /workflows/$workflowName/triggers/$triggerName/histories/$historyName
     if ($result.Status -lt 400) {
         if ($result.Content) {
@@ -51,7 +51,7 @@ function Get-LogicAppStdWorkflowTriggerHistory {
                 return $out
             }
             return $history.value
-            
+
             # Write-Host "Returning array history.properties"
             return $history.properties
         }

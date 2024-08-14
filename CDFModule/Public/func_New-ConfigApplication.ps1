@@ -1,20 +1,20 @@
-Function New-ConfigApplication {
+﻿Function New-ConfigApplication {
   <#
     .SYNOPSIS
     Create a new configuration for a platform instance
-  
+
     .DESCRIPTION
     Setup the configuration for a new application instance within a platform. Output files stored at SourceDir using template.
-    
+
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER TemplateName
     Application template name to be used for deployment
-    
+
     .PARAMETER TemplatVersion
     Application template version to be used for deployment
-        
+
     .PARAMETER Region
     The target Azure Region/region for the deployment
 
@@ -26,13 +26,13 @@ Function New-ConfigApplication {
 
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-      
+
     .INPUTS
     None.
-  
+
     .OUTPUTS
     CdfConfig
-  
+
     .EXAMPLE
     New-CdfConfigPlatform `
       -Region "swedencentral" `
@@ -40,7 +40,7 @@ Function New-ConfigApplication {
       -TemplateVersion "v1net" `
       -PlatformId "capim" `
       -InstanceId "01"
-    
+
     .EXAMPLE
     New-CdfConfigPlatform `
         -Region "northeurope" `
@@ -50,12 +50,12 @@ Function New-ConfigApplication {
         -InstanceId "01" `
         -TemplateDir ../cdf-infra/templates `
         -SourceDir ../cdf-infra/instances
-  
+
     .LINK
     Get-CdfConfigPlatform
     .LINK
     Deploy-CdfTemplatePlatform
-  
+
     #>
 
   [CmdletBinding()]
@@ -87,7 +87,7 @@ Function New-ConfigApplication {
     # Setup paths
     $templatePath = "$TemplateDir/application/$TemplateName/$TemplateVersion"
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
-    
+
     if (!(Test-Path $templatePath)) {
       throw "Bad template specification. Application template path not found [$templatePath]"
     }
@@ -115,7 +115,7 @@ Function New-ConfigApplication {
     $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
     $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json" | ConvertFrom-Json -AsHashtable
     $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable
-   
+
     # Setup region mappings
     $regionCode = $regionCodes[$Region.ToLower()]
     $regionName = $regionNames[$regionCode]
@@ -128,7 +128,7 @@ Function New-ConfigApplication {
 
       $platformEnvKey = "$platformKey$($platformEnv.nameId)"
       $applicationEnvKey = "$applicationKey$($applicationEnv.nameId)"
-      
+
       if ($applicationEnv.isEnabled -and $platformEnv.isEnabled) {
         if (Test-Path -Path "$sourcePath/application/application.$platformEnvKey-$applicationEnvKey-$regionCode.json") {
           Write-Warning "Configuration for [$applicationEnv] already exists for platform [$platformEnvKey], skipping setup"

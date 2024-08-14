@@ -1,16 +1,16 @@
-Function Get-AzureContext {
+﻿Function Get-AzureContext {
   [CmdletBinding()]
   Param(
     [Parameter(Mandatory = $true)]
     [string] $SubscriptionId
   )
-  
+
   $test = Get-AzContext -WarningAction:SilentlyContinue
   [Microsoft.Azure.Common.Authentication.AzureSession]::ClientFactory.AddUserAgent("pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb")
-  
+
   $azSub = Get-AzSubscription -WarningAction:SilentlyContinue `
-  | Where-Object { $_.Name -eq $SubscriptionId -or $_.Id -eq $SubscriptionId }  
-  
+  | Where-Object { $_.Name -eq $SubscriptionId -or $_.Id -eq $SubscriptionId }
+
   if ( $null -eq $azSub) {
     Get-AzSubscription -WarningAction:SilentlyContinue | Format-Table
     Get-AzContext -WarningAction:SilentlyContinue -ListAvailable | Format-Table
@@ -18,9 +18,9 @@ Function Get-AzureContext {
   }
   $env:AZURE_HTTP_USER_AGENT = 'pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb'
   Set-AzContext -SubscriptionObject $azSub -WarningAction:SilentlyContinue | Out-Null
-  $azCtx = Get-AzContext -WarningAction:SilentlyContinue  
-  
-  return $azCtx 
+  $azCtx = Get-AzContext -WarningAction:SilentlyContinue
+
+  return $azCtx
 }
 
 
@@ -33,7 +33,7 @@ Function Get-AzureContext {
 #     [Parameter(Mandatory = $false)]
 #     [string] $SubscriptionId
 #   )
-  
+
 #   $triggerAzureSession = Get-AzContext -WarningAction:SilentlyContinue
 #   $triggerAzureSession -or [Microsoft.Azure.Common.Authentication.AzureSession]::ClientFactory.AddUserAgent("pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb") | Out-Null
 #   $env:AZURE_HTTP_USER_AGENT = 'pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb'
@@ -46,7 +46,7 @@ Function Get-AzureContext {
 #   else {
 #     $azCtx = Get-AzContext -ListAvailable | Where-Object { $_.Subscription.Id -eq $CdfConfig.Platform.Env.subscriptionId -and $_.Tenant.Id -eq $CdfConfig.Platform.Env.tenantId }
 #   }
-  
+
 #   if ( $null -eq $azCtx) {
 #     Get-AzSubscription -WarningAction:SilentlyContinue | Format-Table
 #     Get-AzContext -WarningAction:SilentlyContinue -ListAvailable | Format-Table

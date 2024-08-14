@@ -1,4 +1,4 @@
-Function Get-ConfigApplication {
+﻿Function Get-ConfigApplication {
   <#
     .SYNOPSIS
     Get configuration for a deployed application instance for given platform instance.
@@ -7,19 +7,19 @@ Function Get-ConfigApplication {
     Retrieves the configuration for a deployed application instance from output files stored at SourceDir for the platform instance.
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER ApplicationId
     Name of the application instance template
-    
+
     .PARAMETER InstanceId
     Specific id of the application instance
-    
+
     .PARAMETER EnvDefinitionId
     Name of the environment configuration.
 
     .PARAMETER SourceDir
     Path to the platform source directory. Defaults to "./src".
-      
+
     .INPUTS
     CdfPlatform
 
@@ -89,7 +89,7 @@ Function Get-ConfigApplication {
 
     # Fetch definitions
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
-    
+
     # Setup deployment variables from configuration
     $applicationEnvs = Get-Content -Raw "$sourcePath/application/environments.$applicationKey.json" | ConvertFrom-Json -AsHashtable
     $applicationEnv = $applicationEnvs[$EnvDefinitionId]
@@ -118,16 +118,16 @@ Function Get-ConfigApplication {
 
       $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
       Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-      
+
       $result = Get-AzSubscriptionDeployment  `
         -DefaultProfile $azCtx `
         -Name "$deploymentName" `
         -ErrorAction SilentlyContinue
-      
+
       if ($result -and $result.ProvisioningState -eq 'Succeeded') {
         # Setup application definitions
         $CdfApplication = [ordered] @{
-          IsDeployed    = $true 
+          IsDeployed    = $true
           Env           = $result.Outputs.applicationEnv.Value
           Tags          = $result.Outputs.applicationTags.Value
           Config        = $result.Outputs.applicationConfig.Value
@@ -136,7 +136,7 @@ Function Get-ConfigApplication {
           NetworkConfig = $result.Outputs.applicationNetworkConfig.Value
           AccessControl = $result.Outputs.applicationAccessControl.Value
         }
-        
+
         # Convert to normalized hashtable
         $CdfApplication = $CdfApplication | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
       }
@@ -163,7 +163,7 @@ Function Get-ConfigApplication {
     $CdfApplication.Config.instanceId = $InstanceId
 
     $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose
-       
+
     $CdfConfig.Application = $CdfApplication
     return $CdfConfig
   }

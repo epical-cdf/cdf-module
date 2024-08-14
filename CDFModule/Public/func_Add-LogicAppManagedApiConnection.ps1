@@ -1,17 +1,17 @@
-Function Add-LogicAppManagedApiConnection {
+﻿Function Add-LogicAppManagedApiConnection {
     <#
     .SYNOPSIS
     Adds a managed API Connection to a Logic App Standard
 
     .DESCRIPTION
-    Adds a managed API Connection to a Logic App Standard 
+    Adds a managed API Connection to a Logic App Standard
 
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
-    
+
     .PARAMETER ConnectionName
     The name of the managed API connection
-    
+
     .PARAMETER Connections
     Hashtable with contents of logic app standard connection.json. See examples.
 
@@ -42,7 +42,7 @@ Function Add-LogicAppManagedApiConnection {
 
     if ($UseCS) {
         # not implemented
-       
+
     }
     else {
         $connectionDef = [ordered] @{
@@ -58,7 +58,7 @@ Function Add-LogicAppManagedApiConnection {
             }
             connectionRuntimeUrl = $ConnectionConfig.connectionRuntimeUrl
         }
-      
+
         # $connectionConfig = $connectionConfigJson | ConvertFrom-Json -AsHashtable
         $Connections.managedApiConnections["$ConnectionName"] = $connectionDef
     }

@@ -1,4 +1,4 @@
-<#
+﻿<#
 MIT License
 
 Copyright (c) 2020 Janne Mattila
@@ -31,37 +31,37 @@ Function Import-APIMDeveloperPortal {
 
     .PARAMETER CdfConfig
     APIM Application configuration
-    
+
     .PARAMETER ResourceGroupName
     Resource group name for API Management
-    
+
     .PARAMETER APIMName
     Name of API Manamgement instance
 
     .PARAMETER ImportFolder
     Path to folder where import configuration is located
-    
+
     .PARAMETER APIVersion
     Version of management API to be used
-    
+
     .EXAMPLE
     Import-APIMDeveloperPortal.ps1 -ResourceGroupName rg-apim -APIMName contosoapi -ImportFolder Import
     #>
 
     Param (
-        [Parameter(Mandatory = $true, HelpMessage = 'Resource group of API MAnagement')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'Resource group of API MAnagement')]
         [string] $ResourceGroupName,
 
-        [Parameter(Mandatory = $true, HelpMessage = 'API Management Name')] 
+        [Parameter(Mandatory = $true, HelpMessage = 'API Management Name')]
         [string] $APIMName,
 
-        [Parameter(Mandatory = $false, HelpMessage = 'Import folder')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'Import folder')]
         [string] $ImportFolder = "$PSScriptRoot\Import",
-    
-        [Parameter(Mandatory = $false, HelpMessage = 'Version used in description')] 
+
+        [Parameter(Mandatory = $false, HelpMessage = 'Version used in description')]
         [string] $BuildVersion = $null,
 
-        [Parameter(Mandatory = $false, HelpMessage = 'API Version')] 
+        [Parameter(Mandatory = $false, HelpMessage = 'API Version')]
         [string] $APIVersion = '2023-03-01-preview'
     )
 
@@ -143,7 +143,7 @@ Function Import-APIMDeveloperPortal {
         foreach ($blob in $blobs) {
             $allBlobs.Add($blob.Name)
         }
-    
+
         $continuationToken = $blobs[$blobs.Count - 1].ContinuationToken
     }
     while ($null -ne $continuationToken)
@@ -168,7 +168,7 @@ Function Import-APIMDeveloperPortal {
     'Uploading files'
     $stringIndex = ($mediaFolder + '\').Length
     Get-ChildItem -File -Recurse $mediaFolder `
-    | ForEach-Object { 
+    | ForEach-Object {
         $name = $_.FullName.Substring($stringIndex)
         Write-Host "Uploading file: $name"
         Set-AzStorageBlobContent -File $_.FullName -Blob $name -Container $contentContainer
@@ -209,10 +209,10 @@ Function Import-ApimPortalConfig {
 
     .PARAMETER CdfConfig
     APIM Application configuration
-    
+
     .PARAMETER PortalConfig
     Name of the APIM portal config template. Defaults to 'portal-config'
-    
+
     .PARAMETER BuildVersion
     Version used in description
 
@@ -230,7 +230,7 @@ Function Import-ApimPortalConfig {
     Set-CdfApimPortalWafConfig `
         -CdfConfig $config `
         -TemplateName "portal-epical"
-    
+
     .LINK
     Set-CdfApimWafConfig
 
@@ -243,8 +243,8 @@ Function Import-ApimPortalConfig {
 
         [Parameter(Mandatory = $false)]
         [string] $PortalConfig = 'portal-config',
-    
-        [Parameter(Mandatory = $false, HelpMessage = 'Version used in description')] 
+
+        [Parameter(Mandatory = $false, HelpMessage = 'Version used in description')]
         [string] $BuildVersion = $null,
 
         [Parameter(Mandatory = $false)]

@@ -1,14 +1,14 @@
-Function Add-LogicAppServiceProviderConnection {
+﻿Function Add-LogicAppServiceProviderConnection {
     <#
     .SYNOPSIS
     Adds a Service Provice Connection to a Logic App Standard
 
     .DESCRIPTION
-    Adds a Service Provice Connection to a Logic App Standard 
+    Adds a Service Provice Connection to a Logic App Standard
 
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
-    
+
     .PARAMETER CdfConfig
     The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
@@ -89,13 +89,13 @@ Function Add-LogicAppServiceProviderConnection {
             serviceProvider  = @{
                 id = "/serviceProviders/$ServiceProvider"
             }
-        }     
-        
+        }
+
         $Connections.serviceProviderConnections["$ConnectionName"] = $connectionConfig
-                
+
         switch ($ServiceProvider.ToLower()) {
-            'keyvault' { 
-                # No support for connection string 
+            'keyvault' {
+                # No support for connection string
                 $connectionConfig.parameterSetName = "ManagedServiceIdentity"
                 $connectionConfig.parameterValues.VaultUri = "@appsetting('$($ConnectionName)Uri')"
                 $connectionConfig.parameterValues.authProvider = @{
@@ -103,7 +103,7 @@ Function Add-LogicAppServiceProviderConnection {
                     Type     = "ManagedServiceIdentity"
                 }
             }
-            'eventGridPublisher' { 
+            'eventGridPublisher' {
                 $connectionConfig.parameterSetName = "accessKey"
                 $connectionConfig.parameterValues.accessKey = "@appsetting('$($ConnectionName)_accessKey')"
                 $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($ConnectionName)_topicEndpoint')"
@@ -111,7 +111,7 @@ Function Add-LogicAppServiceProviderConnection {
             Default {
                 $connectionConfig.parameterValues.connectionString = "@appsetting('$($ConnectionName)_connectionString')"
             }
-        }   
+        }
     }
     else {
         $connectionConfig = [ordered] @{
@@ -130,30 +130,30 @@ Function Add-LogicAppServiceProviderConnection {
 
         # $connectionConfig = $connectionConfigJson | ConvertFrom-Json -AsHashtable
         $Connections.serviceProviderConnections["$ConnectionName"] = $connectionConfig
-                
+
         switch ($ServiceProvider.ToLower()) {
-            'keyvault' { 
+            'keyvault' {
                 $connectionConfig.parameterValues.VaultUri = "@appsetting('$($ConnectionName)Uri')"
-            } 
-            'eventGridPublisher' { 
+            }
+            'eventGridPublisher' {
                 # No support for manged identity
                 $connectionConfig.parameterSetName = "accessKey"
                 $connectionConfig.parameterValues.accessKey = "@appsetting('$($ConnectionName)_accessKey')"
                 $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($ConnectionName)_topicEndpoint')"
-            } 
-            'servicebus' { 
+            }
+            'servicebus' {
                 $connectionConfig.parameterValues.fullyQualifiedNamespace = "@appsetting('$($ConnectionName)_fullyQualifiedNamespace')"
             }
-            'azureblob' { 
+            'azureblob' {
                 $connectionConfig.parameterValues.blobStorageEndpoint = "@appsetting('$($connectionName)Uri')"
             }
-            'azuretables' { 
+            'azuretables' {
                 $connectionConfig.parameterValues.tableStorageEndpoint = "@appsetting('$($connectionName)Uri')"
             }
-            'azurequeues' { 
+            'azurequeues' {
                 $connectionConfig.parameterValues.queueStorageEndpoint = "@appsetting('$($connectionName)Uri')"
             }
-            'azurefile' { 
+            'azurefile' {
                 # Azure Storage Account File Shares do not support managed identities, must always use connection string
                 $Connections.serviceProviderConnections["$ConnectionName"] = [ordered] @{
                     displayName      = "$($ConnectionName) Connection"

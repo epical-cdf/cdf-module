@@ -1,12 +1,12 @@
-Function Build-ApimDomainBackendTemplates {
+﻿Function Build-ApimDomainBackendTemplates {
     <#
     .SYNOPSIS
 
     Builds ARM templates for domain backend
 
     .DESCRIPTION
-    This cmdlet builds ARM templates for domain backend specifications found in the <DomainPath>/domain-backends. 
-      
+    This cmdlet builds ARM templates for domain backend specifications found in the <DomainPath>/domain-backends.
+
     .PARAMETER CdfConfig
     Instance config
 
@@ -15,7 +15,7 @@ Function Build-ApimDomainBackendTemplates {
 
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-    
+
     .PARAMETER DomainPath
     File system root path to the domain repository contents
 
@@ -60,16 +60,16 @@ Function Build-ApimDomainBackendTemplates {
         Write-Verbose "No domain backend configuration - returning"
         return
     }
-    
+
     # Setup backends "build" folder.
     New-Item -Force -Type Directory "$BuildPath" | Out-Null
 
-    $DomainBackends = Get-ChildItem -Path "$DomainPath/domain-backends" -Include '*.json' -File -Name 
+    $DomainBackends = Get-ChildItem -Path "$DomainPath/domain-backends" -Include '*.json' -File -Name
     foreach ($DomainBackend in $DomainBackends) {
 
         $BackendConfigFile = Resolve-Path "$DomainPath/domain-backends/$DomainBackend"
         $Backend = Get-Content -Path $BackendConfigFile | ConvertFrom-Json -AsHashtable
-        
+
         Write-Host "Build backend: $($Backend.title)"
         if (-not ($Backend.title.StartsWith("$DomainName-"))) {
             Write-Error 'Domain backends must have titles starting with domain name. <domain name>-<backend name>'
@@ -115,11 +115,11 @@ Function Build-ApimDomainBackendTemplates {
             $BicepParams.parameters.Add('proxyUrl', @{ })
             $BicepParams.parameters.proxyUrl.Add('reference', @{ 'secretName' = "APIM-Backend-$($Backend.title)-ProxyUrl" })
             $BicepParams.parameters.proxyUrl.reference.Add('keyVault', @{ 'id' = '#{{apim-keyvault-id}}' })
-            
+
             $BicepParams.parameters.Add('proxyUserName', @{ })
             $BicepParams.parameters.proxyUserName.Add('reference', @{ 'secretName' = "APIM-Backend-$($Backend.title)-ProxyUserName" })
             $BicepParams.parameters.proxyUserName.reference.Add('keyVault', @{ 'id' = '#{{apim-keyvault-id}}' })
-            
+
             $BicepParams.parameters.Add('proxyPassword', @{ })
             $BicepParams.parameters.proxyPassword.Add('reference', @{ 'secretName' = "APIM-Backend-$($Backend.title)-ProxyPassword" })
             $BicepParams.parameters.proxyPassword.reference.Add('keyVault', @{ 'id' = '#{{apim-keyvault-id}}' })
@@ -134,8 +134,8 @@ Function Build-ApimDomainBackendTemplates {
             $BicepParams.parameters.Add('certPassword', @{})
             $BicepParams.parameters.certPassword.Add('reference', @{ 'secretName' = "$($Backend.certPwdSecretName)" })
             $BicepParams.parameters.certPassword.reference.Add('keyVault', @{ 'id' = $keyVault.ResourceId })
-            
-            
+
+
             # Copy certificate file
             $BackendCertFile = Resolve-Path "$DomainPath/domain-backends/$($Backend.certFileName).$($CdfConfig.Application.Env.definitionId)"
             if (Test-Path $BackendCertFile) {
@@ -147,8 +147,8 @@ Function Build-ApimDomainBackendTemplates {
 
         # Create template parameters json file
         $BicepParams | ConvertTo-Json -Depth 5 | Set-Content -Path "$BuildPath/backend.$($Backend.type).$($Backend.title).params.json"
-        
-        # Copy bicep template with type name 
+
+        # Copy bicep template with type name
         Copy-Item -Force -Path "$SharedPath/resources/backend.$($Backend.type).bicep" -Destination "$BuildPath/backend.$($Backend.type).$($Backend.title).bicep" | Out-Null
     }
 }

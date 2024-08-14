@@ -1,26 +1,26 @@
-Function Update-ConfigPlatform {
+﻿Function Update-ConfigPlatform {
   <#
     .SYNOPSIS
     Create a new configuration for a platform instance
-  
+
     .DESCRIPTION
     Setup the configuration for a new platform instance in output files stored at SourceDir using template.
-    
+
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER TemplateName
     Platform template name to be used for deployment
-    
+
     .PARAMETER TemplatVersion
     Platform template version to be used for deployment
-        
+
     .PARAMETER Region
     The target Azure Region/region for the deployment
-    
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER InstanceId
     Specific id of the platform instance
 
@@ -29,13 +29,13 @@ Function Update-ConfigPlatform {
 
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-      
+
     .INPUTS
     None.
-  
+
     .OUTPUTS
     CdfConfig
-  
+
     .EXAMPLE
     Update-ConfigPlatform `
       -Region "swedencentral" `
@@ -43,7 +43,7 @@ Function Update-ConfigPlatform {
       -TemplateVersion "v1net" `
       -PlatformId "capim" `
       -InstanceId "01"
-    
+
     .EXAMPLE
     Update-ConfigPlatform `
         -Region "northeurope" `
@@ -53,12 +53,12 @@ Function Update-ConfigPlatform {
         -InstanceId "01" `
         -TemplateDir ../cdf-infra/templates `
         -SourceDir ../cdf-infra/instances
-  
+
     .LINK
     Get-CdfConfigPlatform
     .LINK
     Deploy-CdfTemplatePlatform
-  
+
     #>
 
   [CmdletBinding()]
@@ -83,7 +83,7 @@ Function Update-ConfigPlatform {
   }
 
   Process {
-    
+
     # Fetch definitions
     $templatePath = "$TemplateDir/platform/$TemplateName/$TemplateVersion"
     $sourcePath = "$SourceDir/$PlatformId/$InstanceId"
@@ -92,7 +92,7 @@ Function Update-ConfigPlatform {
     $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
     $regionCode = $regionCodes[$region]
     $regionName = $regionNames[$regionCode]
-    
+
     foreach ($envDefinionId in $platformEnvs.Keys) {
       $platformEnv = $platformEnvs[$envDefinionId]
 

@@ -1,20 +1,20 @@
-
+﻿
 Function Get-GitHubConfigPlatform {
     <#
     .SYNOPSIS
     Get platform deployment config artifact from GitHub.
 
     .DESCRIPTION
-    Deployment workflow saves deployment configuration for each environment as an artifact. 
+    Deployment workflow saves deployment configuration for each environment as an artifact.
     This cmdlet tries to download the configuration for all enabled envrionments and update application input file.
     The updated input file configration can then be compared with application configuration files and optionally have them updated.
-      
+
     .PARAMETER CdfConfig
     Instance config
-    
+
     .PARAMETER SourceDir
     Path to the platform instance source directory. Defaults to "./src".
-    
+
     .PARAMETER OutputPath
     Optional output path for artifact download. Defaults to "./tmp/artifacts"
 
@@ -27,7 +27,7 @@ Function Get-GitHubConfigPlatform {
     .EXAMPLE
     Get-CdfGitHubConfigPlatform `
         -CdfConfig $config
-        
+
     .EXAMPLE
     Get-CdfGitHubConfigPlatform `
         -CdfConfig $config `
@@ -47,7 +47,7 @@ Function Get-GitHubConfigPlatform {
         [Parameter(Mandatory = $false)]
         [string] $SourceDir = "./src",
         [Parameter(Mandatory = $false)]
-        [string]$OutputPath = "./tmp/artifacts"  
+        [string]$OutputPath = "./tmp/artifacts"
     )
 
 
@@ -80,8 +80,8 @@ Function Get-GitHubConfigPlatform {
             Write-Host "Copy [$configFile] to [$sourcePath/platform/]"
             Copy-Item `
                 -Path $configFile `
-                -Destination $sourcePath/platform  
+                -Destination $sourcePath/platform
         }
     }
-    
+
 }

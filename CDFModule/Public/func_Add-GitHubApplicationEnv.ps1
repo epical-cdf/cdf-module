@@ -1,4 +1,4 @@
-Function Add-GitHubApplicationEnv {
+﻿Function Add-GitHubApplicationEnv {
     <#
     .SYNOPSIS
     Add or update GitHub Domain Repository environment settings.
@@ -11,16 +11,16 @@ Function Add-GitHubApplicationEnv {
 
     .PARAMETER PlatformEnv
     Name of the platfornm environment configuration.
-    
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER PlatformInstanceId
     Specific id of the appliction instance
 
     .PARAMETER ApplicationEnv
     Name of the application environment configuration.
-    
+
     .PARAMETER ApplicationInstanceId
     Specific id of the application instance
 

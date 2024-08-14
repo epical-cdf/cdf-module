@@ -1,17 +1,17 @@
-Function Deploy-TemplateApplication {
+﻿Function Deploy-TemplateApplication {
     <#
         .SYNOPSIS
         Deploys Integration application template. The application requires the foundational parts of the platform to be in place.
-    
+
         .DESCRIPTION
         Deploy Azure resources for Integration application.
-        
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-        
+
         .PARAMETER Deployed
-        Override check on configuration 'IsDeployed' to force deployment of deployed configuration 
-        
+        Override check on configuration 'IsDeployed' to force deployment of deployed configuration
+
         .PARAMETER TemplateDir
         Path to the platform template root dir. Defaults to ".".
 
@@ -20,10 +20,10 @@ Function Deploy-TemplateApplication {
 
         .INPUTS
         CdfConfig
-    
+
         .OUTPUTS
         Updated CdfConfig and json config files at SourceDir
-    
+
         .EXAMPLE
         ($config | Get-CdfConfigApplication ...) `
             | Deploy-CdfTemplateApplication
@@ -33,7 +33,7 @@ Function Deploy-TemplateApplication {
             | Deploy-CdfTemplateApplication `
             -TemplateDir ../cdf-infra/templates `
             -SourceDir ../cdf-infra/instances
-            
+
         .LINK
         Get-CdfConfigPlatform
         .LINK
@@ -51,7 +51,7 @@ Function Deploy-TemplateApplication {
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src',
         [Parameter(Mandatory = $false)]
         [string] $OutputDir = ''
-           
+
     )
 
     Begin {
@@ -76,12 +76,12 @@ Function Deploy-TemplateApplication {
         $CdfConfig.Application.Env.region = $region
         $CdfConfig.Application.Env.regionCode = $regionCode
         $CdfConfig.Application.Env.regionName = $regionName
-    
+
         $templateFile = "$templatePath/application.bicep"
         $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
         $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "application-$platformEnvKey-$applicationEnvKey-$regionCode"
-    
+
         # Setup platform parameters from envrionment and params file
         $templateParams = [ordered] @{}
         $templateParams.platformEnv = $CdfConfig.Platform.Env
@@ -101,11 +101,11 @@ Function Deploy-TemplateApplication {
         $templateParams.applicationTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
         $templateParams.applicationTags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
         $templateParams.applicationTags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
-    
+
         Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
-        
+
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-        
+
         Write-Host "Starting deployment of '$deploymentName' at '$region' using subscription [$($AzCtx.Subscription.Name)]."
         $result = New-AzSubscriptionDeployment `
             -DefaultProfile $azCtx `
@@ -115,7 +115,7 @@ Function Deploy-TemplateApplication {
             -TemplateParameterObject $templateParams `
             -WarningAction:SilentlyContinue `
             -ErrorAction:Continue
-    
+
         While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed')) {
             Write-Host 'Deployment still running...'
             Start-Sleep 30
@@ -143,16 +143,16 @@ Function Deploy-TemplateApplication {
             }
             throw "Deployment failed, see error output or deployment status on Azure Portal"
         }
-    
+
         if ($result.ProvisioningState -eq 'Succeeded') {
             Write-Host "Successfully deployed '$deploymentName' at '$region '."
 
-            # Save deployment configuration output to file         
+            # Save deployment configuration output to file
             if (!(Test-Path -Path "$sourcePath/output")) {
                 New-Item -Type Directory -Path  "$sourcePath/output" | Out-Null
             }
             $CdfApplication = [ordered] @{
-                IsDeployed    = $true 
+                IsDeployed    = $true
                 Env           = $result.Outputs.applicationEnv.Value
                 Tags          = $result.Outputs.applicationTags.Value
                 Config        = $result.Outputs.applicationConfig.Value
@@ -161,21 +161,21 @@ Function Deploy-TemplateApplication {
                 NetworkConfig = $result.Outputs.applicationNetworkConfig.Value
                 AccessControl = $result.Outputs.applicationAccessControl.Value
             }
-    
+
             # Save config file and load as resulting JSON
             $configPath = $OutputDir ? $OutputDir : "$sourcePath/output"
             $configFileName = "application.$platformEnvKey-$applicationEnvKey-$regionCode.json"
             $configOutput = Join-Path -Path $configPath -ChildPath $configFileName
-             
+
             if (!(Test-Path -Path $configPath)) {
                 New-Item -Type Directory -Path  $configPath | Out-Null
             }
- 
+
             $CdfApplication | ConvertTo-Json -Depth 10 | Out-File $configOutput
             $CdfApplication = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
             $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose
-            
-            $CdfConfig.Application = $CdfApplication   
+
+            $CdfConfig.Application = $CdfApplication
             return $CdfConfig
         }
         else {

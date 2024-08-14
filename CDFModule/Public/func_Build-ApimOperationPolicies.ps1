@@ -1,4 +1,4 @@
-Function Build-ApimOperationPolicies {
+﻿Function Build-ApimOperationPolicies {
     <#
     .SYNOPSIS
 
@@ -13,16 +13,16 @@ Function Build-ApimOperationPolicies {
 
     .PARAMETER ServiceName
     Name of the service as provided in workflow inputs
-    
+
     .PARAMETER ServiceTemplate
     Service template specific as privided in workflow inputs.
-    
+
     .PARAMETER ServiceTemplate
     Service template specific as privided in workflow inputs.
-    
+
     .PARAMETER SharedPath
     File system root path to the apim shared repository contents
-        
+
     .PARAMETER ServicePath
     File system root path to the service's implementation folder, defaults to CWD.
 
@@ -40,8 +40,8 @@ Function Build-ApimOperationPolicies {
         -DomainName "mystic" `
         -ServiceName "api-shaman" `
         -ServiceTemplate "default-spell"
-    
-    
+
+
     # Application policy file base:
     <policies>
         <inbound>
@@ -57,7 +57,7 @@ Function Build-ApimOperationPolicies {
         <apim-policy-operation />
         </on-error>
     </policies>
-    
+
     # Domain policy file base:
     <policies>
         <inbound>
@@ -73,7 +73,7 @@ Function Build-ApimOperationPolicies {
            <apim-policy-operation />
         </on-error>
     </policies>
-    
+
     # Service policy file base:
     <policies>
         <inbound>
@@ -114,7 +114,7 @@ Function Build-ApimOperationPolicies {
         [string] $ServicePath = '.',
         [Parameter(Mandatory = $false)]
         [string] $OutputPath = 'tmp'
-       
+
     )
 
     $PolicyTypes = $ServiceType.Split('_')
@@ -127,20 +127,20 @@ Function Build-ApimOperationPolicies {
 
     Write-Verbose "Build-ApimOperationPolicies - OperationPolicyPath: $OperationPolicyPath"
     Write-Verbose "Build-ApimOperationPolicies - ServicePoliciesPath: $ServicePath/policies"
-   
-    $PolicyFiles = Get-ChildItem -Path "$ServicePath/policies" -Include 'operation-*.xml' -File -Name 
+
+    $PolicyFiles = Get-ChildItem -Path "$ServicePath/policies" -Include 'operation-*.xml' -File -Name
     foreach ($PolicyFile in $PolicyFiles) {
         [xml]$PAppOperation = Get-Content -Path $OperationPolicyPath
         $PAppOperation.PreserveWhitespace = true
-    
+
         $PolicyFilePath = Resolve-Path "$ServicePath/policies/$PolicyFile"
         Write-Host '---------------------------------------'
         Write-Host "Loading XML policy: $PolicyFile"
         Write-Host "Path: $PolicyFilePath"
         [xml]$ServicePolicy = Get-Content -Path $PolicyFilePath
         $ServicePolicy.PreserveWhitespace = true
-    
-        # Add policy header comment with service identity 
+
+        # Add policy header comment with service identity
         $PAppOperation.InsertBefore( $PAppOperation.CreateComment(" cdf: Begin Global policy ($(Split-Path $OperationPolicyPath -leaf)) "), $PAppOperation.policies) | Out-Null
         $PAppOperation.InsertBefore( $PAppOperation.CreateComment(" cdf: DateTime Created: $(Get-Date -Format o) "), $PAppOperation.policies) | Out-Null
         $PAppOperation.InsertBefore( $PAppOperation.CreateComment(' cdf: Domain Name:      #{DomainName}# '), $PAppOperation.policies) | Out-Null
@@ -158,12 +158,12 @@ Function Build-ApimOperationPolicies {
         #####################################################################
         # Replace "<apim-policy-operation />" with domain policy definition
         #####################################################################
-    
+
         $DomainPolicyPath = Resolve-Path "$ServicePath/../domain-policies/$($ServiceType)_$($DomainName)_operation.xml"
         if (Test-Path -Path $DomainPolicyPath -PathType leaf) {
-    
+
             [xml]$PDomainOperation = Get-Content -Path $DomainPolicyPath
-    
+
             Write-Host 'Insert domain policy nodes'
             # Replace inbound
             Write-Host '  Inbound'
@@ -182,7 +182,7 @@ Function Build-ApimOperationPolicies {
                     Write-Host "`tOperation policy node: $($node.LocalName)"
                 }
             }
-    
+
             # Replace backend
             Write-Host '  Backend'
             foreach ($node in $PAppOperation.policies['backend'].ChildNodes) {
@@ -200,7 +200,7 @@ Function Build-ApimOperationPolicies {
                     Write-Host "`tOperation policy node: $($node.LocalName)"
                 }
             }
-    
+
             # Replace outbound
             Write-Host '  Outbound'
             foreach ($node in $PAppOperation.policies['outbound'].ChildNodes) {
@@ -218,7 +218,7 @@ Function Build-ApimOperationPolicies {
                     Write-Host "`tOperation policy node: $($node.LocalName)"
                 }
             }
-    
+
             # Replace on-error
             Write-Host '  On-Error'
             foreach ($node in $PAppOperation.policies['on-error'].ChildNodes) {
@@ -240,11 +240,11 @@ Function Build-ApimOperationPolicies {
         else {
             Write-Host "Could not find any domain specifc policy at path: $DomainPolicyPath"
         }
-    
+
         #####################################################################
         # Replace "<apim-policy-operation />" with service policy definition
         #####################################################################
-    
+
         Write-Host 'Insert service policy nodes'
         # Replace inbound
         Write-Host '  Inbound'
@@ -263,7 +263,7 @@ Function Build-ApimOperationPolicies {
                 Write-Host "`tOperation policy node: $($node.LocalName)"
             }
         }
-    
+
         # Replace backend
         Write-Host '  Backend'
         foreach ($node in $PAppOperation.policies['backend'].ChildNodes) {
@@ -281,7 +281,7 @@ Function Build-ApimOperationPolicies {
                 Write-Host "`tOperation policy node: $($node.LocalName)"
             }
         }
-    
+
         # Replace outbound
         Write-Host '  Outbound'
         foreach ($node in $PAppOperation.policies['outbound'].ChildNodes) {
@@ -299,7 +299,7 @@ Function Build-ApimOperationPolicies {
                 Write-Host "`tOperation policy node: $($node.LocalName)"
             }
         }
-    
+
         # Replace on-error
         Write-Host '  On-Error'
         foreach ($node in $PAppOperation.policies['on-error'].ChildNodes) {
@@ -317,10 +317,9 @@ Function Build-ApimOperationPolicies {
                 Write-Host "`tOperation policy node: $($node.LocalName)"
             }
         }
-    
+
         # Save the new service policy XML to file
         $PAppOperation.PreserveWhitespace = true
-        $PAppOperation.Save("$OutputPath/policies/$PolicyFile") | Out-Null 
-    
+        $PAppOperation.Save("$OutputPath/policies/$PolicyFile") | Out-Null
+
     }
-}  

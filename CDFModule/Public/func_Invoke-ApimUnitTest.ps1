@@ -1,4 +1,4 @@
-Function Invoke-ApimUnitTest {
+﻿Function Invoke-ApimUnitTest {
     <#
     .SYNOPSIS
 
@@ -22,7 +22,7 @@ Function Invoke-ApimUnitTest {
             <testcase name="Build Products" classname="Tests.elxcapim01.apim01.api-todo" time="3.441">
                 <failure message="Assertion error message" type="AssertionError">
                     <!-- Validation error message here -->
-                </failure>            
+                </failure>
             </testcase>
         </testsuite>
     </testsuites>
@@ -38,7 +38,7 @@ Function Invoke-ApimUnitTest {
 
     .PARAMETER TestResultsPath
     File system path where ARM template will be written
-    
+
     .PARAMETER OutputPath
     File system path to working area for building and testing API
 
@@ -53,7 +53,7 @@ Function Invoke-ApimUnitTest {
 
     .EXAMPLE
     PS>  Invoke-ApimUnitTest ...
-       
+
 
     .LINK
 
@@ -94,7 +94,7 @@ Function Invoke-ApimUnitTest {
     }
     $RunFolder = "$OutputPath/$TestName/run"
     $BuildFolder = "$OutputPath/$TestName/build"
-    
+
     if ($null -eq $SharedPath) {
         $SharedPath = Resolve-Path "$PSScriptRoot/../.."
     }

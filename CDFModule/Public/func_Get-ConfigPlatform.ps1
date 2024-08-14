@@ -1,36 +1,36 @@
-Function Get-ConfigPlatform {
+﻿Function Get-ConfigPlatform {
   <#
     .SYNOPSIS
     Get configuration for a deployed platform instance
-  
+
     .DESCRIPTION
     Retrieves the configuration for a deployed platform instance from output files stored at SourceDir.
-    
+
     .PARAMETER PlatformId
     Name of the platform instance
-    
+
     .PARAMETER InstanceId
     Specific id of the platform instance
-    
+
     .PARAMETER EnvDefinitionId
     Name of the environment configuration.
-    
+
     .PARAMETER SourceDir
     Path to the platform source directory. Defaults to "./src".
-      
+
     .INPUTS
     CdfPlatform
-  
+
     .OUTPUTS
     CdfApplication
-  
+
     .EXAMPLE
     Get-CdfConfigPlatform `
       -Region "swedencentral" `
       -PlatformId "capim" `
       -InstanceId "01" `
       -EnvDefinitionId "intg-dev"
-    
+
     .EXAMPLE
     Get-CdfConfigPlatform `
         -Region "swedencentral" `
@@ -38,12 +38,12 @@ Function Get-ConfigPlatform {
         -InstanceId "01" `
         -EnvDefinitionId "intg-dev" `
         -SourceDir "../cdf-infra/src"
-  
+
     .LINK
     Get-CdfConfigApplication
     .LINK
     Deploy-CdfTemplatePlatform
-  
+
     #>
 
   [CmdletBinding()]
@@ -74,19 +74,19 @@ Function Get-ConfigPlatform {
     if (!$haveCdfParameters) {
       throw("Missing required CDF parameters")
     }
-    
+
     # Fetch definitions
     $sourcePath = "$SourceDir/$PlatformId/$InstanceId"
     $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable
     $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json" | ConvertFrom-Json -AsHashtable
     $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
-  
+
     # Setup deployment variables from configuration
-   
+
     $platformEnv = $platformEnvs[$EnvDefinitionId]
     $regionCode = $regionCodes[$Region.ToLower()]
     $regionName = $regionNames[$regionCode]
-  
+
     $platformEnvKey = "$PlatformId$InstanceId$($platformEnv.nameId)"
   }
   Process {
@@ -114,16 +114,16 @@ Function Get-ConfigPlatform {
 
       $azCtx = Get-AzureContext -SubscriptionId $CdfPlatform.Env.subscriptionId
       Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($platformEnv.name)'."
-      
+
       $result = Get-AzSubscriptionDeployment  `
         -DefaultProfile $azCtx `
         -Name "$deploymentName" `
         -ErrorAction SilentlyContinue
-      
+
       if ($result -and $result.ProvisioningState -eq 'Succeeded') {
         # Setup platform definitions
         $CdfPlatform = [ordered] @{
-          IsDeployed    = $true 
+          IsDeployed    = $true
           Env           = $result.Outputs.platformEnv.Value
           Tags          = $result.Outputs.platformTags.Value
           Config        = $result.Outputs.platformConfig.Value
@@ -145,7 +145,7 @@ Function Get-ConfigPlatform {
         Write-Warning "Returning configuration from file."
       }
     }
-    
+
     if ($CdfPlatform.Env) {
 
       # SpokeNetworkConfig is not yet included in platform template output
@@ -163,11 +163,11 @@ Function Get-ConfigPlatform {
       $CdfPlatform.Config.instanceId = $InstanceId
 
       $CdfPlatform | ConvertTo-Json -Depth 10 | Write-Verbose
-                      
+
       $CdfConfig = [ordered] @{
         Platform = $CdfPlatform
       }
-      return $CdfConfig     
+      return $CdfConfig
     }
     else {
       Write-Error "Platform configuration not complete."

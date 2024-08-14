@@ -1,4 +1,4 @@
-Function Deploy-ManagedApiConnection {
+﻿Function Deploy-ManagedApiConnection {
     <#
         .SYNOPSIS
         Deploys managed api connection
@@ -8,16 +8,16 @@ Function Deploy-ManagedApiConnection {
 
         .PARAMETER PlatformId
         Name of the platform instance
-        
+
         .PARAMETER InstanceId
         Specific id of the platform instance
-        
+
         .PARAMETER EnvDefinitionId
         Name of the environment configuration.
-        
+
         .PARAMETER ConnectionId
         The identity of the api connection configuration
-            
+
         .PARAMETER TemplateDir
         Path to the connection templates module dir. Defaults to "./modules".
 
@@ -26,23 +26,23 @@ Function Deploy-ManagedApiConnection {
 
         .INPUTS
         None.
-    
+
         .OUTPUTS
         Connection configuration hashtable
 
         .EXAMPLE
-        Deploy-ManagedApiConnection -ConnectionName "axia-tms" 
+        Deploy-ManagedApiConnection -ConnectionName "axia-tms"
 
         .EXAMPLE
         Deploy-ManagedApiConnection `
-            -ConnectionName "axia-tms" 
+            -ConnectionName "axia-tms"
             -TemplateDir ../cdf-infra/connections/modules `
             -SourceDir ../cdf-infra/connections/config
 
         .LINK
 
         #>
-    
+
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory = $false)]
@@ -69,7 +69,7 @@ Function Deploy-ManagedApiConnection {
     if (!$haveCdfParameters) {
         throw("Missing required CDF parameters")
     }
-    
+
     $cdfPlatform = (Get-CdfConfigPlatform `
             -PlatformId $PlatformId `
             -InstanceId $InstanceId `
@@ -77,7 +77,7 @@ Function Deploy-ManagedApiConnection {
             -Region $Region `
             -Deployed `
     ).Platform
-    
+
     # Load configuration
     $apiConfigFile = "$SourceDir/$ConnectionId.$($cdfPlatform.Config.platformId)$($cdfPlatform.Config.instanceId).$EnvDefinitionId.json"
     Write-Verbose "Loading connection configuration file: $apiConfigFile"
@@ -102,9 +102,9 @@ Function Deploy-ManagedApiConnection {
     # This deployment name follows a standard that is also used by platform, application and domain templates
     $platformKey = "$($cdfPlatform.Config.platformId)$($cdfPlatform.Config.instanceId)"
     $deploymentName = "$platformKey-connection-$($apiConfig.name)"
-    
+
     $templateFile = "$TemplateDir/dgw-connections/$($apiConfig.type).bicep"
-    
+
     # Setup platform parameters from envrionment and params file
     $templateParams = [ordered] @{}
 
@@ -130,10 +130,10 @@ Function Deploy-ManagedApiConnection {
         $templateParams.dataGatewayName = $dgwPlatform.Config.platformDataGateway.dataGatewayName
         $templateParams.dataGatewayRGName = $dgwPlatform.ResourceNames.platformResourceGroupName
     }
-    
+
     # Add connection template specific settings
     $templateParams.templateSettings = $apiConfig.templateSettings
-    
+
     if ($apiConfig.templateSettings.openApiSpecJsonFile) {
         $openApiSpecDoc = Get-Content -Path  "$SourceDir/$($apiConfig.templateSettings.openApiSpecJsonFile)" | ConvertFrom-Json -AsHashtable
         $templateParams.templateSettings.openApiSpec = $openApiSpecDoc
@@ -143,7 +143,7 @@ Function Deploy-ManagedApiConnection {
     Write-Verbose "Deploying to resource group: $($cdfPlatform.ResourceNames.apiConnResourceGroupName)"
 
     $azCtx = Get-CdfAzureContext -SubscriptionId $cdfPlatform.Env.subscriptionId
-        
+
     Write-Host "Starting deployment of '$deploymentName' at '$Region' using subscription [$($AzCtx.Subscription.Name)]."
     $result = New-AzResourceGroupDeployment `
         -DefaultProfile $azCtx `
@@ -152,7 +152,7 @@ Function Deploy-ManagedApiConnection {
         -TemplateFile $templateFile `
         -TemplateParameterObject $templateParams `
         -WarningAction:SilentlyContinue
-    
+
     $result | ConvertTo-Json -Depth 10 | Write-Verbose
 
     While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed')) {
@@ -183,7 +183,7 @@ Function Deploy-ManagedApiConnection {
         }
         throw "Deployment failed, see error output or deployment status on Azure Portal"
     }
-    
+
     if ($result.ProvisioningState = 'Succeeded') {
         Write-Host "Successfully deployed '$deploymentName' at '$Region'."
         $ConnectionConfig = ($result.Outputs | ConvertTo-Json -Depth 10 | ConvertFrom-Json -AsHashtable)
@@ -195,4 +195,3 @@ Function Deploy-ManagedApiConnection {
         Throw "Deployment failed for '$deploymentName' at '$Region'. Please check the deployment status on azure portal for details."
     }
 }
-    

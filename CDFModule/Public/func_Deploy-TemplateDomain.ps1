@@ -1,17 +1,17 @@
-
+﻿
 Function Deploy-TemplateDomain {
     <#
         .SYNOPSIS
         Deploys Integration domain template. The domain requires the foundational parts of the platform and application to be in place.
-    
+
         .DESCRIPTION
         Deploy Azure resources for Integration domain.
-    
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-        
+
         .PARAMETER Deployed
-        Override check on configuration 'IsDeployed' to force deployment of deployed configuration 
+        Override check on configuration 'IsDeployed' to force deployment of deployed configuration
 
         .PARAMETER TemplateDir
         Path to the platform template root dir. Defaults to ".".
@@ -21,25 +21,25 @@ Function Deploy-TemplateDomain {
 
         .INPUTS
         CdfConfig
-    
+
         .OUTPUTS
         Updated CdfConfig and json config files at SourceDir
 
         .EXAMPLE
         Deploy-CdfTemplateDomain -CdfConfig $config
-    
+
         .EXAMPLE
         $config | Deploy-CdfTemplateDomain `
             -TemplateDir ../cdf-infra/templates `
             -SourceDir ../cdf-infra/instances
-    
+
         .LINK
         Deploy-CdfTemplateService
         .LINK
         Remove-CdfTemplateDomain
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -52,12 +52,12 @@ Function Deploy-TemplateDomain {
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src',
         [Parameter(Mandatory = $false)]
         [string] $OutputDir = ''
-           
+
     )
 
     Begin {
     }
-    Process { 
+    Process {
         if ($CdfConfig.Domain.IsDeployed -eq $true -and !$Deployed) {
             $errMsg = 'Provided domain configuration is a deployed version. If this is intended, use parameter switch -Deployed to override this check. Using deployed version for deployments may impact negatively on template functionality.'
             Write-Error -Message $errMsg
@@ -69,7 +69,7 @@ Function Deploy-TemplateDomain {
 
         # Setup deployment variables from configuration
         # Domain uses platform config for region
-        $region = $CdfConfig.Platform.Env.region.toLower() 
+        $region = $CdfConfig.Platform.Env.region.toLower()
         $regionCode = $CdfConfig.Platform.Env.regionCode
         $regionName = $CdfConfig.Platform.Env.regionName
 
@@ -77,7 +77,7 @@ Function Deploy-TemplateDomain {
         $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
         $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "domain-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$regionCode"
-                
+
         # Setup platform parameters from envrionment and params file
         $templateParams = [ordered] @{}
 
@@ -103,11 +103,11 @@ Function Deploy-TemplateDomain {
         $templateParams.domainTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
         $templateParams.domainTags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
         $templateParams.domainTags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
-    
+
         Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
-            
+
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-        
+
         Write-Host "Starting deployment of '$deploymentName' at '$region' using subscription [$($AzCtx.Subscription.Name)]."
         $result = New-AzSubscriptionDeployment `
             -DefaultProfile $azCtx `
@@ -124,7 +124,7 @@ Function Deploy-TemplateDomain {
             $result = Get-AzSubscriptionDeployment -DefaultProfile $azCtx -Name "$deploymentName"
             Write-Verbose $result
         }
-    
+
         if ( -not $? -or ($null -eq $result.Outputs) ) {
             Write-Error 'Deployment failed.'
             if (($null -ne $Error) -and ($null -ne $Error)) {
@@ -146,13 +146,13 @@ Function Deploy-TemplateDomain {
             }
             throw "Deployment failed, see error output or deployment status on Azure Portal"
         }
-        
+
         if ($result.ProvisioningState -eq 'Succeeded') {
             Write-Host "Successfully deployed '$deploymentName' at '$region'."
-            
+
             # Save deployment configuration for domain
             $CdfDomain = [ordered] @{
-                IsDeployed    = $true 
+                IsDeployed    = $true
                 Env           = $result.Outputs.domainEnv.Value
                 Tags          = $result.Outputs.domainTags.Value
                 Config        = $result.Outputs.domainConfig.Value
@@ -161,21 +161,21 @@ Function Deploy-TemplateDomain {
                 NetworkConfig = $result.Outputs.domainNetworkConfig.Value
                 AccessControl = $result.Outputs.domainAccessControl.Value
             }
-    
+
             # Save config file and load as resulting JSON
             $configPath = $OutputDir ? $OutputDir : "$sourcePath/output"
             $configFileName = "domain.$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$regionCode.json"
             $configOutput = Join-Path -Path $configPath -ChildPath $configFileName
-             
+
             if (!(Test-Path -Path $configPath)) {
                 New-Item -Type Directory -Path  $configPath | Out-Null
             }
- 
+
             $CdfDomain | ConvertTo-Json -Depth 10 | Out-File $configOutput
             $CdfDomain = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
             $CdfDomain | ConvertTo-Json -Depth 10 | Write-Verbose
 
-            $CdfConfig.Domain = $CdfDomain 
+            $CdfConfig.Domain = $CdfDomain
             return $CdfConfig
         }
         else {
@@ -186,4 +186,3 @@ Function Deploy-TemplateDomain {
     End {
     }
 }
-        

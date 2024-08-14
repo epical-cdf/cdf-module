@@ -1,21 +1,21 @@
-
+﻿
 function New-TraceParent {
     <#
     .SYNOPSIS
     Generates a new random traceparent identity according to W3C Trace Context  specification
-  
+
     .DESCRIPTION
     Setup the configuration for a new application instance within a platform. Output files stored at SourceDir using template.
-    
+
     .EXAMPLE
     New-CdfTraceParent
-  
+
     .LINK
     https://w3c.github.io/trace-context/
-    
+
     .LINK
     https://learn.microsoft.com/en-us/azure/azure-monitor/app/distributed-trace-data#correlation-headers-using-w3c-tracecontext
-    
+
 
     #>
 
@@ -28,8 +28,8 @@ function New-TraceParent {
     # trace-flags      = 2HEXDIGLC   ; 8 bit flags. Currently, only one bit is used. See below for detail
 
     $VERSION = "00" # fixed in spec at 00
-    $TRACE_ID = (1..32 | % { '{0:x}' -f (Get-Random -Max 16) }) -join ''
-    $PARENT_ID = (1..16 | % { '{0:x}' -f (Get-Random -Max 16) }) -join ''
+    $TRACE_ID = (1..32 | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) }) -join ''
+    $PARENT_ID = (1..16 | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) }) -join ''
     $TRACE_FLAG = "01"   # sampled
     $TRACE_PARENT = "$VERSION-$TRACE_ID-$PARENT_ID-$TRACE_FLAG"
 

@@ -1,20 +1,20 @@
-Function Get-ConfigService {
+﻿Function Get-ConfigService {
   <#
     .SYNOPSIS
     Get configuration for a deployed application instance for given platform instance.
 
     .DESCRIPTION
     Retrieves the configuration for a deployed application instance from output files stored at SourceDir for the platform instance.
-      
+
     .PARAMETER CdfConfig
     Instance configuration
-    
+
     .PARAMETER ServiceName
     Name of the service
 
     .PARAMETER SourceDir
     Path to the platform source directory. Defaults to "./src".
-      
+
     .INPUTS
     CdfPlatform
 
@@ -25,7 +25,7 @@ Function Get-ConfigService {
     $config | Get-ConfigService `
         -CdfConfig $config
         -ServiceName "my-service"
-    
+
     .EXAMPLE
     $config = Get-CdfConfigDomain ...
     Get-ConfigService `
@@ -59,7 +59,7 @@ Function Get-ConfigService {
     if (!$haveCdfParameters) {
       throw("Missing required CDF parameters")
     }
-      
+
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
     $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
     $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
@@ -71,16 +71,16 @@ Function Get-ConfigService {
     if ($Deployed) {
       # Get latest deployment result outputs
       $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
-    
+
       $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
       Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using resourceGroup [$($CdfConfig.Domain.ResourceNames.domainResourceGroupName)] for runtime environment '$($applicationEnv.name)'."
-            
+
       $result = Get-AzResourceGroupDeployment  `
         -DefaultProfile $azCtx `
         -Name "$deploymentName" `
         -ResourceGroupName $CdfConfig.Domain.ResourceNames.domainResourceGroupName `
         -ErrorAction SilentlyContinue
-      
+
       While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed' -or $result.ProvisioningState -eq 'Cancelled')) {
         Write-Host 'Deployment still running...'
         Start-Sleep 30
@@ -91,7 +91,7 @@ Function Get-ConfigService {
       if ($result -and $result.ProvisioningState -eq "Succeeded") {
         # Setup domain definitions
         $CdfService = [ordered] @{
-          IsDeployed    = $true 
+          IsDeployed    = $true
           Tags          = $result.Outputs.serviceTags.Value
           Config        = $result.Outputs.serviceConfig.Value
           Features      = $result.Outputs.serviceFeatures.Value
@@ -99,7 +99,7 @@ Function Get-ConfigService {
           NetworkConfig = $result.Outputs.serviceNetworkConfig.Value
           AccessControl = $result.Outputs.serviceAccessControl.Value
         }
-      
+
         # Convert to normalized hashtable
         $CdfService = $CdfService | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
       }

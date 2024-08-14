@@ -1,18 +1,18 @@
-Function Deploy-ServiceLogicAppStd {
+﻿Function Deploy-ServiceLogicAppStd {
     <#
         .SYNOPSIS
         Deploys a Logic App standard implementation and condfiguration
 
         .DESCRIPTION
-        The cmdlet deploys a Logic App standard implementation with configuration of app settings, parameters and connections.      
-    
+        The cmdlet deploys a Logic App standard implementation with configuration of app settings, parameters and connections.
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-        
+
         .PARAMETER InputPath
         Path to the logic app implementation including cdf-config.json.
         Optional, defaults to "./build"
-        
+
         .PARAMETER OutputPath
         Output path for the environment specific config with updated parameters.json and connections.json.
         Optional, defaults to "./build"
@@ -62,16 +62,16 @@ Function Deploy-ServiceLogicAppStd {
     if (!$OutputPath) {
         $OutputPath = "../tmp/$($CdfConfig.Service.Config.serviceName)"
     }
-    
+
     # Copy service/logicapp implementation
-    New-Item -Force -ItemType Directory -Path $OutputPath -ErrorAction:SilentlyContinue | Out-Null 
+    New-Item -Force -ItemType Directory -Path $OutputPath -ErrorAction:SilentlyContinue | Out-Null
 
     $laFiles = @(
         'wf-*',
         'cdf-config.json',
-        'host.json', 
-        'parameters.json', 
-        'connections.json', 
+        'host.json',
+        'parameters.json',
+        'connections.json',
         'app.settings.json',
         'Artifacts',
         'lib'
@@ -81,7 +81,7 @@ Function Deploy-ServiceLogicAppStd {
     ## Adjust these if template changes regarding placement of logicapp for the service
     $logicAppRG = $CdfConfig.Service.ResourceNames.logicAppResourceGroup
     $logicAppName = $CdfConfig.Service.ResourceNames.logicAppName
-  
+
     Write-Verbose "logicAppRG: $logicAppRG"
     Write-Verbose "logicAppName: $logicAppName"
 
@@ -117,14 +117,14 @@ Function Deploy-ServiceLogicAppStd {
         -StartTokenPattern '{{' `
         -EndTokenPattern '}}' `
         -NoWarning `
-        -WarningAction:SilentlyContinue 
+        -WarningAction:SilentlyContinue
 
     #--------------------------------------
     # Configure connections for target env
     #--------------------------------------
     Write-Host "Preparing connections."
     $connections = Get-Content -Raw "$InputPath/connections.json" | ConvertFrom-Json -AsHashtable
-    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions 
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
     $svcConns = $serviceConfig.Connections ?? $connectionDefinitions.Keys
 
     # Loop through all Platform, Application and Domain connections
@@ -229,7 +229,7 @@ Function Deploy-ServiceLogicAppStd {
     #     -ParameterName "platformKeyVault" `
     #     -ServiceProvider "keyvault" `
     # ) | Out-Null
-    
+
     # ($CdfConfig.Platform.Features.enableServiceBus && Add-LogicAppAppSettings `
     #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
     #     -Config $CdfConfig.Platform -Settings $updateSettings `
@@ -382,7 +382,7 @@ Function Deploy-ServiceLogicAppStd {
                 Start-Sleep 10
             }
         }
-    } until ($tries -gt 3) 
+    } until ($tries -gt 3)
 
 
     Write-Host "Logic App Standard implementation deployment done."

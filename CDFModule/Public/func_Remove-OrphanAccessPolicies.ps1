@@ -1,10 +1,10 @@
-Function Remove-OrphanAccessPolicies {
+﻿Function Remove-OrphanAccessPolicies {
     <#
     .SYNOPSIS
     Remove orphan access policies for Api Connections
     .DESCRIPTION
     Deleting a logic app will leave managed identity access policies for Api Connections as unknown entries.
-    These potentially stop redeployment of logic apps.  
+    These potentially stop redeployment of logic apps.
     .EXAMPLE
     $platform =  Get-PlatformConfig ...
     Remove-CdfOrphanAccessPolicies -Scope $platform
@@ -24,10 +24,10 @@ Function Remove-OrphanAccessPolicies {
         try {
             $sp = Get-AzADServicePrincipal -AppId $azCtxd.Account.Id
             $cdfInfraDeployerName = "Epical CDF Infrastructure Deployer"
-            Get-AzADServicePrincipal -DisplayName $cdfInfraDeployerName 
-        } 
+            Get-AzADServicePrincipal -DisplayName $cdfInfraDeployerName
+        }
         catch {
-            if ((Get-Error).ErrorDetails.StartsWith("Insufficient privileges")) { 
+            if ((Get-Error).ErrorDetails.StartsWith("Insufficient privileges")) {
                 throw "Service Principal for Deployment does not have required permission"
             }
         }
@@ -42,7 +42,7 @@ Function Remove-OrphanAccessPolicies {
         # Handle API connections for Logic App V2 only - ensure the cdf templates deploy only V2 version.
         if ($api.Kind -ne "V2") {
             continue;
-        } 
+        }
         $apiConnAccessPolicies = Get-AzResource `
             -ResourceId "$($api.ResourceId)/accessPolicies" `
             -WarningAction:SilentlyContinue `
@@ -63,11 +63,11 @@ Function Remove-OrphanAccessPolicies {
                 }
                 catch {
                     $err = Get-Error
-                    if (!($err.ErrorDetails -like "*does not exist*")) { 
-                        throw "Could not get service principal details: $($err|ConvertTo-Json)" 
+                    if (!($err.ErrorDetails -like "*does not exist*")) {
+                        throw "Could not get service principal details: $($err|ConvertTo-Json)"
                     }
                 }
-            
+
                 if ($null -eq $sp) {
                     Write-Output "Identity [$($policy.Properties.principal.identity.objectId)] is missing."
                     Write-Output " - Removing access policy for service [$($apiAccessPolicy.Name)] at [$($api.Name)]"

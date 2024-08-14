@@ -1,4 +1,4 @@
-Function Get-TokenValues {
+﻿Function Get-TokenValues {
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -31,23 +31,23 @@ Function Get-TokenValues {
             ServiceTemplate   = $CdfConfig.Service.Config.serviceTemplate
         }
     }
-    
+
     if ($null -ne $env:GITHUB_RUN_ID) {
         $tokenValues += [ordered] @{
-            BuildRepo     = $env:GITHUB_REPOSITORY 
-            BuildBranch   = $env:GITHUB_REF_NAME 
-            BuildCommit   = $env:GITHUB_SHA 
-            BuildPipeline = $env:GITHUB_WORKFLOW 
-            BuildRun      = $env:GITHUB_RUN_ID 
+            BuildRepo     = $env:GITHUB_REPOSITORY
+            BuildBranch   = $env:GITHUB_REF_NAME
+            BuildCommit   = $env:GITHUB_SHA
+            BuildPipeline = $env:GITHUB_WORKFLOW
+            BuildRun      = $env:GITHUB_RUN_ID
         }
     }
     elseif ($null -ne $env:BUILD_BUILDNUMBER) {
         $tokenValues += [ordered] @{
-            BuildRepo     = $env:BUILD_REPOSITORY_NAME 
-            BuildBranch   = $env:BUILD_SOURCEBRANCH 
-            BuildCommit   = $env:BUILD_SOURCEVERSION 
+            BuildRepo     = $env:BUILD_REPOSITORY_NAME
+            BuildBranch   = $env:BUILD_SOURCEBRANCH
+            BuildCommit   = $env:BUILD_SOURCEVERSION
             BuildPipeline = $env:BUILD_DEFINITIONNAME
-            BuildRun      = $env:BUILD_BUILDNUMBER 
+            BuildRun      = $env:BUILD_BUILDNUMBER
         }
     }
     else {
@@ -59,7 +59,7 @@ Function Get-TokenValues {
             BuildPipeline = $azCtx ? $azCtx.Account.Id : 'local'
             BuildRun      = "local"
         }
-    } 
+    }
 
     if ($false -eq $NoOldAPIM -and $null -ne $CdfConfig.Service) {
         # These Aliases are short names for Commonly used attributes
@@ -88,10 +88,10 @@ Function Get-TokenValues {
             GITHUB_SHA                 = 'local'
             GITHUB_WORKFLOW            = 'local'
             GITHUB_RUN_NUMBER          = 'local'
-       
+
         }
     }
-    
+
     if ($null -ne $CdfConfig.Platform) {
         $tokenValues += [ordered] @{
             'Platform.Config.TemplateScope'   = $CdfConfig.Platform.Config.templateScope
@@ -108,7 +108,7 @@ Function Get-TokenValues {
             'Platform.Env.ShortName'          = $CdfConfig.Platform.Env.shortName
         }
     }
-    
+
     if ($null -ne $CdfConfig.Application) {
         $tokenValues += [ordered] @{
             'Application.Config.TemplateScope'               = $CdfConfig.Platform.Config.templateScope
@@ -128,13 +128,13 @@ Function Get-TokenValues {
         if ($CdfConfig.Application.Config.appIdentityClientId) { $tokenValues['Application.Config.AppIdentityClientId'] = $CdfConfig.Application.Config.appIdentityClientId }
         if ($CdfConfig.Application.Config.appIdentityPrincipalId) { $tokenValues['Application.Config.AppIdentityPrincipalId'] = $CdfConfig.Application.Config.appIdentityPrincipalId }
     }
-    
+
     if ($null -ne $CdfConfig.Domain) {
         $tokenValues += [ordered] @{
             'Domain.Config.DomainName' = $CdfConfig.Domain.Config.domainName
         }
     }
-    
+
     if ($null -ne $CdfConfig.Service) {
         $tokenValues += [ordered] @{
             'Service.Config.ServiceName'     = $CdfConfig.Service.Config.serviceName

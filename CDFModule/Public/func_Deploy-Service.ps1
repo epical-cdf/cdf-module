@@ -1,5 +1,5 @@
-Function Deploy-Service {
-    
+﻿Function Deploy-Service {
+
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [hashtable]$CdfConfig,
@@ -62,7 +62,7 @@ Function Deploy-Service {
     if (!(Test-Path -Path $BuildPath)) {
         New-Item -Force  -Type Directory $BuildPath -ErrorAction SilentlyContinue | Out-Null
     }
-    
+
     # Clear output from previos build
     $outputPath = "$BuildPath/$ServiceName"
     if (!(Test-Path -Path $outputPath)) {
@@ -72,7 +72,7 @@ Function Deploy-Service {
         Remove-Item -Recurse -Force $outputPath -ErrorAction SilentlyContinue | Out-Null
     }
     New-Item -Force -Type Directory $outputPath -ErrorAction SilentlyContinue | Out-Null
-    
+
     $isApi = $ServiceTemplate.StartsWith('api-') # API Management has a slightly difference handling and currently does not require domain infra deployment config.
     if ($null -eq $CdfConfig) {
         Write-Host "Get Platform Config [$PlatformId$PlatformInstance]"
@@ -87,7 +87,7 @@ Function Deploy-Service {
         if ($null -eq $CdfConfig.Platform -or $false -eq $CdfConfig.Platform.IsDeployed) {
             throw "Missing Platform configuration for deployed runtime instance."
         }
-        
+
         Write-Host "Get Application Config [$ApplicationId$ApplicationInstance]"
         $CdfConfig = Get-CdfConfigApplication `
             -CdfConfig $CdfConfig `
@@ -101,7 +101,7 @@ Function Deploy-Service {
         if ($null -eq $CdfConfig.Application -or $false -eq $CdfConfig.Application.IsDeployed) {
             throw "Missing Application configuration for deployed runtime instance."
         }
-  
+
         if ($false -eq $isApi) {
             Write-Host "Get Domain Config [$DomainName]"
             $CdfConfig = Get-CdfConfigDomain `
@@ -109,7 +109,7 @@ Function Deploy-Service {
                 -DomainName $DomainName `
                 -SourceDir $CdfInfraSourcePath `
                 -Deployed -ErrorAction Continue
-    
+
             if ($null -eq $CdfConfig.Domain -or $false -eq $CdfConfig.Domain.IsDeployed) {
                 throw "Missing Domain configuration for deployed runtime instance."
             }
@@ -192,9 +192,9 @@ Function Deploy-Service {
                 -OutputPath $outputPath `
                 -TemplateDir $CdfSharedPath/modules/storageaccount-config `
                 -ErrorAction Stop
-                    
+
         }
-                
+
         # TODO: Iterate multiple occurances "servicebus*.config.json"
         if (Test-Path "$ServiceSrcPath/servicebus.config.json" ) {
             Deploy-ServiceBusConfig `
@@ -231,7 +231,7 @@ Function Deploy-Service {
             -ErrorAction Stop
     }
     elseif ($true -eq $isApi) {
-        
+
         # Default is to deploy service dependencies (ServiceOnly = false)
         if (!$ServiceOnly) {
             $CdfConfig | Build-ApimDomainBackendTemplates `
@@ -254,7 +254,7 @@ Function Deploy-Service {
                 -SharedPath $CdfSharedPath `
                 -BuildPath "$OutputPath/domain-namedvalues" `
                 -ErrorAction:Stop
-                        
+
             # Deploy Domain Named Values to KeyVault
             $CdfConfig | Deploy-ApimKeyVaultDomainNamedValues `
                 -DomainName $DomainName `
@@ -264,7 +264,7 @@ Function Deploy-Service {
 
             # Deploy Products
             if (Test-Path "$OutputPath/domain-products") {
-                $Templates = Get-ChildItem -Path "$OutputPath/domain-products" -Include "product.*.$DomainName-*.bicep" -File -Name 
+                $Templates = Get-ChildItem -Path "$OutputPath/domain-products" -Include "product.*.$DomainName-*.bicep" -File -Name
                 foreach ($Template in $Templates) {
                     $Params = $Template.replace('.bicep', '.params.json')
                     Write-Host "Deploying product template: $Template"
@@ -280,10 +280,10 @@ Function Deploy-Service {
                     | Out-Null
                 }
             }
-                
+
             # Deploy Backends
             if (Test-Path "$OutputPath/domain-backends") {
-                $Templates = Get-ChildItem -Path "$OutputPath/domain-backends" -Include "backend.*.$DomainName-*.bicep" -File -Name 
+                $Templates = Get-ChildItem -Path "$OutputPath/domain-backends" -Include "backend.*.$DomainName-*.bicep" -File -Name
                 foreach ($Template in $Templates) {
                     $Params = $Template.replace('.bicep', '.params.json')
                     Write-Host "Deploying backend template: $Template"
@@ -333,8 +333,8 @@ Function Deploy-Service {
             -StartTokenPattern "#{" `
             -EndTokenPattern "}#" `
             -NoWarning `
-            -WarningAction:SilentlyContinue 
-             
+            -WarningAction:SilentlyContinue
+
         # Deploy Service Named Values to KeyVault
         $CdfConfig | Deploy-ApimKeyVaultServiceNamedValues `
             -DomainName $DomainName `
@@ -342,7 +342,7 @@ Function Deploy-Service {
             -ConfigPath "$OutputPath/domain-api"
 
         # Deploy API
-        Write-Host "Deploying api template: $OutputPath/domain-api/$ServiceName.bicep" 
+        Write-Host "Deploying api template: $OutputPath/domain-api/$ServiceName.bicep"
         New-AzResourceGroupDeployment `
             -DefaultProfile $azCtx `
             -Name "api-$DomainName-$ServiceName" `

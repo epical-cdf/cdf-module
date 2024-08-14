@@ -1,18 +1,18 @@
-Function Deploy-ServiceFunctionApp {
+﻿Function Deploy-ServiceFunctionApp {
     <#
         .SYNOPSIS
         Deploys a Function App Service implementation and condfiguration
 
         .DESCRIPTION
-        The cmdlet deploys a Function App Service implementation with configuration of app settings, parameters and connections.      
-    
+        The cmdlet deploys a Function App Service implementation with configuration of app settings, parameters and connections.
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-        
+
         .PARAMETER InputPath
         Path to the Function implementation including cdf-config.json.
         Optional, defaults to "./build"
-        
+
         .PARAMETER OutputPath
         Output path for the environment specific config with updated parameters.json and connections.json.
         Optional, defaults to "./build"
@@ -73,9 +73,9 @@ Function Deploy-ServiceFunctionApp {
         'tsconfig.json'
         '.funcignore'
     )
-   
+
     Copy-Item -Force -Recurse -Include $functionFiles -Path $InputPath/* -Destination $OutputPath
-    
+
     # Write-Host "Build function..."
     # Push-Location $OutputPath
     # npm install
@@ -94,7 +94,7 @@ Function Deploy-ServiceFunctionApp {
     #         Join-Path $OutputPath $_.Parent.FullName.Substring($InputPath.length)
     #     }
     # }
-      
+
     ## Adjust these if template changes regarding placement of appService for the service
     $appServiceRG = $CdfConfig.Service.ResourceNames.functionAppResourceGroup
     $appServiceName = $CdfConfig.Service.ResourceNames.functionAppName
@@ -106,7 +106,7 @@ Function Deploy-ServiceFunctionApp {
     # Preparing appsettings for target env
     #--------------------------------------
     Write-Host "Preparing app settings."
-  
+
     # Get app service settings
     $app = Get-AzWebApp `
         -DefaultProfile $azCtx `
@@ -124,13 +124,13 @@ Function Deploy-ServiceFunctionApp {
 
     # Get service config from cdf-config.json
     $serviceConfig = Get-Content -Path "$InputPath/cdf-config.json" | ConvertFrom-Json -AsHashtable
- 
+
 
     #--------------------------------------
     # Configure connections for target env
     #--------------------------------------
     Write-Host "Preparing connections."
-    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions 
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
     $svcConns = $serviceConfig.Connections ?? $connectionDefinitions.Keys
 
     # TODO: Make these configurable using a "platform services" definition file
@@ -160,7 +160,7 @@ Function Deploy-ServiceFunctionApp {
             "Setting" {
                 # $Parameters.Service.value[$serviceSettingKey] = $setting.Values[0].Value
                 $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
-                
+
             }
             "Secret" {
                 # $secret = Get-AzKeyVaultSecret `
@@ -169,7 +169,7 @@ Function Deploy-ServiceFunctionApp {
                 #     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
                 #     -AsPlainText `
                 #     -ErrorAction SilentlyContinue
-                
+
                 # if ($null -eq $secret) {
                 #     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
                 #     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
@@ -193,11 +193,11 @@ Function Deploy-ServiceFunctionApp {
             "Constant" {
                 # $Parameters.External.value[$externalSettingKey] = $setting.Value
                 $updateSettings["EXTERNAL_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
-                
+
             }
             "Setting" {
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = $value 
+                $updateSettings["EXTERNAL_$serviceSettingKey"] = $value
             }
             "Secret" {
                 $secret = Get-AzKeyVaultSecret `
@@ -206,7 +206,7 @@ Function Deploy-ServiceFunctionApp {
                     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
                     -AsPlainText `
                     -ErrorAction SilentlyContinue
-                
+
                 if ($null -eq $secret) {
                     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
                     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
@@ -220,7 +220,7 @@ Function Deploy-ServiceFunctionApp {
                     $updateSettings[$appSettingKey] = $appSettingRef
                     $Parameters.Service.value[$setting.Identifier] = "@appsetting('$appSettingKey')"
                     Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-    
+
                 }
 
             }
@@ -269,7 +269,7 @@ Function Deploy-ServiceFunctionApp {
         -StartTokenPattern '{{' `
         -EndTokenPattern '}}' `
         -NoWarning `
-        -WarningAction:SilentlyContinue 
+        -WarningAction:SilentlyContinue
 
     Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
 
@@ -295,12 +295,12 @@ Function Deploy-ServiceFunctionApp {
     # '*/node_modules/typescript/*'
     [string[]]$exclude = @(
         'app.settings.*'
-    ) 
+    )
     $OutputPath = Resolve-Path $OutputPath
     New-Zip `
         -Exclude $exclude `
         -FolderPath $OutputPath `
-        -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" 
+        -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip"
 
     # Compress-Archive -Force  `
     #     -Path "$OutputPath/*"  `

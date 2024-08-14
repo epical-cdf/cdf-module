@@ -1,32 +1,32 @@
-
+﻿
 Function Remove-TemplateDomain {
     <#
         .SYNOPSIS
         Removes a domain runtime instance.
-    
+
         .DESCRIPTION
         Remove Azure resources for a CDF template domain.
-        
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-        
+
         .PARAMETER DryRun
         Shows what resources would be removed when command is run.
-    
+
         .INPUTS
         CDFConfig
-    
+
         .OUTPUTS
         None.
-    
+
         .EXAMPLE
         PS> $config = Get-CdfConfigApplication
         PS> Remove-CdfTemplateApplication `
             -CdfConfig $config `
             -DryRun
         PS> Remove-CdfTemplateApplication `
-            -CdfConfig $config 
-      
+            -CdfConfig $config
+
         .LINK
         Deploy-CdfTemplatePlatform
         Deploy-CdfTemplateApplication
@@ -36,21 +36,21 @@ Function Remove-TemplateDomain {
         Remove-CdfTemplateApplication
         Remove-CdfTemplateDomain
         Remove-CdfTemplateService
-    
+
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [Object]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [switch] $DryRun 
+        [switch] $DryRun
     )
-    
+
     Begin {
     }
-    Process { 
+    Process {
         if ($CdfConfig.Platform.IsDeployed -eq $false -or $CdfConfig.Application.IsDeployed -eq $false -or $CdfConfig.Domain.IsDeployed -eq $false) {
             $errMsg = 'Provided platform, application, domain and service configurations are not deployed versions.'
             Write-Error -Message $errMsg
@@ -66,11 +66,11 @@ Function Remove-TemplateDomain {
         $templateInstance = "$platformKey-$applicationKey-$($CdfConfig.Domain.Config.domainName)-$regionCode"
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$regionCode"
         $deploymentName = "domain-$templateEnvInstance"
-    
+
         $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-            
+
         Write-Host "Starting removal of domain resources for '$templateEnvInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
-        
+
         $azJobs = @()
 
         # TODO: Add optional removal of storage fileshares etc that belong to the domain?
@@ -102,7 +102,7 @@ Function Remove-TemplateDomain {
             $query += " | where type=~'Microsoft.Web/connections' "
             $query += "     and resourceGroup=='$($CdfConfig.Platform.ResourceNames.apiConnResourceGroupName)' "
             $query += " | project id, name, tags "
-    
+
             Write-Verbose "Executing: Search-AzGraph -DefaultProfile <azCtx>  -Query $query"
             $apiConnections = Search-AzGraph -DefaultProfile $azCtx  -Query $query
             foreach ($api in $apiConnections) {
@@ -116,10 +116,10 @@ Function Remove-TemplateDomain {
                         -DefaultProfile $azCtx `
                         -ResourceId $_.ResourceId `
                         -Force `
-                        -AsJob 
+                        -AsJob
                 }
             }
-            
+
 
             $query = "Resources "
             $query += " | where tags.TemplateScope=~'$($CdfConfig.Domain.Config.templateScope)' "
@@ -131,7 +131,7 @@ Function Remove-TemplateDomain {
             Write-Verbose "Executing: Search-AzGraph -DefaultProfile <azCtx>  -Query $query"
             $resources = Search-AzGraph -DefaultProfile $azCtx  -Query $query
             foreach ($resource in $resources) {
-           
+
                 Write-Host "Removing resource $($resource.Name)"
                 if ($false -eq $DryRun) {
                     Write-Verbose " resource id: $($resource.Id)"
@@ -139,7 +139,7 @@ Function Remove-TemplateDomain {
                         -DefaultProfile $azCtx `
                         -ResourceId $resource.Id `
                         -Force  `
-                        -AsJob 
+                        -AsJob
                 }
             }
 
@@ -149,7 +149,7 @@ Function Remove-TemplateDomain {
                         -ErrorAction SilentlyContinue `
                         -DefaultProfile $azCtx `
                         -Name  $CdfConfig.Domain.ResourceNames[$resourceNameKey]
-                
+
                     if ($null -ne $resourceGroup -And $resourceGroup.ResourceGroupName -eq $CdfConfig.Domain.ResourceNames[$resourceNameKey]) {
                         Write-Host "Removing resource group $($resourceGroup.ResourceGroupName)"
                         if ($false -eq $DryRun) {
@@ -169,12 +169,12 @@ Function Remove-TemplateDomain {
 
                 # Remove subnet
                 # $subNetName = $appResourceNames["appSubnetName"]
-            
+
                 # $vNet = Get-AzVirtualNetwork `
                 #     -DefaultProfile $azCtx `
                 #     -Name $vNetName `
                 #     -ResourceGroupName $vNetRGName
-            
+
                 # if ($null -ne $vNet) {
                 #     Write-Host "Removing subnet [$subNetName] from vNet [$($vNet.Name)]"
                 #     if ($false -eq $DryRun) {
@@ -190,7 +190,7 @@ Function Remove-TemplateDomain {
             if ($azJobs.Length -gt 0) {
                 if ($true -eq $DryRun) {
                     Write-Error "Dry-run, but still found jobs."
-                } 
+                }
 
                 Write-Host -NoNewline "Waiting for long running jobs such as removing resource groups to complete "
                 $azJobs | ForEach-Object {
@@ -203,9 +203,9 @@ Function Remove-TemplateDomain {
             # Remove any pending key vault deletion
             # Get-AzKeyVault -InRemovedState | ForEach-Object -Process {
             #     Write-Host "Purging deleted Key Vault [$($_.VaultName)] "
-            #     Remove-AzKeyVault -VaultName $_.VaultName -InRemovedState -Force -Location $env:CDF_REGION 
+            #     Remove-AzKeyVault -VaultName $_.VaultName -InRemovedState -Force -Location $env:CDF_REGION
             # }
-  
+
             # Remove deployment - last record of deployed resources if above fails with partial removal the process can be restarted if deployment is available.
             Write-Host "Removing deployment [$deploymentName]"
             if ($false -eq $DryRun) {
@@ -222,6 +222,5 @@ Function Remove-TemplateDomain {
         }
     }
     End {
-    }   
+    }
 }
-    

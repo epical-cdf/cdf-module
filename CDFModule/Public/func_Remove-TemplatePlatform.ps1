@@ -1,43 +1,43 @@
-Function Remove-TemplatePlatform {
+﻿Function Remove-TemplatePlatform {
     <#
         .SYNOPSIS
         Removes a platform runtime instance.
-    
+
         .DESCRIPTION
         Remove Azure resources for a CDF template platform.
-        
+
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configuration
-        
+
         .PARAMETER DryRun
         Shows what resources would be removed when command is run.
-            
+
         .INPUTS
         CDFConfig
-        
+
         .EXAMPLE
         PS> $config = Get-CdfConfigPlatform
         PS> Remove-CdfTemplatePlatform `
             -CdfConfig $config `
             -DryRun
         PS> Remove-CdfTemplatePlatform `
-            -CdfConfig $config 
-      
+            -CdfConfig $config
+
         .LINK
         Deploy-CdfTemplatePlatform
         Get-CdfConfigPlatform
-    
+
         #>
-    
-    
+
+
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [Object]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [switch] $DryRun 
+        [switch] $DryRun
     )
-    
+
     Begin {
         if (-not (Get-Module Az.ResourceGraph -ListAvailable)) {
             Install-Module -Name Az.ResourceGraph -Scope CurrentUser -Force
@@ -63,9 +63,9 @@ Function Remove-TemplatePlatform {
         $deploymentName = "platform-$templateEnvInstance"
 
         $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-            
+
         Write-Host "Starting removal of platform resources for '$templateInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
- 
+
         Write-Host "-- Begin Phase #1 (Resources without dependencies) -----------------------"
         $azJobs = @()
 
@@ -90,7 +90,7 @@ Function Remove-TemplatePlatform {
         $allResources = $resourcesP1
 
         foreach ($resource in $resourcesP1) {
-           
+
             Write-Host "`tRemoving resource $($resource.Name)"
             if ($false -eq $DryRun) {
                 Write-Verbose " resource id: $($resource.Id)"
@@ -106,7 +106,7 @@ Function Remove-TemplatePlatform {
         if ($azJobs.Length -gt 0) {
             if ($true -eq $DryRun) {
                 Write-Error "Dry-run, but still found jobs."
-            } 
+            }
 
             Write-Host -NoNewline "`tWaiting for jobs to complete"
             $azJobs | ForEach-Object {
@@ -131,7 +131,7 @@ Function Remove-TemplatePlatform {
         # $query += " | project id, name, tags "
         # $resources = Search-AzGraph -DefaultProfile $azCtx  -Query $query
         # foreach ($resource in $resources) {
-           
+
         #     Write-Host "Removing resource $($resource.Name)"
         #     if ($false -eq $DryRun) {
         #         Write-Verbose " resource id: $($resource.Id)"
@@ -139,7 +139,7 @@ Function Remove-TemplatePlatform {
         #             -DefaultProfile $azCtx `
         #             -ResourceId $resource.Id `
         #             -Force  `
-        #             -AsJob 
+        #             -AsJob
         #     }
         # }
 
@@ -202,18 +202,18 @@ Function Remove-TemplatePlatform {
             # Get Network Configuration and clean up
             $vNetRGName = $CdfConfig.Platform.ResourceNames.networkingResourceGroupName
             $vNetName = $CdfConfig.Platform.ResourceNames.alzSpokeVNetName
-            if ($vNetRGName -and $vNetName) {     
+            if ($vNetRGName -and $vNetName) {
                 Write-Verbose "Phase #2 Begin (Networking)"
                 $vNet = Get-AzVirtualNetwork `
                     -DefaultProfile $azCtx `
                     -Name $vNetName `
                     -ResourceGroupName $vNetRGName
-                
+
                 if ($null -ne $vNet) {
                     # Remove subnets
-                    $CdfConfig.Platform.ResourceNames.GetEnumerator() | ? Key -like '*SubNetName*' | ForEach-Object -Process {
+                    $CdfConfig.Platform.ResourceNames.GetEnumerator() | Where-Object Key -like '*SubNetName*' | ForEach-Object -Process {
                         if ($vNet -and $vNet.Subnets -and ($vNet.Subnets | Foreach-Object -Process { $_.Name }).Contains($_.Value)) {
-                            Write-Host "`tRemoving Subnet [$($_.Value)] of vnet [$($vNet.Name)]"   
+                            Write-Host "`tRemoving Subnet [$($_.Value)] of vnet [$($vNet.Name)]"
                             if ($false -eq $DryRun) {
                                 Remove-AzVirtualNetworkSubnetConfig `
                                     -DefaultProfile $azCtx `
@@ -232,7 +232,7 @@ Function Remove-TemplatePlatform {
         }
 
         # Remove resources in Phase #2 - those that were not removed in first run.
-      
+
         $query = "Resources "
         $query += " | where type != 'Microsoft.Network/VirtualNetwork' " # Explicitly exclude virtual networks not accidentally remove spoke vnet.
         $query += " | where tags.TemplateScope=~'$($CdfConfig.Platform.Config.templateScope)' "
@@ -243,9 +243,9 @@ Function Remove-TemplatePlatform {
         $query += " | project id, name, tags "
         $resourcesP2 = Search-AzGraph -DefaultProfile $azCtx  -Query $query
         $allResources += $resourcesP2
-        
+
         foreach ($resource in $resourcesP2) {
-           
+
             Write-Host "`tRemoving resource $($resource.Name)"
             if ($false -eq $DryRun) {
                 Write-Verbose " resource id: $($resource.Id)"
@@ -253,7 +253,7 @@ Function Remove-TemplatePlatform {
                     -DefaultProfile $azCtx `
                     -ResourceId $resource.Id `
                     -Force  `
-                    -AsJob 
+                    -AsJob
             }
         }
 
@@ -262,11 +262,11 @@ Function Remove-TemplatePlatform {
         if ($false -eq $DryRun) {
             Remove-AzDeployment -DefaultProfile $azCtx -Name $deploymentName -ErrorAction SilentlyContinue
         }
-        
+
         if ($azJobs.Length -gt 0) {
             if ($true -eq $DryRun) {
                 Write-Error "Dry-run, but still found jobs."
-            } 
+            }
 
             Write-Host -NoNewline "Waiting for long running jobs such as removing resource groups to complete "
             $azJobs | ForEach-Object {
@@ -277,6 +277,5 @@ Function Remove-TemplatePlatform {
         }
     }
     End {
-    }   
+    }
 }
-    

@@ -1,11 +1,11 @@
-#Requires -Modules @{ ModuleName="Az.ResourceGraph"; ModuleVersion="1.0.0" }
+﻿#Requires -Modules @{ ModuleName="Az.ResourceGraph"; ModuleVersion="1.0.0" }
 
 Get-ChildItem (Split-Path $script:MyInvocation.MyCommand.Path) -Filter 'func_*.ps1' -Recurse | ForEach-Object {
-  # Write-Host ($_.FullName)
+  # Write-Verbose ($_.FullName)
   . $_.FullName
 }
 Get-ChildItem "$(Split-Path $script:MyInvocation.MyCommand.Path)\Public\*" -Filter 'func_*.ps1' -Recurse | ForEach-Object {
-  # Write-Host """$(($_.BaseName -Split "_")[1])"""
+  # Write-Verbose """$(($_.BaseName -Split "_")[1])"""
   Export-ModuleMember -Function ($_.BaseName -Split "_")[1]
   Export-ModuleMember ($_.BaseName -Split "_")[1]
 }
@@ -30,7 +30,7 @@ Export-ModuleMember -Alias *
 
 #   CDFConfigParameter() {
 #   }
-  
+
 #   CDFConfigParameter([string]$Name) {
 #     if (Test-Path 'cdf-config.json') {
 #       $svcConfig = Get-Content -Raw "cdf-config.json" | ConvertFrom-Json -AsHashtable

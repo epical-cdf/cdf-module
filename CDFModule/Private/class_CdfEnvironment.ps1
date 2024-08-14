@@ -1,23 +1,23 @@
-class PlatformEnv {
-    [ValidateNotNullOrEmpty()] 
+﻿class PlatformEnv {
+    [ValidateNotNullOrEmpty()]
     [string] $DefinitionId;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $NameId;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $ShortName;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $Name;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $Description;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $Purpose;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $Quality;
     [bool] $IsEnabled = $false;
     [bool] $ReleaseApproval = $false;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $TenantId;
-    [ValidateNotNullOrEmpty()] 
+    [ValidateNotNullOrEmpty()]
     [string] $SubscriptionId;
     [string] $InfraDeployerName;
     [string] $InfraDeployerAppId;
@@ -32,8 +32,8 @@ class PlatformEnv {
 }
 
 class ApplicationEnv:PlatformEnv {
-    [ValidateNotNullOrEmpty()] 
-    [string] $PlatformDefinitionId; 
+    [ValidateNotNullOrEmpty()]
+    [string] $PlatformDefinitionId;
 }
 
 
