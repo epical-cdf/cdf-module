@@ -1,0 +1,66 @@
+name: "release-cdfmodule"
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Create Release
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare release
+        id: prepare-release
+        shell: pwsh
+        run: |
+          New-Item -Type Directory release | Out-Null
+          Copy-Item -Recurse -Path CDFModule -Destination release
+          cd release
+          $releaseTag="${{ github.ref_name }}"
+          $releaseVersion=$releaseTag.TrimStart("v")
+          #Install CDFModule required dependency
+          if(-not (Get-Module Az.ResourceGraph -ListAvailable))
+          {
+            Install-Module -Name Az.ResourceGraph -Force
+          }
+          Update-ModuleManifest -ModuleVersion $releaseVersion -Path CDFModule/CDFModule.psd1
+          zip -r ../CDFModule.zip CDFModule
+          Write-Host "Release CDFModule version: $releaseVersion"
+          Write-Output "CDFModuleVersion=$releaseVersion" >> $Env:GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload templates artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: CDFModule.zip
+          asset_name: CDFModule.zip
+          asset_content_type: application/zip
+
+      # Artifact name is used in pwsh scripts/cmdlet, see/search reference REF-ARTIFACT-05
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cdf-module-${{ steps.prepare-release.outputs.CdfModuleVersion }}
+          path: ./release/CDFModule

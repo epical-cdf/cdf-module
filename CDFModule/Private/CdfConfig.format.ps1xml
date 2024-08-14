@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<Configuration> 
+    <ViewDefinitions> 
+ <View> 
+            <Name>CDFConfig</Name>
+ # This must match with the &#8220;insert&#8221; command above so that object is linked to this format 
+            <ViewSelectedBy> 
+                <TypeName>hrmctoolcustomformat</TypeName>
+ # This must match with the &#8220;insert&#8221; command above so that object is linked to this format 
+            </ViewSelectedBy> 
+             <TableControl> 
+                <TableHeaders> 
+                    <TableColumnHeader> 
+                        <Label>columnX</Label>
+ # This displays a different name rather than defaulting to the property name. 
+                        <Width>40</Width>
+ # This defines the column width. 
+                    </TableColumnHeader> 
+ <TableColumnHeader> 
+                        <Label>columnY</Label> 
+                        <Width>15</Width> 
+                    </TableColumnHeader> 
+                    <TableColumnHeader> 
+ <Label>columnZ</Label> 
+                        <Width>15</Width> 
+                    </TableColumnHeader> 
+                </TableHeaders> 
+                <TableRowEntries> 
+                    <TableRowEntry> 
+                        <TableColumnItems> 
+                            <TableColumnItem> 
+                                <PropertyName>column1</PropertyName>
+ # Here you can re-arrange the column ordering. 
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>column2</PropertyName> 
+                            </TableColumnItem> 
+ <TableColumnItem> 
+                                <PropertyName>column3</PropertyName> 
+                            </TableColumnItem> 
+                        </TableColumnItems> 
+                    </TableRowEntry> 
+                 </TableRowEntries> 
+            </TableControl> 
+        </View> 
+    </ViewDefinitions> 
+</Configuration> 

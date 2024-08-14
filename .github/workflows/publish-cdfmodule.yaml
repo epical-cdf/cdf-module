@@ -1,0 +1,133 @@
+name: "publish-cdfmodule"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish CDFModule
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      MODULE_VERSION: ${{ vars.CDFMODULE_VERSION }}
+      INPUT_TARGET: nuget
+      INPUT_PATH: ./packages/CDFModule/CDFModule.psd1
+      INPUT_NUGETURL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+    steps:
+      - name: "Checkout the source"
+        uses: actions/checkout@v3
+
+      - name: Prepare package
+        shell: pwsh
+        run: |
+          New-Item -Type Directory packages | Out-Null
+          Copy-Item -Recurse -Path CDFModule -Destination packages
+
+      - name: Validate Inputs
+        shell: pwsh
+        run: |
+          $ValidTargets = @("packages","nuget","gallery")
+          if ($ValidTargets -notcontains $ENV:INPUT_TARGET) {
+              throw "Invalid value provided for 'target' input."
+          }
+
+          if ((($ENV:INPUT_TARGET -eq "packages") -or ($ENV:INPUT_TARGET -eq "gallery")) -and $ENV:INPUT_NUGETURL) {
+              throw "'nugetUrl' can only be used with target 'nuget'."
+          }
+
+          if (($ENV:INPUT_TARGET -eq "nuget") -and !$ENV:INPUT_NUGETURL) {
+              throw "Target 'nuget' requires 'nugetUrl'."
+          }
+
+      - name: Prepare to Publish
+        shell: pwsh
+        run: |
+          Write-Host "Starting Action..."
+
+          $PsrgPinnedVerShort = "0.5.23"
+          $PsrgPinnedVer = "0.5.23-beta23"
+
+          Write-Host -Object "Ensuring PowerShellGet 2.2.5 is installed..."
+          # Ensuring PowerShellGet stable is at least version 2.2.5
+          $PowerShellGetMetadata = Get-Module -Name PowerShellGet
+          if ($PowerShellGetMetadata.Version -ge "2.2.5") {
+              Write-Host -Object "Updating PowerShellGet to 2.2.5..."
+              Install-Module -Name PowerShellGet -Force -AllowClobber
+          }
+          else {
+              Write-Host -Object "PowerShellGet is up-to-date."
+          }
+
+          # Ensuring Microsoft.PowerShell.PSResourceGet is installed
+          $PSResourceGetMetadata = Get-Module -ListAvailable -Name Microsoft.PowerShell.PSResourceGet
+          if (!$PSResourceGetMetadata) {
+              Write-Host -Object "'Microsoft.PowerShell.PSResourceGet' is not installed, now installing..."
+              Install-Module -Name Microsoft.PowerShell.PSResourceGet -RequiredVersion $PsrgPinnedVer -Force -AllowPrerelease
+          }
+          elseif ($PSResourceGetMetadata.Version -gt $PsrgPinnedVerShort) {
+              Write-Warning -Message "'Microsoft.PowerShell.PSResourceGet' is higher than the pinned version of '$PsrgPinnedVer'. This may cause unexpected results. Consider opening a GitHub issue at 'https://github.com/natescherer/publish-powershell-action/issues' regarding this."
+          }
+          elseif ($PSResourceGetMetadata.Version -lt $PsrgPinnedVerShort) {
+              Write-Host "'Microsoft.PowerShell.PSResourceGet' is less than the pinned version of '$PsrgPinnedVer'. Now updating..."
+              Install-Module -Name Microsoft.PowerShell.PSResourceGet -RequiredVersion $PsrgPinnedVer -Force -AllowPrerelease
+          }
+          elseif ($PSResourceGetMetadata.Version -eq $PsrgPinnedVerShort) {
+              Write-Host "'Microsoft.PowerShell.PSResourceGet' is already at pinned version of '$PsrgPinnedVer'."
+          }
+          else {
+              throw "Something went wrong while ensuring 'Microsoft.PowerShell.PSResourceGet' is installed. Consider opening a GitHub issue at 'https://github.com/natescherer/publish-powershell-action/issues' regarding this."
+          }
+
+          $FullPath = "$env:GITHUB_WORKSPACE\$env:INPUT_PATH"
+          $ResolvedPath = $FullPath
+
+          # if (Test-Path -Path $FullPath -PathType Container) {
+          #     Write-Host "Input 'path' is a directory."
+
+          #     . "$env:GITHUB_ACTION_PATH\src\private\Find-PowerShellFiles.ps1"
+          #     $ResolvedPath = Find-PowerShellFiles -Path $FullPath
+          # } else {
+          #     Write-Host "Input 'path' is a file."
+          #     $ResolvedPath = $FullPath
+          # }
+
+          # if ($ResolvedPath -like "*.psd1") {
+          #     # This is necessary due to weird folder naming requirements for module publishing
+          #     . "$env:GITHUB_ACTION_PATH\src\private\Copy-FilesToModuleDirectory.ps1"
+          #     $ResolvedPath = Copy-FilesToModuleDirectory -Path $ResolvedPath
+          # }
+          Write-Host "Path resolved to: $ResolvedPath"
+          "RESOLVED_PATH=$ResolvedPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf-8 -Append
+
+      - name: Publish to NuGet Repository
+        shell: pwsh
+        run: |
+          Write-Host "Registering NuGet repository..."
+          Register-PSResourceRepository -Name "NuGet" -Uri $env:INPUT_NUGETURL -Trusted
+
+          Write-Host "Publishing to NuGet repository...."
+          $PublishSplat = @{
+              Path = $env:RESOLVED_PATH
+              Repository = "NuGet"
+              ApiKey = "${{ secrets.GITHUB_TOKEN }}"
+              SkipDependenciesCheck = $true
+          }
+          if ($env:RESOLVED_PATH -like "*.psd1") {
+              $ManifestData = Import-PowerShellDataFile $env:RESOLVED_PATH
+              if ($ManifestData.RequiredModules) {
+                  $PublishSplat += @{
+                      SkipModuleManifestValidate = $true
+                  }
+              }
+
+              $verPart = $env:MODULE_VERSION.Split('.')
+              [String]$version = New-Object -TypeName System.Version -ArgumentList ($verPart[0], $verPart[1], $verPart[2])
+              Write-Output "Publish version: $version"
+              Update-ModuleManifest -Path $env:RESOLVED_PATH -ModuleVersion $version   
+          }
+          Publish-PSResource @PublishSplat
+          Unregister-PSResourceRepository -Name "NuGet"
+          Write-Host "Done!"
