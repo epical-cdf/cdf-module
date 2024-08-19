@@ -58,6 +58,12 @@ jobs:
           asset_name: CDFModule.zip
           asset_content_type: application/zip
 
+      - name: Publish module
+        env:
+          NUGET_KEY: ${{ secrets.NUGET_KEY }}
+        shell: pwsh
+        run: Publish-Module -Path ./CDFModule -NuGetApiKey $env:NUGET_KEY -Verbose
+
       # Artifact name is used in pwsh scripts/cmdlet, see/search reference REF-ARTIFACT-05
       - name: Upload deployment artifacts
         uses: actions/upload-artifact@v3

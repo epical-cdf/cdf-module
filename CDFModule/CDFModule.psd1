@@ -30,7 +30,7 @@
     Copyright            = '(c) Epical Sweden AB. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description          = 'Baseline CDF Module'
+    Description          = 'Epical Baseline CDF Module'
 
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion    = '7.4'
@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = "Az.ResourceGraph"; ModuleVersion = "1.0"; Guid = "a153eead-f293-4588-b61e-b465b237591e" })
+    RequiredModules      = @(@{ModuleName = 'Az.ResourceGraph'; ModuleVersion = '1.0'; Guid = 'a153eead-f293-4588-b61e-b465b237591e' })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -95,28 +95,28 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            # Tags = @()
+            Tags = @()
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://github.com/epical-cdf/cdf-module/LICENSE'
 
             # A URL to the main website for this project.
-            # ProjectUri = ''
+            ProjectUri = 'https://github.com/epical-cdf/cdf-module'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            # ReleaseNotes = ''
+            ReleaseNotes = 'https://github.com/epical-cdf/cdf-module/RELEASE_NOTES'
 
             # Prerelease string of this module
-            # Prerelease = 'pre'
+            Prerelease = 'pre'
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-            # RequireLicenseAcceptance = $false
+            RequireLicenseAcceptance = $false
 
             # External dependent modules of this module
-            # ExternalModuleDependencies = @()
+            ExternalModuleDependencies = @('Az', 'Az.ResourceGraph', 'DnsClient-PS', 'ACME-PS')
 
         } # End of PSData hashtable
 
