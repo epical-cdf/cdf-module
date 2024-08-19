@@ -103,7 +103,7 @@
     $platformKey = "$($cdfPlatform.Config.platformId)$($cdfPlatform.Config.instanceId)"
     $deploymentName = "$platformKey-connection-$($apiConfig.name)"
 
-    $templateFile = "$TemplateDir/dgw-connections/$($apiConfig.type).bicep"
+    $templateFile = "$TemplateDir/api-connections/$($apiConfig.type).bicep"
 
     # Setup platform parameters from envrionment and params file
     $templateParams = [ordered] @{}
