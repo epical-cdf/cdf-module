@@ -79,7 +79,7 @@
 
         $templateFile = "$templatePath/application.bicep"
         $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
-        $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
+        $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "application-$platformEnvKey-$applicationEnvKey-$regionCode"
 
         # Setup platform parameters from envrionment and params file

@@ -78,7 +78,7 @@ Function Global:Prompt {
         if ('Unix' -eq $PSVersionTable.Platform) {
             $elemCwd[0] = [IO.Path]::DirectorySeparatorChar
         }
-        $Cwd = Join-Path $elemCwd[0] $elemCwd[1] '...' $elemCwd[-3] $elemCwd[-2] $elemCwd[-1]
+        $Cwd = Join-Path -Path @($elemCwd[0], $elemCwd[1], '...', $elemCwd[-3], $elemCwd[-2], $elemCwd[-1])
     }
     Write-Host $Cwd -NoNewline -ForegroundColor Red
     if (Get-Module posh-git) {

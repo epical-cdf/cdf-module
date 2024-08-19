@@ -118,7 +118,7 @@
         # Could use default parameter in bicep template, but this construct allows for programatic configuration changes.
         $templateParams.storageAccountConfig = $storageAccountConfig
 
-        $applicationEnvKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)$($CdfConfig.Application.Env.nameId)"
+        $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "st-cfg-$($CdfConfig.Service.Config.serviceName)-$($CdfConfig.Domain.Config.domainName)-$storageAccountName-$applicationEnvKey-$($CdfConfig.Application.Env.regionCode)"
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 

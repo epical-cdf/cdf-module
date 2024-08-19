@@ -88,10 +88,10 @@
 
     # Get-ChildItem -Path $InputPath/* -Recurse -Exclude $exclude | Copy-Item -Force -Destination {
     #     if ($_.GetType() -eq [System.IO.FileInfo]) {
-    #         Join-Path $OutputPath $_.FullName.Substring($InputPath.length)
+    #         Join-Path -Path  $OutputPath $_.FullName.Substring($InputPath.length)
     #     }
     #     else {
-    #         Join-Path $OutputPath $_.Parent.FullName.Substring($InputPath.length)
+    #         Join-Path -Path  $OutputPath $_.Parent.FullName.Substring($InputPath.length)
     #     }
     # }
 
