@@ -131,7 +131,7 @@
             }
         }
         catch {
-            Write-Host "Deploying CDF Infrastructure for Logic App Standard service [$ServiceName]"
+            Write-Host "Deploying CDF Infrastructure for [$ServiceTemplate] service [$ServiceName]"
             $CdfConfig = Deploy-TemplateService `
                 -CdfConfig $CdfConfig `
                 -ServiceName $ServiceName `

@@ -175,7 +175,7 @@
     # }
 
     # Write-Debug "Connections: $($connections | ConvertTo-Json -Depth 10 | Out-String)"
-    # $connections | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/$($CdfConfig.Service.Config.serviceName)/connections.json"
+    # $connections | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/connections.json"
 
     #--------------------------------------
     # Preparing appsettings for target env
@@ -400,23 +400,21 @@
     # Preparing the app settings
     #-------------------------------------------------------------
 
-    $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/$($CdfConfig.Service.Config.serviceName)/app.settings.raw.json"
+    $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.gen.json"
 
     # Substitute Tokens in the app.settings file
     $tokenValues = $CdfConfig | Get-TokenValues
     Update-ConfigFileTokens `
-        -InputFile "$OutputPath/$($CdfConfig.Service.Config.serviceName)/app.settings.raw.json" `
-        -OutputFile "$OutputPath/$($CdfConfig.Service.Config.serviceName)/app.settings.json" `
+        -InputFile "$OutputPath/app.settings.gen.json" `
+        -OutputFile "$OutputPath/app.settings.json" `
         -Tokens $tokenValues `
         -StartTokenPattern '{{' `
         -EndTokenPattern '}}' `
         -NoWarning `
         -WarningAction:SilentlyContinue
 
-    Remove-Item -Path "$OutputPath/$($CdfConfig.Service.Config.serviceName)/local.settings.json" -ErrorAction SilentlyContinue
-
     # Read generated app.settings file with token substitutions
-    $updateSettings = Get-Content -Path "$OutputPath/$($CdfConfig.Service.Config.serviceName)/app.settings.json" | ConvertFrom-Json -Depth 10 -AsHashtable
+    $updateSettings = Get-Content -Path "$OutputPath/app.settings.json" | ConvertFrom-Json -Depth 10 -AsHashtable
 
     Set-AzWebApp `
         -Name $appServiceName `
@@ -430,7 +428,7 @@
     Write-Host "Deploying workflows."
 
     Compress-Archive -Force  `
-        -Path "$OutputPath/$($CdfConfig.Service.Config.serviceName)/*"  `
+        -Path "$OutputPath/*"  `
         -DestinationPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip"
 
     Publish-AzWebApp -Force `
