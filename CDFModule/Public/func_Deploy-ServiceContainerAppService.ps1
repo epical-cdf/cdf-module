@@ -149,7 +149,7 @@
                 }
                 else {
                     # $Parameters.External.value[$externalSettingKey] = $secret
-                    $updateSettings["EXTERNAL_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
+                    $updateSettings["EXT_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
 
                     $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
                     $appSettingKey = "EXT_$serviceSettingKey"
