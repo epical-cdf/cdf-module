@@ -103,11 +103,11 @@
         switch ($setting.Type) {
             "Constant" {
                 #  $Parameters.Service.value[$serviceSettingKey] = $setting.Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
+                $updateSettings["SVC_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
             }
             "Setting" {
                 # $Parameters.Service.value[$serviceSettingKey] = $setting.Values[0].Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
+                $updateSettings["SVC_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
 
             }
             "Secret" {
@@ -127,13 +127,13 @@
         switch ($setting.Type) {
             "Constant" {
                 # $Parameters.External.value[$externalSettingKey] = $setting.Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
+                $updateSettings["EXT_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
 
             }
             "Setting" {
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
                 # $Parameters.External.value[$externalSettingKey] = $setting.Values[0].Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = $value
+                $updateSettings["EXT_$serviceSettingKey"] = $value
             }
             "Secret" {
                 $secret = Get-AzKeyVaultSecret `
@@ -164,28 +164,40 @@
     }
 
     # Configure service API URLs
-    $updateSettings["SERVICE_API_BASEURL"] = "https://$($app.HostNames[0])"
+    $updateSettings["CDF_SERVICE_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
-    $updateSettings["SERVICE_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
+    $updateSettings["CDF_SERVICE_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
 
     #-------------------------------------------------------------
     # Preparing the app settings
     #-------------------------------------------------------------
 
+    # CDF Env details
+    $updateSettings["CDF_ENV_DEFINITION_ID"] = $CdfConfig.Application.Env.definitionId
+    $updateSettings["CDF_ENV_NAME_ID"] = $CdfConfig.Application.Env.nameId
+    $updateSettings["CDF_ENV_NAME"] = $CdfConfig.Application.Env.name
+    $updateSettings["CDF_ENV_SHORT_NAME"] = $CdfConfig.Application.Env.shortName
+    $updateSettings["CDF_ENV_DESCRIPTION"] = $CdfConfig.Application.Env.description
+    $updateSettings["CDF_ENV_PURPOSE"] = $CdfConfig.Application.Env.purpose
+    $updateSettings["CDF_ENV_QUALITY"] = $CdfConfig.Application.Env.quality
+    $updateSettings["CDF_ENV_REGION_CODE"] = $CdfConfig.Application.Env.regionCode
+    $updateSettings["CDF_ENV_REGION_NAME"] = $CdfConfig.Application.Env.regionName
+
     # Service Identity
-    $updateSettings["SERVICE_NAME"] = $CdfConfig.Service.Config.serviceName
-    $updateSettings["SERVICE_TYPE"] = $CdfConfig.Service.Config.serviceType
-    $updateSettings["SERVICE_GROUP"] = $CdfConfig.Service.Config.serviceGroup
-    $updateSettings["SERVICE_TEMPLATE"] = $CdfConfig.Service.Config.serviceTemplate
-    $updateSettings["DOMAIN_NAME"] = $CdfConfig.Domain.Config.domainName
+    $updateSettings["CDF_SERVICE_NAME"] = $CdfConfig.Service.Config.serviceName
+    $updateSettings["CDF_SERVICE_TYPE"] = $CdfConfig.Service.Config.serviceType
+    $updateSettings["CDF_SERVICE_GROUP"] = $CdfConfig.Service.Config.serviceGroup
+    $updateSettings["CDF_SERVICE_TEMPLATE"] = $CdfConfig.Service.Config.serviceTemplate
+    $updateSettings["CDF_DOMAIN_NAME"] = $CdfConfig.Domain.Config.domainName
 
     # Build information
-    $updateSettings["BUILD_COMMIT"] = $env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)
-    $updateSettings["BUILD_RUN"] = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
-    $updateSettings["BUILD_BRANCH"] = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
-    $updateSettings["BUILD_REPOSITORY"] = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
-    $updateSettings["BUILD_PIPELINE"] = $env:GITHUB_WORKFLOW_REF ?? $env:BUILD_DEFINITIONNAME ?? "local"
+    $updateSettings["CDF_BUILD_COMMIT"] = $env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)
+    $updateSettings["CDF_BUILD_RUN"] = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
+    $updateSettings["CDF_BUILD_BRANCH"] = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
+    $updateSettings["CDF_BUILD_REPOSITORY"] = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
+    $updateSettings["CDF_BUILD_PIPELINE"] = $env:GITHUB_WORKFLOW_REF ?? $env:BUILD_DEFINITIONNAME ?? "local"
+    $updateSettings["CDF_BUILD_BRANCH"] = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
 
     $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.gen.json"
 
