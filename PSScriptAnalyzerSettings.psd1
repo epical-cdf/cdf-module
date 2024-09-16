@@ -26,6 +26,7 @@
     )
     ExcludeRules = @(
         'PSUseSingularNouns',
-        'PSAvoidUsingWriteHost'
+        'PSAvoidUsingWriteHost',
+        'PSAvoidGlobalVars'
     )
 }

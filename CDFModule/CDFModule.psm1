@@ -11,8 +11,6 @@ Get-ChildItem "$(Split-Path $script:MyInvocation.MyCommand.Path)\Public\*" -Filt
 }
 
 Set-Alias -Scope Global -Name cdf-profile -Value "Import-CdfProfile" -Description "Load the standard CDFModule profile which includes customized prompt."
-Set-Alias -Scope Global -Name cdf-prompt-on -Value "Enable-CdfPrompt"
-Set-Alias -Scope Global -Name cdf-prompt-off -Value "Disable-CdfPrompt"
 
 Export-ModuleMember -Alias *
 # Get-ChildItem "$(Split-Path $script:MyInvocation.MyCommand.Path)\Private\*" -Filter 'type_*.ps1' -Recurse | ForEach-Object {
@@ -49,5 +47,4 @@ Export-ModuleMember -Alias *
 #   }
 # }
 
-# Force import of the CDF PowerShell Profile
 Import-Profile
