@@ -11,16 +11,16 @@ Function Import-KeyVaultSecrets {
 
     [
         {
-            "kvSecretName": "System-AppA-Secret",
-            "kvValue": "app-a-secret"
+            "kvSecretName": "Secret-1",
+            "kvValue": "somevalue"
         },
         {
-            "kvSecretName": "System-AppB-Dev-Secret",
-            "kvValue": "app-b-dev-secret"
+            "kvSecretName": "Secret-2",
+            "kvValue": "somevalue"
         },
         {
-            "kvSecretName": "System-AppB-Test-Secret",
-            "kvValue": "app-b-tst-secret"
+            "kvSecretName": "Secret-3",
+            "kvValue": "somevalue"
         }
     ]
 

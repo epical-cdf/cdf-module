@@ -7,25 +7,22 @@ Function Import-GitHubSecretsToKeyVault {
     .DESCRIPTION
     The command takes 3 inputs:
     - JSON (As Hashtable) of all configured GitHub secrets.
-      Format must have the following format:
+      Must have the following format:
       {
-        "Key1": "Value1",
-        "Key2": "Value2"
+        "Secret1": "somevalue",
+        "Secret2": "somevalue",
+        "Secret3": "somevalue"
       }
     - path of the file having list of GitHub secrets to be imported and respective key name to be used in KV.
       The file must have the following JSON format:
       [
         {
-          "kvSecretName": "Test-Cert-Password-wildcard-axesslogistics-com",
-          "ghSecretName": "AXL_CERT_PASSWORD"
+          "kvSecretName": "Secret-1",
+          "ghSecretName": "Secret1"
         },
         {
-          "kvSecretName": "Test-ODGW-ServiceAccount-Username",
-          "ghSecretName": "AXL_ODGW_USERNAME"
-        },
-        {
-          "kvSecretName": "Test-ODGW-ServiceAccount-Password",
-          "ghSecretName": "AXL_ODGW_PASSWORD"
+          "kvSecretName": "Secret-3",
+          "ghSecretName": "Secret3"
         }
       ]
     - KeyVault where secrets has to be imported.    
