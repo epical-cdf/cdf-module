@@ -123,12 +123,12 @@
         $setting = $serviceConfig.ExternalSettings[$externalSettingKey]
         switch ($setting.Type) {
             "Constant" {
-                $updateSettings["EXT_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
+                $updateSettings["EXT_$externalSettingKey"] = ($setting.Value | Out-String -NoNewline)
 
             }
             "Setting" {
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-                $updateSettings["EXT_$serviceSettingKey"] = $value
+                $updateSettings["EXT_$externalSettingKey"] = $value
             }
             "Secret" {
                 $secret = Get-AzKeyVaultSecret `
@@ -143,10 +143,10 @@
                     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
                 }
                 else {
-                    $updateSettings["EXT_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
+                    $updateSettings["EXT_$externalSettingKey"] = ($secret | Out-String -NoNewline)
 
                     $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    $appSettingKey = "EXT_$serviceSettingKey"
+                    $appSettingKey = "EXT_$externalSettingKey"
                     $updateSettings[$appSettingKey] = $appSettingRef
                     Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
 
