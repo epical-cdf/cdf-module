@@ -36,11 +36,10 @@ Function Import-KeyVaultSecrets {
     .EXAMPLE
     PS> Import-CdfGitHubSecretsToKeyVault ... | Import-CdfKeyVaultSecrets `
             -Name "KeyVault Name"
-            
 
     PS> (Get-Content  "secrets json file path" | ConvertFrom-Json -AsHashtable) `
             | Import-CdfKeyVaultSecrets `
-            -Name "KeyVault Name" 
+            -Name "KeyVault Name"
 
     .LINK
     Import-CdfGitHubSecretsToKeyVault
@@ -50,21 +49,26 @@ Function Import-KeyVaultSecrets {
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [hashtable] $Secrets,    
+        [hashtable]$Secrets,
         [Parameter(Mandatory = $true)]
-        [string] $Name        
+        [string] $Name
     )
-    
-    foreach ($Secret in $Secrets) {
-        Write-Verbose "Processing $($Secret.kvSecretName)"
-        $CurrentSecret = Get-AzKeyVaultSecret -VaultName $Name -Name $Secret.kvSecretName -AsPlainText 
-        if($Secret.kvValue  -eq $CurrentSecret) {
-            Write-Verbose " - Existing, match, no change"
-        } else {
-            Write-Verbose " - Add/Update"
-            $SecretValue = ConvertTo-SecureString $Secret.kvValue -AsPlainText -Force 
-            Set-AzKeyVaultSecret -VaultName $Name -Name $Secret.kvSecretName -SecretValue $SecretValue
+
+    Begin {}
+    Process {
+        Write-Verbose (ConvertTo-Json $Secrets)
+        foreach ($Secret in $Secrets) {
+            Write-Verbose "Processing $($Secret.kvSecretName)"
+            $CurrentSecret = Get-AzKeyVaultSecret -VaultName $Name -Name $Secret.kvSecretName -AsPlainText
+            if ($Secret.kvValue -eq $CurrentSecret) {
+                Write-Verbose " - Existing, match, no change"
+            }
+            else {
+                Write-Verbose " - Add/Update"
+                $SecretValue = ConvertTo-SecureString $Secret.kvValue -AsPlainText -Force
+                Set-AzKeyVaultSecret -VaultName $Name -Name $Secret.kvSecretName -SecretValue $SecretValue
+            }
         }
     }
-
+    End {}
 }

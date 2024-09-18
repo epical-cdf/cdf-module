@@ -1,5 +1,5 @@
 Function Import-GitHubSecretsToKeyVault {
-    <#
+  <#
     .SYNOPSIS
 
     Imports a set of secrets from GitHub into a target key vault.
@@ -25,7 +25,7 @@ Function Import-GitHubSecretsToKeyVault {
           "ghSecretName": "Secret3"
         }
       ]
-    - KeyVault where secrets has to be imported.    
+    - KeyVault where secrets has to be imported.
 
     .PARAMETER GithubSecrets
     GitHub Secrets as HashTable
@@ -47,35 +47,36 @@ Function Import-GitHubSecretsToKeyVault {
         -GithubKeyVaultMappingFilePath "FilePath" -KeyVaultName "KeyVaultName"
 
     .LINK
-    
+
     #>
 
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)]
-        [hashtable] $GithubSecrets,    
-        [Parameter(Mandatory = $true)]
-        [string] $GithubKeyVaultMappingFilePath,
-        [Parameter(Mandatory = $true)]
-        [string] $KeyVaultName        
-    )    
-            if (Test-Path $GithubKeyVaultMappingFilePath) {
-              $ghKvList = Get-Content  $GithubKeyVaultMappingFilePath | ConvertFrom-Json -AsHashtable
-              $secretsList = @()
-              foreach($ghKvItem in $ghKvList) {
-                foreach($ghSecret in $GithubSecrets.Keys) {
-                  if($ghKvItem.ghSecretName -eq $ghSecret){
-                    $keyValue = @{
-                      kvSecretName = $ghKvItem.kvSecretName
-                      kvValue = $GithubSecrets[$ghSecret]}   
-                    $secretsList += $keyValue
-                  }
-                }
-              }              
-              $secretsList | Import-KeyVaultSecrets -Name $KeyVaultName
-            }
-            else {
-                Write-Host "No secrets needed to be imported from GitHub to KeyVault"
-            }
+  [CmdletBinding()]
+  Param(
+    [Parameter(Mandatory = $true)]
+    [hashtable] $GithubSecrets,
+    [Parameter(Mandatory = $true)]
+    [string] $GithubKeyVaultMappingFilePath,
+    [Parameter(Mandatory = $true)]
+    [string] $KeyVaultName
+  )
+  if (Test-Path $GithubKeyVaultMappingFilePath) {
+    $ghKvList = Get-Content  $GithubKeyVaultMappingFilePath | ConvertFrom-Json -AsHashtable
+    $secretsList = @()
+    foreach ($ghKvItem in $ghKvList) {
+      foreach ($ghSecret in $GithubSecrets.Keys) {
+        if ($ghKvItem.ghSecretName -eq $ghSecret) {
+          $secretsList += @{
+            kvSecretName = $ghKvItem.kvSecretName
+            kvValue      = $GithubSecrets[$ghSecret]
+          }
+        }
+      }
+    }
+    Write-Verbose (ConvertTo-Json $secretsList)
+    $secretsList | Import-KeyVaultSecrets -Name $KeyVaultName
+  }
+  else {
+    Write-Host "No secrets needed to be imported from GitHub to KeyVault"
+  }
 
 }
