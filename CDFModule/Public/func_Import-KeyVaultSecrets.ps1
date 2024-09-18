@@ -56,7 +56,6 @@ Function Import-KeyVaultSecrets {
 
     Begin {}
     Process {
-        Write-Verbose (ConvertTo-Json $Secrets)
         foreach ($Secret in $Secrets) {
             Write-Verbose "Processing $($Secret.kvSecretName)"
             $CurrentSecret = Get-AzKeyVaultSecret -VaultName $Name -Name $Secret.kvSecretName -AsPlainText

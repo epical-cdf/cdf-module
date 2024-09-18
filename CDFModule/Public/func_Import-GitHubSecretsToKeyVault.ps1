@@ -72,8 +72,6 @@ Function Import-GitHubSecretsToKeyVault {
         }
       }
     }
-    Write-Verbose (ConvertTo-Json $secretsList)
-    $secretsList | Import-KeyVaultSecrets -Name $KeyVaultName
   }
   else {
     Write-Host "No secrets needed to be imported from GitHub to KeyVault"
