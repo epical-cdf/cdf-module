@@ -65,6 +65,7 @@ Function Import-GitHubSecretsToKeyVault {
     foreach ($ghKvItem in $ghKvList) {
       foreach ($ghSecret in $GithubSecrets.Keys) {
         if ($ghKvItem.ghSecretName -eq $ghSecret) {
+          Write-Verbose "Include GitHub Secret $($ghKvItem.ghSecretName)"
           $secretsList += @{
             kvSecretName = $ghKvItem.kvSecretName
             kvValue      = $GithubSecrets[$ghSecret]
@@ -72,6 +73,7 @@ Function Import-GitHubSecretsToKeyVault {
         }
       }
     }
+    $secretsList | Import-KeyVaultSecrets -Name $KeyVaultName
   }
   else {
     Write-Host "No secrets needed to be imported from GitHub to KeyVault"
