@@ -29,7 +29,7 @@
             -Application $CdfConfig.Application `
             -Domain $CdfConfig.Domain `
             -Service $CdfConfig.Service `
-            -InputPath "./la-<name>" `
+            -InputPath "./cs-<name>" `
             -OutputPath "./build"
 
         .LINK
@@ -50,7 +50,7 @@
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [hashtable]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [string] $InputPath = "./logicapp",
+        [string] $InputPath = ".",
         [Parameter(Mandatory = $false)]
         [string] $OutputPath = "../tmp/$($CdfConfig.Service.Config.serviceName)",
         [Parameter(Mandatory = $false)]
@@ -59,10 +59,10 @@
 
     Write-Host "Preparing Container App Service implementation deployment."
 
-    # Copy service/logicapp implementation
+    # Copy service implementation
     $containerFiles = @(
         'cdf-config.json',
-        '*'
+        'cdf-secrets.json'
     )
     Copy-Item -Force -Recurse -Include $containerFiles -Path $InputPath/* -Destination $OutputPath
 
@@ -109,6 +109,16 @@
 
             }
             "Secret" {
+                $secret = Get-AzKeyVaultSecret `
+                    -DefaultProfile $azCtx `
+                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
+                    -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
+                    -ErrorAction SilentlyContinue
+
+                if ($null -eq $secret) {
+                    Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found in KeyVault"
+                    Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
+                }
                 $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
                 $appSettingKey = "Param_$serviceSettingKey"
                 $updateSettings[$appSettingKey] = $appSettingRef
@@ -135,23 +145,17 @@
                     -DefaultProfile $azCtx `
                     -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
                     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                    -AsPlainText `
                     -ErrorAction SilentlyContinue
 
                 if ($null -eq $secret) {
                     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
                     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
                 }
-                else {
-                    $updateSettings["EXT_$externalSettingKey"] = ($secret | Out-String -NoNewline)
 
-                    $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    $appSettingKey = "EXT_$externalSettingKey"
-                    $updateSettings[$appSettingKey] = $appSettingRef
-                    Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-
-                }
-
+                $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
+                $appSettingKey = "EXT_$externalSettingKey"
+                $updateSettings[$appSettingKey] = $appSettingRef
+                Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
             }
         }
     }

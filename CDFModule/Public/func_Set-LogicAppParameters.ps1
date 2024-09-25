@@ -136,7 +136,7 @@
         switch ($setting.Type) {
             "Constant" {
                 if ($setting.IsAppSetting) {
-                    $appSettingKey = "External_$externalSettingKey"
+                    $appSettingKey = "EXT_$externalSettingKey"
                     $appsettings[$appSettingKey] = $setting.Values[0].Value
                     $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
                 }
@@ -148,7 +148,7 @@
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
 
                 if ($setting.IsAppSetting) {
-                    $appSettingKey = "External_$externalSettingKey"
+                    $appSettingKey = "EXT_$externalSettingKey"
                     $appsettings[$appSettingKey] = $value
                     $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
                 }
@@ -163,7 +163,7 @@
                     -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
                     -ErrorAction SilentlyContinue
                 $appSettingRef = "@Microsoft.KeyVault(SecretUri=$($keyVault.VaultUri)secrets/$secretName)"
-                $appSettingKey = "External_$externalSettingKey"
+                $appSettingKey = "EXT_$externalSettingKey"
                 $appsettings[$appSettingKey] = $appSettingRef
                 $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
                 Write-Verbose "Prepared KeyVault secret reference for Setting [$externalSettingKey] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"

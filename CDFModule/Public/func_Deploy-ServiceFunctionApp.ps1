@@ -155,26 +155,25 @@
         switch ($setting.Type) {
             "Constant" {
                 #  $Parameters.Service.value[$serviceSettingKey] = $setting.Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
+                $updateSettings["SVC_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
             }
             "Setting" {
                 # $Parameters.Service.value[$serviceSettingKey] = $setting.Values[0].Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
+                $updateSettings["SVC_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
 
             }
             "Secret" {
-                # $secret = Get-AzKeyVaultSecret `
-                #     -DefaultProfile $azCtx `
-                #     -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                #     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                #     -AsPlainText `
-                #     -ErrorAction SilentlyContinue
+                $secret = Get-AzKeyVaultSecret `
+                    -DefaultProfile $azCtx `
+                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
+                    -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
+                    -ErrorAction SilentlyContinue
 
-                # if ($null -eq $secret) {
-                #     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
-                #     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
-                # }
-                # else {
+                if ($null -eq $secret) {
+                    Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
+                    Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
+                }
+
                 $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
                 $appSettingKey = "Param_$serviceSettingKey"
                 $updateSettings[$appSettingKey] = $appSettingRef
@@ -191,47 +190,42 @@
         $setting = $serviceConfig.ExternalSettings[$externalSettingKey]
         switch ($setting.Type) {
             "Constant" {
-                # $Parameters.External.value[$externalSettingKey] = $setting.Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
+                $updateSettings["EXT_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
 
             }
             "Setting" {
                 [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = $value
+                $updateSettings["EXT_$serviceSettingKey"] = $value
             }
             "Secret" {
                 $secret = Get-AzKeyVaultSecret `
                     -DefaultProfile $azCtx `
                     -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
                     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                    -AsPlainText `
                     -ErrorAction SilentlyContinue
 
                 if ($null -eq $secret) {
                     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
                     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
                 }
-                else {
-                    # $Parameters.External.value[$externalSettingKey] = $secret
-                    $updateSettings["EXTERNAL_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
 
-                    $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    $appSettingKey = "EXT_$serviceSettingKey"
-                    $updateSettings[$appSettingKey] = $appSettingRef
-                    $Parameters.Service.value[$setting.Identifier] = "@appsetting('$appSettingKey')"
-                    Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
+                $updateSettings["EXT_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
 
-                }
+                $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
+                $appSettingKey = "EXT_$serviceSettingKey"
+                $updateSettings[$appSettingKey] = $appSettingRef
+                $Parameters.Service.value[$setting.Identifier] = "@appsetting('$appSettingKey')"
+                Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
 
             }
         }
     }
 
     # Configure service API URLs
-    $updateSettings["SERVICE_API_BASEURL"] = "https://$($app.HostNames[0])"
+    $updateSettings["SVC_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
-    $updateSettings["SERVICE_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
+    $updateSettings["SVC_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
 
     # Run from package
     $updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
