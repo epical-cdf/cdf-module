@@ -53,14 +53,16 @@
         [string] $ConfigPath
     )
 
-    if ($false -eq (Test-Path "$ConfigPath")) {
-        Write-Verbose "No domain named values configuration - returning"
-        return
-    }
-
-    $cdfConfigFile = Resolve-Path "$ConfigPath/cdf-config.json"
+    $cdfConfigFile = Join-Path -Path $ConfigPath -ChildPath 'cdf-config.json' | Resolve-Path -ErrorAction:SilentlyContinue
 
     if (!$null -eq $cdfConfigFile) {
+        $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+        if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+            Write-Error "Service configuration file did not validate. Please check errors above and correct."
+            Write-Error "File path:  $configJson"
+            return
+        }
+
         $svcConfig = Get-Content -Path $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
         foreach ($NamedValue in $svcConfig.ServiceSettings.namedValues) {
