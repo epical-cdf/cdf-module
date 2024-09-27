@@ -123,8 +123,14 @@
     }
 
     # Get service config from cdf-config.json
-    $serviceConfig = Get-Content -Path "$InputPath/cdf-config.json" | ConvertFrom-Json -AsHashtable
-
+    $cdfConfigFile = Join-Path -Path $InputPath  -ChildPath 'cdf-config.json'
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+        Write-Error "Service configuration file did not validate. Please check errors above and correct."
+        Write-Error "File path:  $cdfConfigFile"
+        return
+    }
+    $serviceConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
     #--------------------------------------
     # Configure connections for target env
