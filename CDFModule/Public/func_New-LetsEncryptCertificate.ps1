@@ -174,7 +174,7 @@
             $regionCode = $CdfConfig.Platform.Env.regionCode
             $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)"
             $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
-            $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
+            $applicationKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
             $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
 
             $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName

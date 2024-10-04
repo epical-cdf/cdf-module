@@ -53,7 +53,7 @@
 
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.platformInstanceId)"
     $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.platformInstanceId)"
-    $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)"
+    $applicationKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)"
     $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
     $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
     $regionCode = $CdfConfig.Application.Config.regionCode
