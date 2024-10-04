@@ -142,7 +142,8 @@
 
                 }
                 $matrix += $env
-            } else {
+            }
+            else {
                 Write-Verbose "`tSkipping env is [$($platformEnv.isEnabled)]"
             }
 
