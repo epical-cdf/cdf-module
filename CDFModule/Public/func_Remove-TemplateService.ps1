@@ -61,7 +61,7 @@ Function Remove-TemplateService {
         $regionCode = $CdfConfig.Platform.Env.regionCode
         $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)"
         $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
-        $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
+        $applicationKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
         $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
         $templateInstance = "$platformKey-$applicationKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName)-$regionCode"
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName)-$regionCode"
