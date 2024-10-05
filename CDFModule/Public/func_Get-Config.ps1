@@ -67,8 +67,16 @@
   }
 
   # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precendens
-  if (Test-Path 'cdf-config.json') {
-    $svcConfig = Get-Content -Raw "cdf-config.json" | ConvertFrom-Json -AsHashtable
+  $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
+  if (Test-Path $cdfConfigFile) {
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+      Write-Error "Service configuration file did not validate. Please check errors above and correct."
+      Write-Error "File path:  $cdfConfigFile"
+      return
+    }
+    $svcConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
+
     $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $svcConfig.ServiceDefaults.ServiceName
     $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $svcConfig.ServiceDefaults.ServiceGroup
     $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $svcConfig.ServiceDefaults.ServiceType

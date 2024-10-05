@@ -92,7 +92,15 @@
     #--------------------------------------
     Write-Host "Preparing parameters."
 
-    $serviceConfig = Get-Content -Path "$InputPath/cdf-config.json" | ConvertFrom-Json -AsHashtable
+    $cdfConfigFile = Join-Path -Path $InputPath  -ChildPath 'cdf-config.json'
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+        Write-Error "Service configuration file did not validate. Please check errors above and correct."
+        Write-Error "File path:  $cdfConfigFile"
+        return
+    }
+    $serviceConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
+
     $parameters = Get-Content -Path "$InputPath/parameters.json" | ConvertFrom-Json -AsHashtable
 
     # TODO: Fix this workaround with override of the logic app infra build tags to set the logic app implementation build context parameters

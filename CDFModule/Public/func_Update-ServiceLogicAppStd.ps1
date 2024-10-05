@@ -156,11 +156,14 @@
     # Get current service configurations
     #############################################################
 
-    $configJson = Get-Content -Raw "$ServicePath/cdf-config.json"
-    if (!(Test-Json -SchemaFile "$CdfSharedPath/schemas/cdf-config.schema.json" -Json $configJson)) {
-        throw "Service configuration file did not validate. Please check errors above and correct."
+    $cdfConfigFile = Join-Path -Path $ServicePath  -ChildPath 'cdf-config.json'
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+        Write-Error "Service configuration file did not validate. Please check errors above and correct."
+        Write-Error "File path:  $cdfConfigFile"
+        return
     }
-    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable
+    $svcConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
     # Update app setting with "local" then "app"
     if (Test-Path "$ServicePath/local.settings.json") {

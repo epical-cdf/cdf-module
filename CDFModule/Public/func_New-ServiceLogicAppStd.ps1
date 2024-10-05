@@ -154,13 +154,21 @@
     }
 
     #############################################################
+    # Validate and get cdf config for template service
+    ############################################################
+    $cdfConfigFile = Join-Path -Path $SharedTemplatePath -ChildPath $ServiceType -AdditionalChildPath 'cdf-config.json'
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+        Write-Error "Service configuration file did not validate. Please check errors above and correct."
+        Write-Error "File path:  $cdfConfigFile"
+        return
+    }
+    $serviceConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
+
+
+    #############################################################
     # Copy template for service type
     #############################################################
-
-    $configJson = Get-Content -Raw "$SharedTemplatePath/$ServiceType/cdf-config.json"
-    if (!(Test-Json -SchemaFile "$CdfSharedPath/schemas/cdf-config.schema.json" -Json $configJson)) {
-        throw "Service configuration file did not validate. Please check errors above and correct."
-    }
 
     # Copy Logic App Standard base
     Copy-Item -Recurse `
@@ -230,8 +238,6 @@
     #############################################################
     # Setup the service CDF Config file from template
     #############################################################
-
-    $serviceConfig = Get-Content -Path "$SharedTemplatePath/$ServiceType/cdf-config.json" | ConvertFrom-Json -AsHashtable
     $serviceConfig.ServiceDefaults.ServiceName = $ServiceName
     $serviceConfig.ServiceDefaults.ServiceGroup = $ServiceGroup
     $serviceConfig.ServiceDefaults.ServiceType = $ServiceType

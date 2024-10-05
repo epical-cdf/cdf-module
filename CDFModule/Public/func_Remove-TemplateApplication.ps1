@@ -295,7 +295,7 @@
             }
 
             # TODO: Replace with Az Module commands once available.
-            $config | Get-ApiManagementDeletedService | ForEach-Object -Process {
+            $CdfConfig | Get-ApiManagementDeletedService | ForEach-Object -Process {
                 if ($allResources -and ($allResources | ForEach-Object -Process { $_.Name }).Contains($_.name)) {
                     Write-Host "`tPurging deleted API Management service [$($_.name)] "
                     $CdfConfig | Remove-ApiManagementDeletedService -Name $_.name

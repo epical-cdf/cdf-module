@@ -46,9 +46,15 @@
     #############################################################
     # Get current service configurations
     #############################################################
+    $cdfConfigFile = Join-Path -Path $ServicePath  -ChildPath 'cdf-config.json'
+    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
+        Write-Error "Service configuration file did not validate. Please check errors above and correct."
+        Write-Error "File path:  $cdfConfigFile"
+        return
+    }
+    $svcConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
-    $configJson = Get-Content -Raw "cdf-config.json"
-    $svcConfig = ConvertFrom-Json -InputObject $configJson -AsHashtable
     $azCtx = Get-AzureContext -Subscription $CdfConfig.Platform.Env.subscriptionId
     if ($Internal) {
         # Service internal settings
