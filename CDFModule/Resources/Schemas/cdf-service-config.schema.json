@@ -205,7 +205,7 @@
           "const": "Constant"
         },
         "Value": {
-          "type": "string"
+          "type": ["string", "boolean", "number"]
         },
         "Description": {
           "type": "string"
@@ -238,7 +238,7 @@
                 "type": "string"
               },
               "Value": {
-                "type": "string"
+                "type": ["string", "boolean", "number"]
               }
             },
             "additionalProperties": false
