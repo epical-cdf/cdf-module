@@ -74,26 +74,7 @@
         '.funcignore'
     )
 
-    Copy-Item -Force -Recurse -Include $functionFiles -Path $InputPath/* -Destination $OutputPath
-
-    # Write-Host "Build function..."
-    # Push-Location $OutputPath
-    # npm install
-    # npm run build
-    # Remove-Item -Force -Recurse node_modules
-    # npm install --omit=dev
-    # Pop-Location
-
-    # Copy-Item -Force -Recurse -Exclude $exclude -Path $InputPath/* -Destination $OutputPath
-
-    # Get-ChildItem -Path $InputPath/* -Recurse -Exclude $exclude | Copy-Item -Force -Destination {
-    #     if ($_.GetType() -eq [System.IO.FileInfo]) {
-    #         Join-Path -Path  $OutputPath $_.FullName.Substring($InputPath.length)
-    #     }
-    #     else {
-    #         Join-Path -Path  $OutputPath $_.Parent.FullName.Substring($InputPath.length)
-    #     }
-    # }
+    Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath    
 
     ## Adjust these if template changes regarding placement of appService for the service
     $appServiceRG = $CdfConfig.Service.ResourceNames.functionAppResourceGroup
@@ -122,117 +103,7 @@
         $updateSettings[$setting.Name] = $setting.Value
     }
 
-    # Get service config from cdf-config.json
-    $cdfConfigFile = Join-Path -Path $InputPath  -ChildPath 'cdf-config.json'
-    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
-    if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
-        Write-Error "Service configuration file did not validate. Please check errors above and correct."
-        Write-Error "File path:  $cdfConfigFile"
-        return
-    }
-    $serviceConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
-
-    #--------------------------------------
-    # Configure connections for target env
-    #--------------------------------------
-    Write-Host "Preparing connections."
-    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
-    $svcConns = $serviceConfig.Connections ?? $connectionDefinitions.Keys
-
-    # TODO: Make these configurable using a "platform services" definition file
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`tConnection setting for $connectionName"
-            Add-LogicAppAppSettings `
-                -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-                -Settings $updateSettings `
-                -Config $CdfConfig[$definition.Scope] `
-                -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey `
-                -ServiceProvider $definition.ServiceProvider
-        }
-    }
-
-    # Service internal settings
-    foreach ($serviceSettingKey in $serviceConfig.ServiceSettings.Keys) {
-        Write-Host "Adding service internal setting: $serviceSettingKey"
-        $setting = $serviceConfig.ServiceSettings[$serviceSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                #  $Parameters.Service.value[$serviceSettingKey] = $setting.Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
-            }
-            "Setting" {
-                # $Parameters.Service.value[$serviceSettingKey] = $setting.Values[0].Value
-                $updateSettings["SERVICE_$serviceSettingKey"] = ($setting.Values[0].Value | Out-String -NoNewline)
-
-            }
-            "Secret" {
-                # $secret = Get-AzKeyVaultSecret `
-                #     -DefaultProfile $azCtx `
-                #     -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                #     -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                #     -AsPlainText `
-                #     -ErrorAction SilentlyContinue
-
-                # if ($null -eq $secret) {
-                #     Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
-                #     Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
-                # }
-                # else {
-                $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                $appSettingKey = "Param_$serviceSettingKey"
-                $updateSettings[$appSettingKey] = $appSettingRef
-                $Parameters.Service.value[$setting.Identifier] = "@appsetting('$appSettingKey')"
-                Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-                # }
-            }
-        }
-    }
-
-    # Service external settings
-    foreach ($externalSettingKey in $serviceConfig.ExternalSettings.Keys) {
-        Write-Host "Adding service external setting: $externalSettingKey"
-        $setting = $serviceConfig.ExternalSettings[$externalSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                # $Parameters.External.value[$externalSettingKey] = $setting.Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = ($setting.Value | Out-String -NoNewline)
-
-            }
-            "Setting" {
-                [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-                $updateSettings["EXTERNAL_$serviceSettingKey"] = $value
-            }
-            "Secret" {
-                $secret = Get-AzKeyVaultSecret `
-                    -DefaultProfile $azCtx `
-                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                    -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                    -AsPlainText `
-                    -ErrorAction SilentlyContinue
-
-                if ($null -eq $secret) {
-                    Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found"
-                    Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
-                }
-                else {
-                    # $Parameters.External.value[$externalSettingKey] = $secret
-                    $updateSettings["EXTERNAL_$serviceSettingKey"] = ($secret | Out-String -NoNewline)
-
-                    $appSettingRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    $appSettingKey = "EXT_$serviceSettingKey"
-                    $updateSettings[$appSettingKey] = $appSettingRef
-                    $Parameters.Service.value[$setting.Identifier] = "@appsetting('$appSettingKey')"
-                    Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-
-                }
-
-            }
-        }
-    }
-
+    Get-ServiceConfigSettings -CdfConfig $CdfConfig -UpdateSettings $updateSettings -InputPath $InputPath -Deployed
     # Configure service API URLs
     $updateSettings["SERVICE_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
