@@ -110,10 +110,10 @@
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
     $updateSettings["SERVICE_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
 
-    # Run from package
-    $updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
-    $updateSettings["SCM_DO_BUILD_DURING_DEPLOYMENT"] = "true"
-    $updateSettings["ENABLE_ORYX_BUILD"] = "true"
+    # Run from package. Not to be used with .net functions app
+    #$updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
+    #$updateSettings["SCM_DO_BUILD_DURING_DEPLOYMENT"] = "true"
+    #$updateSettings["ENABLE_ORYX_BUILD"] = "true"
 
 
     # Add default app settings if exists - override any generated app settings
