@@ -2,12 +2,12 @@
     <#
         .SYNOPSIS
         Deploys a Container App Service implementation and condfiguration
+        
+        .SYNOPSIS
+        Deploys a Container service to an App Service implementation and configuration
 
         .DESCRIPTION
-        The cmdlet deploys a Container App Service implementation with configuration of app settings, parameters and connections.
-
-        .PARAMETER CdfConfig
-        The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
+        The cmdlet deploys a Container service to an App Service implementation with configuration of app settings, parameters and connections.
 
         .PARAMETER InputPath
         Path to the Container implementation including cdf-config.json.
@@ -58,6 +58,8 @@
     )
 
     Write-Host "Preparing Container App Service implementation deployment."
+
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
     # Copy service implementation
     $containerFiles = @(

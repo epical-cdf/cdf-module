@@ -85,7 +85,7 @@
     Write-Verbose "logicAppRG: $logicAppRG"
     Write-Verbose "logicAppName: $logicAppName"
 
-    $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
     #--------------------------------------
     # Configure parameters for target env
