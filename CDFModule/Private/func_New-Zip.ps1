@@ -33,6 +33,8 @@ Function New-Zip {
         # keep sync between folder and zip (doesn"t do anything if OverwriteZip=true) - delete surplus files from zip
         [Alias("s")][switch]
         $Sync,
+        [Alias("ih")][switch]
+        $IncludeHidden,
         # verbose output
         [Alias("v")][switch]
         $Verbose
@@ -73,7 +75,12 @@ Function New-Zip {
     try {
         $ZipArchive = [IO.Compression.ZipFile]::Open( $ZipPath, 2 )
         foreach ($FolderPath in $FolderPaths) {
-            $FileList = (Get-ChildItem -LiteralPath $FolderPath -Filter $Filter -Exclude $Exclude -File -Recurse | Where-Object $FilterScript) #use the -File argument because empty folders can"t be stored
+            if ($IncludeHidden) {
+                $FileList = (Get-ChildItem -LiteralPath $FolderPath -Filter $Filter -Exclude $Exclude -File -Recurse -Force | Where-Object $FilterScript) #use the -File argument because empty folders can"t be stored
+            }
+            else {
+                $FileList = (Get-ChildItem -LiteralPath $FolderPath -Filter $Filter -Exclude $Exclude -File -Recurse | Where-Object $FilterScript) #use the -File argument because empty folders can"t be stored
+            }
             foreach ($File in $FileList) {
                 if ($File.FullName.endsWith($ZipPath)) { continue }
                 # get relative path and trim leading .\ from it
