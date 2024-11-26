@@ -57,7 +57,7 @@
         $regionCode = $CdfConfig.Platform.Env.regionCode
         $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)"
         $platformEnvKey = "$platformKey$($CdfConfig.Platform.Env.nameId)"
-        $applicationKey = "$($CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
+        $applicationKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
         $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
         $templateInstance = "$platformKey-$applicationKey-$regionCode"
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$regionCode"
@@ -295,7 +295,7 @@
             }
 
             # TODO: Replace with Az Module commands once available.
-            $config | Get-ApiManagementDeletedService | ForEach-Object -Process {
+            $CdfConfig | Get-ApiManagementDeletedService | ForEach-Object -Process {
                 if ($allResources -and ($allResources | ForEach-Object -Process { $_.Name }).Contains($_.name)) {
                     Write-Host "`tPurging deleted API Management service [$($_.name)] "
                     $CdfConfig | Remove-ApiManagementDeletedService -Name $_.name

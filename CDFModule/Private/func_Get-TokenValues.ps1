@@ -25,6 +25,7 @@
             EnvNameId         = $CdfConfig.Application.Env.nameId
             EnvShortName      = $CdfConfig.Application.Env.shortName
             DomainName        = $CdfConfig.Domain.Config.domainName
+            DomainStorageName = $CdfConfig.Domain.ResourceNames.storageAccountName
             ServiceName       = $CdfConfig.Service.Config.serviceName
             ServiceGroup      = $CdfConfig.Service.Config.serviceGroup
             ServiceType       = $CdfConfig.Service.Config.serviceType

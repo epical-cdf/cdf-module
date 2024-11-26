@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://cdf.epicalgroup.com/apim-nv-secrets.json",
+  "title": "This schema represents the CDF APIM Named Value constants configuration.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "kvSecretName": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "value": {
+        "type": "string"
+      }
+    },
+    "required": ["kvSecretName", "name", "value"],
+    "additionalProperties": false
+  }
+}

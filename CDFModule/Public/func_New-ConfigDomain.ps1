@@ -93,7 +93,7 @@
     }
 
     $platformKey = $CdfConfig.Platform.Config.platformId + $CdfConfig.Platform.Config.instanceId
-    $applicationKey = $CdfConfig.Application.Config.templateName + $CdfConfig.Application.Config.instanceId
+    $applicationKey = $CdfConfig.Application.Config.applicationId + $CdfConfig.Application.Config.instanceId
 
     Write-Information "Preparing application configuration for platform instance at [$sourcePath]"
 

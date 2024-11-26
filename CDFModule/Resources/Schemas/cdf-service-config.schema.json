@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://cdf.epicalgroup.com/service-config.json",
+  "type": "object",
+  "title": "This schema represents the CDF service configuration.",
+  "required": ["ServiceDefaults", "ServiceSettings"],
+  "properties": {
+    "ServiceDefaults": {
+      "type": "object",
+      "title": "ServiceDefaults",
+      "properties": {
+        "ServiceName": {
+          "type": "string"
+        },
+        "ServiceType": {
+          "type": "string"
+        },
+        "ServiceGroup": {
+          "type": "string"
+        },
+        "ServiceTemplate": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ServiceSettings": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/APIConfiguration"
+        },
+        {
+          "type": "object",
+          "title": "ServiceSettings",
+          "patternProperties": {
+            "^.+$": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/ConstantValue"
+                },
+                {
+                  "$ref": "#/$defs/EnvSetting"
+                },
+                {
+                  "$ref": "#/$defs/SecretValue"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExternalSettings": {
+      "type": "object",
+      "title": "ExternalSettings",
+      "patternProperties": {
+        "^.+$": {
+          "type": "object",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ConstantValue"
+            },
+            {
+              "$ref": "#/$defs/EnvSetting"
+            },
+            {
+              "$ref": "#/$defs/SecretValue"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Connections": {
+      "title": "Connections",
+      "description": "List of required connections for the service",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ConnectionConfigs": {
+      "title": "ConnectionConfigs",
+      "description": "List of connection configurations for the service.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "ConnectionConfig",
+        "required": ["ConnectionName", "Config"],
+        "additionalProperties": false,
+        "properties": {
+          "ConnectionName": {
+            "type": "string"
+          },
+          "IsPersistent": {
+            "description": "Indicates a configuration that is not remove with the service unless forced.",
+            "type": "boolean"
+          },
+          "Config": {
+            "type": "object",
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ConnectionConfigServiceBus"
+              },
+              {
+                "$ref": "#/$defs/ConnectionConfigStorageAccount"
+              },
+              {
+                "$ref": "#/$defs/ConnectionConfigEventGridTopic"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "APIConfiguration": {
+      "type": "object",
+      "title": "APIConfiguration",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "policy": {
+          "type": "string"
+        },
+        "protocols": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "openApiSpec": {
+          "type": "string"
+        },
+        "backend": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "urlTemplate": {
+                "type": "string"
+              },
+              "policy": {
+                "type": "string"
+              }
+            },
+            "required": ["method", "name", "urlTemplate", "policy"]
+          }
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["displayName", "policy", "protocols", "products"],
+      "additionalProperties": true
+    },
+    "SecretValue": {
+      "type": "object",
+      "title": "SecretValue",
+      "required": ["Type", "Identifier"],
+      "properties": {
+        "Type": {
+          "type": "string",
+          "const": "Secret"
+        },
+        "Identifier": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConstantValue": {
+      "type": "object",
+      "title": "SecretValue",
+      "required": ["Type", "Value"],
+      "properties": {
+        "Type": {
+          "type": "string",
+          "const": "Constant"
+        },
+        "Value": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "IsAppSetting": {
+          "type": "boolean",
+          "default": false,
+          "description": "Makes parameter reference its value in app settings"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EnvSetting": {
+      "type": "object",
+      "title": "SecretValue",
+      "required": ["Type", "Values"],
+      "properties": {
+        "Type": {
+          "type": "string",
+          "const": "Setting"
+        },
+        "Values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "EnvValue",
+            "required": ["Purpose", "Value"],
+            "properties": {
+              "Purpose": {
+                "type": "string"
+              },
+              "Value": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "Description": {
+          "type": "string"
+        },
+        "IsAppSetting": {
+          "type": "boolean",
+          "default": false,
+          "description": "Makes parameter reference its value in app settings"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectionConfigEventGridTopic": {
+      "type": "object",
+      "title": "ConnectionConfigEventGridTopic",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "ConnectionConfigStorageAccount": {
+      "type": "object",
+      "title": "ConnectionConfigStorageAccount",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "publicAccess": {
+                "type": "string"
+              },
+              "immutableVersioning": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "DomainName": {
+                    "type": "string"
+                  },
+                  "ServiceName": {
+                    "type": "string"
+                  }
+                },
+                "required": ["DomainName", "ServiceName"]
+              }
+            },
+            "required": [
+              "name",
+              "publicAccess",
+              "immutableVersioning",
+              "metadata"
+            ]
+          }
+        },
+        "fileShares": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "shareQuota": {
+                "type": "integer"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "DomainName": {
+                    "type": "string"
+                  },
+                  "ServiceName": {
+                    "type": "string"
+                  }
+                },
+                "required": ["DomainName", "ServiceName"]
+              }
+            },
+            "required": ["name", "shareQuota", "metadata"]
+          }
+        },
+        "queues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "DomainName": {
+                    "type": "string"
+                  },
+                  "ServiceName": {
+                    "type": "string"
+                  }
+                },
+                "required": ["DomainName", "ServiceName"]
+              }
+            },
+            "required": ["name", "metadata"]
+          }
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["name"]
+          }
+        }
+      }
+    },
+    "ConnectionConfigServiceBus": {
+      "type": "object",
+      "title": "ConnectionConfigServiceBus",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "queues": {
+          "title": "QueueConfigs",
+          "description": "Configuration for a set of ServiceBus queues owned by the service.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "QueueConfig",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "description": "Name of queue.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "topics": {
+          "title": "TopicConfigs",
+          "description": "Configuration for a set of ServiceBus topics owned by the service.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "TopicConfig",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "description": "Name of topic.",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "topicSubscriptions": {
+          "title": "TopicSubscriptionConfigs",
+          "description": "Configuration for a set of ServiceBus topic subscriptions owned by the service.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "TopicSubscriptionConfig",
+            "required": ["subscription", "topic", "forwardTo"],
+            "additionalProperties": false,
+            "properties": {
+              "subscription": {
+                "description": "Name of the subscription.",
+                "type": "string"
+              },
+              "topic": {
+                "description": "Name of topic.",
+                "type": "string"
+              },
+              "forwardTo": {
+                "description": "Name of queue or topic to forward messages to.",
+                "type": "string"
+              },
+              "rule": {
+                "type": "object",
+                "title": "TopicSubscriptionRuleConfig",
+                "required": ["name", "type", "filter"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "description": "Name of the subscription.",
+                    "type": "string"
+                  },
+                  "type": {
+                    "description": "Name of topic.",
+                    "type": "string",
+                    "enum": ["SqlFilter"],
+                    "default": "SqlFilter"
+                  },
+                  "filter": {
+                    "description": "Name of queue or topic to forward messages to.",
+                    "examples": ["eventType='Event1' or eventType='Event2'"],
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
