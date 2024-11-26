@@ -177,7 +177,8 @@
     New-Zip `
         -Exclude $exclude `
         -FolderPath $OutputPath `
-        -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip"
+        -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
+        -IncludeHidden
 
     # Compress-Archive -Force  `
     #     -Path "$OutputPath/*"  `
