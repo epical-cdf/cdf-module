@@ -61,7 +61,7 @@
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
-    # Copy service implementation
+    # Copy service config
     $containerFiles = @(
         'cdf-config.json',
         'cdf-secrets.json',
@@ -95,139 +95,56 @@
         $updateSettings = @( New-AzContainerAppEnvironmentVarObject -Name 'CDF_SERVICE_NAME' -Value $CdfConfig.Service.Config.serviceName)
     }
 
-    # Substitute Tokens in the cdf-config json file
-    $tokenValues = $CdfConfig | Get-TokenValues
-    Update-ConfigFileTokens `
-        -InputFile "$OutputPath/cdf-config.json" `
-        -OutputFile "$OutputPath/cdf-config.gen.json" `
-        -Tokens $tokenValues `
-        -StartTokenPattern '{{' `
-        -EndTokenPattern '}}' `
-        -NoWarning `
-        -WarningAction:SilentlyContinue
-
-    # Get service config from cdf-config.json with token substitutions
-    $serviceConfig = Get-Content -Path "$OutputPath/cdf-config.gen.json" | ConvertFrom-Json -AsHashtable
-    
     #-------------------------------------------------------------
     # Set the CDF parameters
     #-------------------------------------------------------------
-    
-    # CDF Env details
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_DEFINITION_ID' -VarValue $CdfConfig.Application.Env.definitionId
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_NAME_ID' -VarValue  $CdfConfig.Application.Env.nameId
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_NAME' -VarValue $CdfConfig.Application.Env.name
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_SHORT_NAME' -VarValue $CdfConfig.Application.Env.shortName
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_DESCRIPTION' -VarValue $CdfConfig.Application.Env.description
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_PURPOSE' -VarValue $CdfConfig.Application.Env.purpose
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_QUALITY' -VarValue $CdfConfig.Application.Env.quality
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_REGION_CODE' -VarValue $CdfConfig.Application.Env.regionCode
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_ENV_REGION_NAME' -VarValue $CdfConfig.Application.Env.regionName
-        
-    # Service Identity
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_SERVICE_NAME' -VarValue $CdfConfig.Service.Config.serviceName
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_SERVICE_TYPE' -VarValue $CdfConfig.Service.Config.serviceType
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_SERVICE_GROUP' -VarValue $CdfConfig.Service.Config.serviceGroup
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_SERVICE_TEMPLATE' -VarValue $CdfConfig.Service.Config.serviceTemplate
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_DOMAIN_NAME' -VarValue $CdfConfig.Domain.Config.domainName
-    
-    # Build information
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_TIME' -VarValue (Get-Date -Format 'o' -AsUTC)
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_COMMIT' -VarValue ($env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD))
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_RUN' -VarValue ($env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local")
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_BRANCH' -VarValue ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current))
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_REPOSITORY' -VarValue ($env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin)))
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_PIPELINE' -VarValue ($env:GITHUB_WORKFLOW_REF ?? $env:BUILD_DEFINITIONNAME ?? "local")
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_BUILD_BRANCH' -VarValue ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current))
+    $envSettings = $CdfConfig | Get-CdfServiceConfigSettings -InputPath $OutputPath
 
-    #-------------------------------------------------------------
-    # Set the CDF service settings
-    #-------------------------------------------------------------
-    
-    # Service internal settings
-    foreach ($serviceSettingKey in $serviceConfig.ServiceSettings.Keys) {
-        $setting = $serviceConfig.ServiceSettings[$serviceSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName "SVC_$serviceSettingKey"-VarValue ($setting.Value | Out-String -NoNewline)
-            }
-            "Setting" {
-                $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName "SVC_$serviceSettingKey"-VarValue ($svcEnvSetting.Value | Out-String -NoNewline)
-            }
-            "Secret" {
-                Write-Host "Adding service internal secret: $serviceSettingKey"
-                $secret = Get-AzKeyVaultSecret `
-                    -DefaultProfile $azCtx `
-                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                    -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                    -ErrorAction SilentlyContinue
+    foreach ($envKey in $envSettings.Keys) {
+        $envValue = $envSettings[$envKey]
 
-                if ($null -eq $secret) {
-                    Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found in KeyVault"
-                    Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
+        $updateSettings = Set-EnvVarValue `
+            -Settings $updateSettings `
+            -VarName $envKey `
+            -VarValue $envValue
+
+        if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal].+)[)|;].*') {
+            $kvSecretName = $Matches[1]
+            $envVar = $updateSettings | Where-Object { $_.Name -eq $envKey }
+            $isInternal = $envValue -match 'Internal'
+            $secret = Get-AzKeyVaultSecret `
+                -DefaultProfile $azCtx `
+                -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
+                -Name $kvSecretName `
+                -ErrorAction SilentlyContinue
+
+            if ($null -eq $secret) {
+                Write-Warning " KeyVault secret not found in Domain KeyVault."
+                Write-Warning " Expecting secret by name [$kvSecretName] in KeyVault [$($CdfConfig.Domain.ResourceNames.keyVaultName)]"
+            }
+            else {
+                $secretUrl = "https://$($CdfConfig.Domain.ResourceNames.keyVaultName).vault.azure.net/secrets/$($secret.Name)"
+                $containerAppSecret = $app.Configuration.Secret | Where-Object { $_.Name -eq $secret.Name }
+
+                if ($null -eq $containerAppSecret) {
+                    $containerAppSecret = New-AzContainerAppSecretObject `
+                        -Name $secret.Name.ToLower() `
+                        -Identity $app.IdentityUserAssignedIdentity.Keys[0] `
+                        -KeyVaultUrl $secretUrl
+                    $app.Configuration.Secret += $containerAppSecret
                 }
                 else {
-
-                    $envVar = $updateSettings | Where-Object { $_.Name -eq "SVC_$serviceSettingKey" }
-                    $secretRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    if ($null -eq $envVar) {
-                        $app.Configuration.Secret.Add(@{
-                                name        = $serviceSettingKey
-                                keyVaultUrl = $secretRef
-                                identity    = $app.IdentityUserAssignedIdentity.Keys[0]
-                            })
-
-                        $updateSettings += New-AzContainerAppEnvironmentVarObject `
-                            -Name "SVC_$serviceSettingKey" `
-                            -SecretRef $serviceSettingKey
-                    }
-                    else {
-                        $secretRef = $envVar.SecretRef
-                        $secretConfig = $app.Configuration.Secret | Where-Object { $_.Name -eq $secretRef }
-                        $secretConfig.KeyVaultUrl = $secretRef
-                    }
-                    Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
+                    $containerAppSecret.KeyVaultUrl = $secretUrl
                 }
             }
-        }
-    }
 
-    # Service external settings
-    foreach ($externalSettingKey in $serviceConfig.ExternalSettings.Keys) {
-        $setting = $serviceConfig.ExternalSettings[$externalSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName "EXT_$externalSettingKey"-VarValue ($setting.Value | Out-String -NoNewline)
+            if ($null -eq $envVar) {
+                $updateSettings += New-AzContainerAppEnvironmentVarObject `
+                    -Name "$($isInternal ? 'SVC_' : 'EXT_')_$externalSettingKey" `
+                    -SecretRef $secret.Name.ToLower()
             }
-            "Setting" {
-                $svcEnvSetting = $setting.Values | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }
-                $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName "EXT_$externalSettingKey"-VarValue ($svcEnvSetting.Value | Out-String -NoNewline)
-            }
-            "Secret" {
-                Write-Host "Adding service external secret: $externalSettingKey"
-                $secret = Get-AzKeyVaultSecret `
-                    -DefaultProfile $azCtx `
-                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                    -Name "svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)" `
-                    -ErrorAction SilentlyContinue
-
-                if ($null -eq $secret) {
-                    Write-Warning " KeyVault secret for Identifier [$($setting.Identifier)] not found in KeyVault"
-                    Write-Warning " Expecting secret name [svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)] in Domain KeyVault"
-                }
-                else {
-                    $envVar = $updateSettings | Where-Object { $_.Name -eq "EXT_$externalSettingKey" }
-                    $secretRef = "@Microsoft.KeyVault(VaultName=$($CdfConfig.Domain.ResourceNames.keyVaultName );SecretName=svc-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier))"
-                    if ($null -eq $envVar) {
-                        $updateSettings += New-AzContainerAppEnvironmentVarObject `
-                            -Name "EXT_$externalSettingKey" `
-                            -SecretRef $secretRef
-                    }
-                    else {
-                        $envVar.SecretRef = $secretRef
-                    }
-                    Write-Verbose "Prepared KeyVault secret reference for Setting [$($setting.Identifier)] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-                }
+            else {
+                $envVar.SecretRef = $secret.Name.ToLower()
             }
         }
     }
@@ -235,54 +152,30 @@
     # Configure service API URLs for the App Service
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURL' -VarValue "https://$($app.Configuration.IngressFqdn)"
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURLS' -VarValue "https://$($app.Configuration.IngressFqdn)"
-    
-    # Add custom env settings:
-    # Substitute Tokens in the app.settings file
-    $tokenValues = $CdfConfig | Get-TokenValues
-    Update-ConfigFileTokens `
-        -InputFile "$OutputPath/app.settings.json" `
-        -OutputFile "$OutputPath/app.settings.gen.json" `
-        -Tokens $tokenValues `
-        -StartTokenPattern '{{' `
-        -EndTokenPattern '}}' `
-        -NoWarning `
-        -WarningAction:SilentlyContinue
 
-
-    $appSettings = (Get-Content "$OutputPath/app.settings.gen.json" | ConvertFrom-Json -AsHashtable)
-
-    foreach ($appSettingKey in $appSettings.Keys) {
-        $appSetting = $appSettings[$appSettingKey]
-        if ($appSetting.Type -eq "System.Management.Automation.OrderedHashtable") {
-            $appSetting = $appSettings[$appSettingKey] | ConvertTo-Json -Depth 20
-        }
-        $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName $appSettingKey -VarValue $appSetting    
-    }
     #-------------------------------------------------------------
-    # Set container image config
+    # Set default container image and port config if missing
     #-------------------------------------------------------------
-    
     $acrName = $cdfConfig.Application.ResourceNames.containerRegistryName
     $cdfEnvId = $cdfConfig.Application.Env.definitionId
     $cdfDomainName = $cdfConfig.Domain.Config.domainName
     $cdfServiceName = $CdfConfig.Service.Config.serviceName
+    $imageTag = $CdfConfig.Service.Config.imageTag ?? 'latest'
     $imageName = "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$cdfServiceName"
-    $imageTag = 'v1'
 
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_NAME' -VarValue $imageName
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_TAG' -VarValue $imageTag
+    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_NAME' -VarValue  $imageName
+    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_TAG' -VarValue  $imageTag
 
-    if ($CdfConfig.Service.Config.serviceType -eq 'javascript' ) {
+    $containerPort = $updateSettings['PORT']
+    if ($null -eq $containerPort) {
         $containerPort = 8080
-    }
-    else {
-        $containerPort = 8080
-    }
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'PORT' -VarValue "$containerPort"
+        $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'PORT' -VarValue "$containerPort"
 
-    # $app.Configuration = New-AzContainerAppConfigurationObject
-    $app.Configuration.IngressExposedPort = $containerPort
-  
+        # # For publicly exposed container apps... ??
+        # $app.Configuration = New-AzContainerAppConfigurationObject
+        # $app.Configuration.IngressExposedPort = $containerPort
+    }
+
     $containerProbe = New-AzContainerAppProbeObject `
         -Type Liveness `
         -HttpGetPort $containerPort `
@@ -301,8 +194,6 @@
 
     $app.TemplateContainer[0] = $container
 
-    # $app.TemplateContainer[0].Env = $updateSettings
-
     #--------------------------------------
     # Deploy container app implementation
     #--------------------------------------
@@ -310,6 +201,7 @@
         -DefaultProfile $azCtx `
         -Name $CdfConfig.Service.ResourceNames.appServiceName `
         -ResourceGroupName $CdfConfig.Service.ResourceNames.appServiceResourceGroup `
+        -Configuration $app.Configuration `
         -TemplateContainer  $app.TemplateContainer[0] `
         -WarningAction:SilentlyContinue
 
@@ -328,7 +220,7 @@ Function Set-EnvVarValue {
         [string] $VarValue
     )
 
-    Write-Host "Adding service env setting: $VarName"
+    Write-Host "Adding container app env setting: $VarName"
     $envVar = $Settings | Where-Object { $_.Name -eq $VarName }
     if ($null -eq $envVar) {
         $Settings += New-AzContainerAppEnvironmentVarObject -Name $VarName -Value $VarValue

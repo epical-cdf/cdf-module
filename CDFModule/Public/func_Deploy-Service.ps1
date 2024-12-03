@@ -48,7 +48,7 @@
 
     )
 
-    # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precendens
+    # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precedence
     $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
     if (Test-Path $cdfConfigFile) {
         Write-Host "Loading service settings from cdf-config.json"
@@ -126,7 +126,34 @@
     }
 
     # API Management does not have infrastructure configuration for service
-    if ($false -eq $isApi) {
+    if ($true -eq $isApi) {
+        # Setup a dummy domain and service configuration for API
+        $CdfConfig.Domain = @{
+            IsDeployed = $false
+            Config     = @{
+                templateScope   = 'domain'
+                templateName    = $CdfConfig.Application.Config.templateName
+                templateVersion = $CdfConfig.Application.Config.templateVersion
+                domainName      = $DomainName
+            }
+            Env        = $CdfConfig.Application.Env
+        }
+        $CdfConfig.Service = @{
+            IsDeployed = $false
+            Config     = @{
+                templateScope   = 'service'
+                templateName    = $CdfConfig.Application.Config.templateName
+                templateVersion = $CdfConfig.Application.Config.templateVersion
+                serviceName     = $ServiceName
+                serviceGroup    = $ServiceGroup
+                serviceType     = $ServiceType
+                serviceTemplate = $ServiceTemplate
+            }
+            Env        = $CdfConfig.Application.Env
+        }
+    }
+    elseif ($false -eq $isApi -and ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed )) {
+        # We're missing Deployed Service configuration in CdfConfig. Try fetching or deploy infra.
         try {
             Write-Host "Get Service Config [$ServiceName]"
             $CdfConfig = Get-ConfigService `
@@ -156,33 +183,10 @@
             }
 
         }
+        # Set current ServiceGroup
+        $CdfConfig.Service.Config.serviceGroup = $ServiceGroup
     }
-    else {
-        # Setup a dummy domain and service configuration for API
-        $CdfConfig.Domain = @{
-            IsDeployed = $false
-            Config     = @{
-                templateScope   = 'domain'
-                templateName    = $CdfConfig.Application.Config.templateName
-                templateVersion = $CdfConfig.Application.Config.templateVersion
-                domainName      = $DomainName
-            }
-            Env        = $CdfConfig.Application.Env
-        }
-        $CdfConfig.Service = @{
-            IsDeployed = $false
-            Config     = @{
-                templateScope   = 'service'
-                templateName    = $CdfConfig.Application.Config.templateName
-                templateVersion = $CdfConfig.Application.Config.templateVersion
-                serviceName     = $ServiceName
-                serviceGroup    = $ServiceGroup
-                serviceType     = $ServiceType
-                serviceTemplate = $ServiceTemplate
-            }
-            Env        = $CdfConfig.Application.Env
-        }
-    }
+
 
     if ($true -eq $isApi -and $null -ne $CdfConfig.Service) {
         # Ensure we are using any override values as we move on
@@ -231,6 +235,14 @@
             -TemplateDir $CdfSharedPath/modules `
             -ErrorAction Stop
     }
+    elseif ($ServiceTemplate.StartsWith('containerapp-')) {
+        Deploy-ServiceContainerApp `
+            -CdfConfig $CdfConfig `
+            -InputPath $ServiceSrcPath `
+            -OutputPath $outputPath `
+            -TemplateDir $CdfSharedPath/modules `
+            -ErrorAction Stop
+    }
     elseif ($ServiceTemplate.StartsWith('container-')) {
         Deploy-ServiceContainerAppService `
             -CdfConfig $CdfConfig `
@@ -240,7 +252,6 @@
             -ErrorAction Stop
     }
     elseif ($true -eq $isApi) {
-
         # Default is to deploy service dependencies (ServiceOnly = false)
         if (!$ServiceOnly) {
             $CdfConfig | Build-ApimDomainBackendTemplates `
