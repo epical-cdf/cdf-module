@@ -44,21 +44,21 @@ Function Show-Prompt {
         $Result += $env:CDF_PLATFORM_ID ? " | ${env:CDF_PLATFORM_ID}${env:CDF_PLATFORM_INSTANCE}" : ''
         $Result += $env:CDF_APPLICATION_ID ? "-${env:CDF_APPLICATION_ID}${env:CDF_APPLICATION_INSTANCE}" : ''
         $Result += $env:CDF_DOMAIN_NAME ? "-${env:CDF_DOMAIN_NAME}" : ''
-        
+
         if (Test-Path 'cdf-config.json') {
             $svcConfig = Get-Content -Raw "cdf-config.json" | ConvertFrom-Json -AsHashtable
             $ServiceName = $svcConfig.ServiceDefaults.ServiceName
             $ServiceGroup = $svcConfig.ServiceDefaults.ServiceGroup
             # $ServiceType = $svcConfig.ServiceDefaults.ServiceType
             # $ServiceTemplate = $svcConfig.ServiceDefaults.ServiceTemplate
-            $Result += "`e[33m:${ServiceName}:${ServiceGroup}`e[37m"
+            $Result += " `e[33m:${ServiceName}:${ServiceGroup}`e[37m"
         }
         elseif ($env:CDF_SERVICE_NAME) {
             $ServiceName = $env:CDF_SERVICE_NAME
             $ServiceGroup = $env:CDF_SERVICE_GROUP
             #$ServiceType = $env:CDF_SERVICE_TYPE
             #$ServiceTemplate = $env:CDF_SERVICE_TEMPLATE
-            $Result += "${ServiceName}:${ServiceGroup}"
+            $Result += " ${ServiceName}:${ServiceGroup}"
         }
 
         # Add application environment to the prompt if different from platform environment
@@ -66,8 +66,8 @@ Function Show-Prompt {
             'production' { $envColor = "`e[91m" }
             'validation' { $envColor = "`e[32m" }
             Default { $envColor = "`e[34m" }
-        } 
-        
+        }
+
         $envName = $CdfConfig.Application.Env.nameId
         if ($envName -ne $CdfConfig.Platform.Env.nameId ) {
             $envName = $CdfConfig.Platform.Env.nameId + "/" + $envName
@@ -82,7 +82,7 @@ Function Show-Prompt {
         if ('Unix' -eq $PSVersionTable.Platform) {
             $elemCwd[0] = [IO.Path]::DirectorySeparatorChar
         }
-        $Cwd = Join-Path $elemCwd[0] $elemCwd[1] '...' $elemCwd[-3] $elemCwd[-2] $elemCwd[-1]
+        $Cwd = Join-Path -Path $elemCwd[0] -ChildPath $elemCwd[1] -AdditionalChildPath @('...' , $elemCwd[-3] , $elemCwd[-2] , $elemCwd[-1])
     }
     if (Get-Module posh-git) {
         $Result += Write-VcsStatus
