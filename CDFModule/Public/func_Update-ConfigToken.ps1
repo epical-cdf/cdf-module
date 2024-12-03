@@ -39,7 +39,7 @@ Function Update-ConfigToken {
         "password": "{{PASSWORD}}"
     }
     '''
-    Update-CdfConfigTokens `
+    Update-CdfConfigToken `
         -InputString $myConfig `
         -Tokens @{URL="http://localhost:8080";USERNAME="admin";PASSWORD="Test123"} `
         -StartTokenPattern "{{" `
