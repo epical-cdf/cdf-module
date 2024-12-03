@@ -109,23 +109,47 @@
     $CdfConfig.Service.Tags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $InputPath branch --show-current)
     $CdfConfig.Service.Tags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $InputPath remote get-url origin))
 
-    $paramAppSettings = Set-LogicAppParameters `
+    #------------------------------------------------------
+    # Preparing appsettings and parameters for target env
+    #------------------------------------------------------
+    Write-Host "Preparing app settings."
+
+    # Get app service settings
+    $app = Get-AzWebApp `
+        -DefaultProfile $azCtx `
+        -Name $logicAppName `
+        -ResourceGroupName $logicAppRG `
+        -WarningAction:SilentlyContinue `
+        -ErrorAction:Stop
+
+    $appSettings = $app.SiteConfig.AppSettings
+
+    # Preparing hashtable with exsting config
+    $updateSettings = ConvertFrom-Json -InputObject "{}" -AsHashtable
+    $updateSettings = $CdfConfig `
+    | Get-ServiceConfigSettings `
+        -UpdateSettings $updateSettings `
+        -InputPath $InputPath `
+        -ErrorAction:Stop
+
+    foreach ($setting in $appSettings) {
+        $updateSettings[$setting.Name] = $setting.Value
+    }
+
+    Set-LogicAppParameters `
         -CdfConfig $CdfConfig `
-        -ServiceConfig $serviceConfig `
-        -Parameters $parameters
+        -AppSettings $updateSettings `
+        -Parameters $parameters | Out-Null
 
-    $parameters | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/parameters.raw.json"
+    # # Add app settings for parameter references
+    # foreach ($settingKey in $paramAppSettings.Keys) {
+    #     Write-Verbose "Adding parameter appsetting for [$settingKey] value [$($paramAppSettings[$settingKey])]"
+    #     $updateSettings[$settingKey] = $paramAppSettings[$settingKey]
+    # }
 
-    # Substitute Tokens in the parameters file
-    $tokenValues = $CdfConfig | Get-TokenValues
-    Update-ConfigFileTokens `
-        -InputFile  "$OutputPath/parameters.raw.json" `
-        -OutputFile  "$OutputPath/parameters.json" `
-        -Tokens $tokenValues `
-        -StartTokenPattern '{{' `
-        -EndTokenPattern '}}' `
-        -NoWarning `
-        -WarningAction:SilentlyContinue
+    $parameters | ConvertTo-Json -Depth 10 `
+    | Update-ConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
+    | Set-Content -Path "$OutputPath/parameters.json"
 
     #--------------------------------------
     # Configure connections for target env
@@ -184,34 +208,9 @@
     }
 
     Write-Debug "Connections: $($connections | ConvertTo-Json -Depth 10 | Out-String)"
-    $connections | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/connections.json"
-
-    #--------------------------------------
-    # Preparing appsettings for target env
-    #--------------------------------------
-    Write-Host "Preparing app settings."
-
-    # Get app service settings
-    $app = Get-AzWebApp `
-        -DefaultProfile $azCtx `
-        -Name $logicAppName `
-        -ResourceGroupName $logicAppRG `
-        -WarningAction:SilentlyContinue `
-        -ErrorAction:Stop
-
-    $appSettings = $app.SiteConfig.AppSettings
-
-    # Preparing hashtable with exsting config
-    $updateSettings = ConvertFrom-Json -InputObject "{}" -AsHashtable
-    foreach ($setting in $appSettings) {
-        $updateSettings[$setting.Name] = $setting.Value
-    }
-
-    # Add app settings for parameter references
-    foreach ($settingKey in $paramAppSettings.Keys) {
-        Write-Verbose "Adding parameter appsetting for [$settingKey] value [$($paramAppSettings[$settingKey])]"
-        $updateSettings[$settingKey] = $paramAppSettings[$settingKey]
-    }
+    $connections | ConvertTo-Json -Depth 10 `
+    | Update-CdfConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
+    | Set-Content -Path "$OutputPath/connections.json"
 
     # TODO: Make these configurable using a "platform services" definition file
     foreach ( $connectionName in $connectionDefinitions.Keys ) {
@@ -228,105 +227,6 @@
         }
     }
 
-    # # Platform Connections Uri Settings
-    # ($CdfConfig.Platform.Features.enableKeyVault && Add-LogicAppAppSettings `
-    #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #     -Config $CdfConfig.Platform `
-    #     -Settings $updateSettings `
-    #     -ConnectionName "PlatformKeyVault" `
-    #     -ParameterName "platformKeyVault" `
-    #     -ServiceProvider "keyvault" `
-    # ) | Out-Null
-
-    # ($CdfConfig.Platform.Features.enableServiceBus && Add-LogicAppAppSettings `
-    #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #     -Config $CdfConfig.Platform -Settings $updateSettings `
-    #     -ConnectionName "PlatformServiceBus" `
-    #     -ParameterName "platformServiceBus" `
-    #     -ServiceProvider "servicebus" `
-    # ) | Out-Null
-
-    # if ( $CdfConfig.Platform.Features.enableStorageAccount) {
-    #     Add-LogicAppAppSettings `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #         -Config $CdfConfig.Platform -Settings $updateSettings `
-    #         -ConnectionName "PlatformStorageAccountBlob" `
-    #         -ParameterName "platformStorageAccount" `
-    #         -ServiceProvider "AzureBlob"
-    #     Add-LogicAppAppSettings `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #         -Config $CdfConfig.Platform -Settings $updateSettings `
-    #         -ConnectionName "PlatformStorageAccountFile" `
-    #         -ParameterName "platformStorageAccount" `
-    #         -ServiceProvider "azurefile"
-    #     Add-LogicAppAppSettings `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #         -Config $CdfConfig.Platform -Settings $updateSettings `
-    #         -ConnectionName "PlatformStorageAccountQueues" `
-    #         -ParameterName "platformStorageAccount" `
-    #         -ServiceProvider "azurequeues"
-    #     Add-LogicAppAppSettings `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #         -Config $CdfConfig.Platform -Settings $updateSettings `
-    #         -ConnectionName "PlatformStorageAccountTables" `
-    #         -ParameterName "platformStorageAccount" `
-    #         -ServiceProvider "azureTables"
-    # }
-
-    # # Application Connections Uri Settings
-    # ($CdfConfig.Application.Features.enableStorageAccount && Add-LogicAppAppSettings `
-    #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #     -Config $CdfConfig.Application  -Settings $updateSettings `
-    #     -ConnectionName "ApplicationKeyVault" `
-    #     -ParameterName "applicationKeyVault"`
-    #     -ServiceProvider "keyvault" `
-    # ) | Out-Null
-    # ($CdfConfig.Application.Features.enableSftpStorageAccount && Add-LogicAppAppSettings `
-    #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-    #     -Config $CdfConfig.Application  -Settings $updateSettings `
-    #     -ConnectionName "AppSftpStorageAccountBlob" `
-    #     -ParameterName "appSftpStorageAccount" `
-    #     -ServiceProvider "AzureBlob" `
-    # ) | Out-Null
-
-    # # Domain Connections Uri Settings
-    # ($CdfConfig.Domain.Features.enableKeyVault && Add-LogicAppAppSettings  `
-    #     -SubscriptionId $CdfConfig.Platform.Env.subscriptionId  `
-    #     -Config $CdfConfig.Domain -Settings $updateSettings  `
-    #     -ConnectionName "DomainKeyVault"  `
-    #     -ParameterName "domainKeyVault"  `
-    #     -ServiceProvider "keyvault" `
-    # ) | Out-Null
-    # if ( $CdfConfig.Domain.Features.enableStorageAccount) {
-    #     Add-LogicAppAppSettings  `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId  `
-    #         -Config $CdfConfig.Domain  `
-    #         -Settings $updateSettings  `
-    #         -ConnectionName "DomainStorageAccountBlob"  `
-    #         -ParameterName "domainStorageAccount"  `
-    #         -ServiceProvider "AzureBlob"
-    #     Add-LogicAppAppSettings  `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId  `
-    #         -Config $CdfConfig.Domain -Settings $updateSettings  `
-    #         -ConnectionName "DomainStorageAccountFile"  `
-    #         -ParameterName "domainStorageAccount"  `
-    #         -ServiceProvider "azurefile"
-    #     Add-LogicAppAppSettings  `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId  `
-    #         -Config $CdfConfig.Domain `
-    #         -Settings $updateSettings  `
-    #         -ConnectionName "DomainStorageAccountQueues"  `
-    #         -ParameterName "domainStorageAccount"  `
-    #         -ServiceProvider "azurequeues"
-    #     Add-LogicAppAppSettings  `
-    #         -SubscriptionId $CdfConfig.Platform.Env.subscriptionId  `
-    #         -Config $CdfConfig.Domain  `
-    #         -Settings $updateSettings  `
-    #         -ConnectionName "DomainStorageAccountTables"  `
-    #         -ParameterName "domainStorageAccount"  `
-    #         -ServiceProvider "azureTables"
-    # }
-
     if ($CdfConfig.Application.Env.purpose -eq 'production') {
         $updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "1"
         Write-Host "PRODUCTION: Using 'WEBSITE_RUN_FROM_PACKAGE=1' which prevents editing in Azure Portal." -ForegroundColor Yellow
@@ -336,27 +236,13 @@
         Write-Host "NON-PRODUCTION: Using 'WEBSITE_RUN_FROM_PACKAGE=0' which allows editing in Azure Portal." -ForegroundColor Gray
     }
 
-    if (Test-Path "$OutputPath/app.settings.json") {
-        # Add default app settings if exists - override any generated app settings
-        Write-Host "Loading settings from app.settings.json"
-        $defaultSettings = Get-Content -Raw "$OutputPath/app.settings.json" | ConvertFrom-Json -AsHashtable
-        foreach ($key in $defaultSettings.Keys) {
-            Write-Verbose "Adding parameter appsetting for [$key] value [$($defaultSettings[$key])]"
-            $updateSettings[$key] = $defaultSettings[$key]
-        }
-    }
-    #-------------------------------------------------------------
-    # Update the app settings
-    #-------------------------------------------------------------
-    $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.gen.json"
-    Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
-
     Set-AzWebApp `
         -DefaultProfile $azCtx `
         -Name $logicAppName `
         -ResourceGroupName $logicAppRG `
         -AppSettings $updateSettings `
-        -WarningAction:SilentlyContinue | Out-Null
+        -WarningAction:SilentlyContinue `
+        -ErrorAction:Stop | Out-Null
 
     #-----------------------------------------------------------
     # Deploy logic app implementation using 'run-from-package'

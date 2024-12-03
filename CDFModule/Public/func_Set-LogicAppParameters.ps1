@@ -6,35 +6,81 @@
     Update logic app parameters for domain and environment ...
     .PARAMETER CdfConfig
     The CdfConfig object that holds the current scope configurations (Platform, Application and Domain)
-    .PARAMETER ServiceConfig
+    .PARAMETER AppSettings
     The service configuration from cdf-config.json.
     .PARAMETER Parameters
     Hashtable with contents of logic app standard parameters.json. See examples.
 
     .OUTPUTS
-    Hashtable with required app settings.
+    Hashtable with updated app settings.
 
     .EXAMPLE
-    parameters.json:
-    {
 
+    $appsettings = @{
+        "AzureWebJobsStorage"= "",
+        "WORKFLOWS_SUBSCRIPTION_ID"= "",
+        "PlatformKeyVaultUri"= "<KeyVaultName>.vault.azure.net",
+        "DomainStorageAccountUri"= "<StorageAccountName>.vault.azure.net",
+        "SVC_SETTING_02" = "VAL02"
+        "EXT_SETTING_04" = "VAL04"
+    }
+    $parameters = @{
+        "OtherParam": { ... },
+        "SVC_SETTING_01": {
+            type: "string"
+            value = "VAL01"
+        }
+        "SVC_SETTING_02": {
+            type: "string"
+            value = "VAL02"
+        }
+        "EXT_SETTING_03": {
+            type: "string"
+            value = "VAL03"
+        }
     }
 
-    $parameters = Get-Content "parameters.json" | ConvertFrom-Json -AsHashtable
-    $serviceConfig = Get-Content "cdf-config.json" | ConvertFrom-Json -AsHashtable
     Set-CdfLogicAppParameters `
         -CdfConfig $CdfConfig `
-        -ServiceConfig $serviceConfig `
-        -Parameters $arameters
+        -AppSettings $appsettings `
+        -Parameters $parameters
 
-    $parameters | ConvertTo-Json -Depth 10 | Set-Content -Path "parameters.json"
-
-    appsettings.json (result):
+    $parameters (json):
     {
-        "AzureWebJobsStorage": "",
-        "WORKFLOWS_SUBSCRIPTION_ID": "",
-        "PlatformKeyVaultUri": "<KeyVaultName>.vault.azure.net"
-        "DomainStorageAccountUri": "<StorageAccountName>.vault.azure.net"
+        "OtherParam": { ... },
+        "Platform": { ... },
+        "Application": { ... },
+        "Domain": { ... },
+        "Service": {
+          "type": "object",
+          "value" {
+            ...
+            "SETTING_02": "@appsetting('SVC_SETTING_02')"
+          }
+        },
+        "External": {
+         "type": "object",
+          "value" {
+            ...
+            "SETTING_04": "@appsetting('EXT_SETTING_04')"
+          }
+        },
+        "SVC_SETTING_01": {
+            type: "string"
+            value = "VAL01"
+        },
+        "SVC_SETTING_02": {
+            type: "string"
+            value = "@appsetting('SVC_SETTING_02')"
+        },
+        "EXT_SETTING_03": {
+            type: "string"
+            value = "VAL03"
+        },
+        "EXT_SETTING_04": {
+            type: "string"
+            value = "@appsetting('EXT_SETTING_04')"
+        }
     }
     #>
 
@@ -44,7 +90,7 @@
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [hashtable]$CdfConfig,
         [Parameter(Mandatory = $true)]
-        [hashtable]$ServiceConfig,
+        [hashtable]$AppSettings,
         [Parameter(Mandatory = $true)]
         [hashtable]$Parameters
     )
@@ -83,92 +129,23 @@
     $Parameters.BuildContext.value.TemplateVersion = $CdfConfig.Service.Tags.TemplateVersion
     $Parameters.BuildContext.value.TemplateInstance = $CdfConfig.Service.Tags.TemplateInstance
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env["subscriptionId"]
 
-    $appsettings = @{}
+    foreach ($AppSettingKey in $AppSettings.Keys) {
+        $ParameterName = $AppSettingKey.Substring(4)
+        if ($AppSettingKey.StartsWith('SVC_')) {
+            $Parameters.Service.value[$ParameterName] = "@appsetting('$AppSettingKey')"
+        }
 
-    # Service internal settings
-    foreach ($serviceSettingKey in $ServiceConfig.ServiceSettings.Keys) {
-        Write-Verbose "Adding service internal setting: $serviceSettingKey"
-        $setting = $ServiceConfig.ServiceSettings[$serviceSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                if ($setting.IsAppSetting) {
-                    $appSettingKey = "Internal_$serviceSettingKey"
-                    $appsettings[$appSettingKey] = $setting.Values[0].Value
-                    $Parameters.Service.value[$serviceSettingKey] = "@appsetting('$appSettingKey')"
-                }
-                else {
-                    $Parameters.Service.value[$serviceSettingKey] = $setting.Value
-                }
+        if ($AppSettingKey.StartsWith('EXT_')) {
+            $Parameters.External.value[$ParameterName] = "@appsetting('$AppSettingKey')"
+        }
 
-            }
-            "Setting" {
-                if ($setting.IsAppSetting) {
-                    $appSettingKey = "Internal_$serviceSettingKey"
-                    $appsettings[$appSettingKey] = $setting.Values[0].Value
-                    $Parameters.Service.value[$serviceSettingKey] = "@appsetting('$appSettingKey')"
-                }
-                else {
-                    $Parameters.Service.value[$serviceSettingKey] = $setting.Values[0].Value
-                }
-
-            }
-            "Secret" {
-                $secretName = "Internal-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
-                $keyVault = Get-AzKeyVault `
-                    -DefaultProfile $azCtx `
-                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                    -ErrorAction SilentlyContinue
-                $appSettingRef = "@Microsoft.KeyVault(SecretUri=$($keyVault.VaultUri)secrets/$secretName)"
-                $appSettingKey = "Internal_$serviceSettingKey"
-                $appsettings[$appSettingKey] = $appSettingRef
-                $Parameters.Service.value[$serviceSettingKey] = "@appsetting('$appSettingKey')"
-                Write-Verbose "Prepared KeyVault secret reference for Setting [$serviceSettingKey] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-            }
+        # For future use add app settings as individual parameters too
+        $Parameters[$appSettingKey] = @{
+            type  = 'string'
+            value = "@appsetting('$appSettingKey')"
         }
     }
 
-    # Service external settings
-    foreach ($externalSettingKey in $ServiceConfig.ExternalSettings.Keys) {
-        Write-Verbose "Adding service external setting: $externalSettingKey"
-        $setting = $ServiceConfig.ExternalSettings[$externalSettingKey]
-        switch ($setting.Type) {
-            "Constant" {
-                if ($setting.IsAppSetting) {
-                    $appSettingKey = "EXT_$externalSettingKey"
-                    $appsettings[$appSettingKey] = $setting.Values[0].Value
-                    $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
-                }
-                else {
-                    $Parameters.External.value[$externalSettingKey] = $setting.Value
-                }
-            }
-            "Setting" {
-                [string] $value = ($setting.Values  | Where-Object { $_.Purpose -eq $CdfConfig.Application.Env.purpose }).Value
-
-                if ($setting.IsAppSetting) {
-                    $appSettingKey = "EXT_$externalSettingKey"
-                    $appsettings[$appSettingKey] = $value
-                    $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
-                }
-                else {
-                    $Parameters.External.value[$externalSettingKey] = $value
-                }
-            }
-            "Secret" {
-                $secretName = "External-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
-                $keyVault = Get-AzKeyVault `
-                    -DefaultProfile $azCtx `
-                    -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                    -ErrorAction SilentlyContinue
-                $appSettingRef = "@Microsoft.KeyVault(SecretUri=$($keyVault.VaultUri)secrets/$secretName)"
-                $appSettingKey = "EXT_$externalSettingKey"
-                $appsettings[$appSettingKey] = $appSettingRef
-                $Parameters.External.value[$externalSettingKey] = "@appsetting('$appSettingKey')"
-                Write-Verbose "Prepared KeyVault secret reference for Setting [$externalSettingKey] using app setting [$appSettingKey] KeyVault ref [$appSettingRef]"
-            }
-        }
-    }
-    return $appsettings
+    return $AppSettings
 }
