@@ -101,7 +101,7 @@
     while (!$dnsResult -or $result.HasError) {
         Start-Sleep -Seconds 30
         Write-Host '.' -NoNewline
-        $dnsResult = Resolve-Dns -Query "$recordName.$DomainName" -QueryType TXT
+        $dnsResult = Resolve-Dns -Query "$recordName.$DomainName" -QueryType TXT -NameServer 8.8.8.8
         if ($dnsResult.Answers[0]) {
             if ($dnsResult.Answers[0].Text -ne $recordValue ) {
                 Write-Warning ('Found wrong TXT record: ' + $dnsResult.Answers[0].Text)
