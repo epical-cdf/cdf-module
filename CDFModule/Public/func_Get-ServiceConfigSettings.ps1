@@ -58,14 +58,14 @@ Function Get-ServiceConfigSettings {
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
         [hashtable]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [hashtable]$UpdateSettings,
+        [System.Collections.IDictionary]$UpdateSettings,
         [Parameter(Mandatory = $false)]
         [switch] $Deployed,
         [Parameter(Mandatory = $false)]
         [switch] $SecretValue,
         [Parameter(Mandatory = $false)]
         [string] $ConfigFileName = 'cdf-config.json',
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string] $InputPath = ".",
         [Parameter(Mandatory = $false)]
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? "."
@@ -85,6 +85,33 @@ Function Get-ServiceConfigSettings {
     if ($null -eq $UpdateSettings) {
         $UpdateSettings = @{}
     }
+
+    # CDF Env details
+    $UpdateSettings["CDF_ENV_DEFINITION_ID"] = $CdfConfig.Application.Env.definitionId
+    $UpdateSettings["CDF_ENV_NAME_ID"] = $CdfConfig.Application.Env.nameId
+    $UpdateSettings["CDF_ENV_NAME"] = $CdfConfig.Application.Env.name
+    $UpdateSettings["CDF_ENV_SHORT_NAME"] = $CdfConfig.Application.Env.shortName
+    $UpdateSettings["CDF_ENV_DESCRIPTION"] = $CdfConfig.Application.Env.description
+    $UpdateSettings["CDF_ENV_PURPOSE"] = $CdfConfig.Application.Env.purpose
+    $UpdateSettings["CDF_ENV_QUALITY"] = $CdfConfig.Application.Env.quality
+    $UpdateSettings["CDF_ENV_REGION_CODE"] = $CdfConfig.Application.Env.regionCode
+    $UpdateSettings["CDF_ENV_REGION_NAME"] = $CdfConfig.Application.Env.regionName
+
+    # Service Identity
+    $UpdateSettings["CDF_SERVICE_NAME"] = $CdfConfig.Service.Config.serviceName
+    $UpdateSettings["CDF_SERVICE_TYPE"] = $CdfConfig.Service.Config.serviceType
+    $UpdateSettings["CDF_SERVICE_GROUP"] = $CdfConfig.Service.Config.serviceGroup
+    $UpdateSettings["CDF_SERVICE_TEMPLATE"] = $CdfConfig.Service.Config.serviceTemplate
+    $UpdateSettings["CDF_DOMAIN_NAME"] = $CdfConfig.Domain.Config.domainName
+
+    # Build information
+    $UpdateSettings["CDF_BUILD_TIME"] = (Get-Date -Format 'o' -AsUTC).ToString()
+    $UpdateSettings["CDF_BUILD_COMMIT"] = ($env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)).ToString()
+    $UpdateSettings["CDF_BUILD_RUN"] = ($env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local").ToString()
+    $UpdateSettings["CDF_BUILD_BRANCH"] = ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)).ToString()
+    $UpdateSettings["CDF_BUILD_REPOSITORY"] = ($env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))).ToString()
+    $UpdateSettings["CDF_BUILD_PIPELINE"] = ($env:GITHUB_WORKFLOW_REF ?? $env:BUILD_DEFINITIONNAME ?? "local").ToString()
+    $UpdateSettings["CDF_BUILD_BRANCH"] = ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)).ToString()
 
     $cdfConfigFile = Join-Path -Path $InputPath  -ChildPath $ConfigFileName
     $serviceConfig = Get-Content -Raw $cdfConfigFile | Update-ConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) | ConvertFrom-Json -AsHashtable
@@ -166,34 +193,6 @@ Function Get-ServiceConfigSettings {
             }
         }
     }
-
-    # CDF Env details
-    $UpdateSettings["CDF_ENV_DEFINITION_ID"] = $CdfConfig.Application.Env.definitionId
-    $UpdateSettings["CDF_ENV_NAME_ID"] = $CdfConfig.Application.Env.nameId
-    $UpdateSettings["CDF_ENV_NAME"] = $CdfConfig.Application.Env.name
-    $UpdateSettings["CDF_ENV_SHORT_NAME"] = $CdfConfig.Application.Env.shortName
-    $UpdateSettings["CDF_ENV_DESCRIPTION"] = $CdfConfig.Application.Env.description
-    $UpdateSettings["CDF_ENV_PURPOSE"] = $CdfConfig.Application.Env.purpose
-    $UpdateSettings["CDF_ENV_QUALITY"] = $CdfConfig.Application.Env.quality
-    $UpdateSettings["CDF_ENV_REGION_CODE"] = $CdfConfig.Application.Env.regionCode
-    $UpdateSettings["CDF_ENV_REGION_NAME"] = $CdfConfig.Application.Env.regionName
-
-    # Service Identity
-    $UpdateSettings["CDF_SERVICE_NAME"] = $CdfConfig.Service.Config.serviceName
-    $UpdateSettings["CDF_SERVICE_TYPE"] = $CdfConfig.Service.Config.serviceType
-    $UpdateSettings["CDF_SERVICE_GROUP"] = $CdfConfig.Service.Config.serviceGroup
-    $UpdateSettings["CDF_SERVICE_TEMPLATE"] = $CdfConfig.Service.Config.serviceTemplate
-    $UpdateSettings["CDF_DOMAIN_NAME"] = $CdfConfig.Domain.Config.domainName
-
-    # Build information
-    $UpdateSettings["CDF_BUILD_TIME"] = (Get-Date -Format 'o' -AsUTC).ToString()
-    $UpdateSettings["CDF_BUILD_COMMIT"] = ($env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)).ToString()
-    $UpdateSettings["CDF_BUILD_RUN"] = ($env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local").ToString()
-    $UpdateSettings["CDF_BUILD_BRANCH"] = ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)).ToString()
-    $UpdateSettings["CDF_BUILD_REPOSITORY"] = ($env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))).ToString()
-    $UpdateSettings["CDF_BUILD_PIPELINE"] = ($env:GITHUB_WORKFLOW_REF ?? $env:BUILD_DEFINITIONNAME ?? "local").ToString()
-    $UpdateSettings["CDF_BUILD_BRANCH"] = ($env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)).ToString()
-
 
     # Add default/override app settings if exists - override any generated app settings
     if (Test-Path "$OutputPath/app.settings.json") {
