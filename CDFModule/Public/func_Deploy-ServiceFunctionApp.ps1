@@ -57,7 +57,19 @@
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? "../../cdf-infra"
     )
 
+
+    if ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed) {
+        Write-Error "Service configuration is not deployed. Please deploy the service infrastructure first."
+        return
+    }
+    if (-not $CdfConfig.Config.serviceTemplate -match 'functionapp.*') {
+        Write-Error "Service mismatch - does not match a FunctionApp implementation."
+        return
+    }
+    
     Write-Host "Preparing Function App Service implementation deployment."
+
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
     # Copy service/logicapp implementation
 
@@ -74,11 +86,11 @@
         '.funcignore'
     )
 
-    Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath    
+    Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath
 
-    ## Adjust these if template changes regarding placement of appService for the service
-    $appServiceRG = $CdfConfig.Service.ResourceNames.functionAppResourceGroup
-    $appServiceName = $CdfConfig.Service.ResourceNames.functionAppName
+    ## Adjust these if template changes regarding placement of appService runtime for the service
+    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Host "AppServiceRG: $appServiceRG"
     Write-Host "AppServiceName: $appServiceName"
@@ -105,10 +117,10 @@
 
     Get-ServiceConfigSettings -CdfConfig $CdfConfig -UpdateSettings $updateSettings -InputPath $InputPath -Deployed
     # Configure service API URLs
-    $updateSettings["SERVICE_API_BASEURL"] = "https://$($app.HostNames[0])"
+    $updateSettings["SVC_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
-    $updateSettings["SERVICE_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
+    $updateSettings["SVC_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
 
     # Run from package. Not to be used with .net functions app
     #$updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
