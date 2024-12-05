@@ -57,6 +57,15 @@
         [string] $TemplateDir = "."
     )
 
+    if ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed) {
+        Write-Error "Service configuration is not deployed. Please deploy the service infrastructure first."
+        return
+    }
+    if (-not $CdfConfig.Config.serviceTemplate -match 'containerapp-.*') {
+        Write-Error "Service mismatch - does not match a ContainerApp implementation."
+        return
+    }
+
     Write-Host "Preparing Container App Service implementation deployment."
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
@@ -70,8 +79,8 @@
     Copy-Item -Force -Recurse -Include $containerFiles -Path $InputPath/* -Destination $OutputPath
 
     ## Adjust these if template changes regarding placement of appService for the service
-    $containerAppRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup
-    $containerAppName = $CdfConfig.Service.ResourceNames.appServiceName
+    $containerAppRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $containerAppName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Host "containerAppRG: $containerAppRG"
     Write-Host "containerAppName: $containerAppName"
@@ -84,8 +93,8 @@
     # Get container app env
     $app = Get-AzContainerApp `
         -DefaultProfile $azCtx `
-        -Name $CdfConfig.Service.ResourceNames.appServiceName `
-        -ResourceGroupName $CdfConfig.Service.ResourceNames.appServiceResourceGroup `
+        -Name $containerAppName `
+        -ResourceGroupName $containerAppRG `
         -WarningAction:SilentlyContinue
 
     if (  $app.TemplateContainer.Count -gt 0) {
@@ -192,7 +201,12 @@
         -Env $updateSettings `
         -Probe $containerProbe
 
-    $app.TemplateContainer[0] = $container
+    if ($null -eq $app.TemplateContainer -or $app.TemplateContainer.Count -eq 0) {
+        $app.TemplateContainer += $container
+    }
+    else {
+        $app.TemplateContainer[0] = $container
+    }
 
     #--------------------------------------
     # Deploy container app implementation

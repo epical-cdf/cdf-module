@@ -57,6 +57,27 @@
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? "../../cdf-infra"
     )
 
+    if ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed) {
+        Write-Error "Service configuration is not deployed. Please deploy the service infrastructure first."
+        return
+    }
+    if (-not $CdfConfig.Service.Config.serviceTemplate -eq 'logicapp-standard') {
+        Write-Error "Service mismatch - does not match a Logic App Standard implementation."
+        return
+    }
+    
+    ## Adjust these if template changes regarding placement of logicapp for the service
+    $logicAppRG = $CdfConfig.Service.ResourceNames.logicAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $logicAppName = $CdfConfig.Service.ResourceNames.logicAppName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
+
+    Write-Verbose "logicAppRG: $logicAppRG"
+    Write-Verbose "logicAppName: $logicAppName"
+
+    if ($null -eq $logicAppRG -or $null -eq $logicAppName) {
+        Write-Error "Service configuration is missing LogicApp resource group or name. Please check the service configuration."
+        return
+    }
+
     Write-Host "Preparing Logic App Standard implementation deployment."
 
     if (!$OutputPath) {
@@ -77,13 +98,6 @@
         'lib'
     )
     Copy-Item -Force -Recurse -Include $laFiles -Path (Resolve-Path -Path $InputPath/*) -Destination (Resolve-Path -Path $OutputPath)
-
-    ## Adjust these if template changes regarding placement of logicapp for the service
-    $logicAppRG = $CdfConfig.Service.ResourceNames.logicAppResourceGroup
-    $logicAppName = $CdfConfig.Service.ResourceNames.logicAppName
-
-    Write-Verbose "logicAppRG: $logicAppRG"
-    Write-Verbose "logicAppName: $logicAppName"
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
@@ -236,14 +250,6 @@
         Write-Host "NON-PRODUCTION: Using 'WEBSITE_RUN_FROM_PACKAGE=0' which allows editing in Azure Portal." -ForegroundColor Gray
     }
 
-    Set-AzWebApp `
-        -DefaultProfile $azCtx `
-        -Name $logicAppName `
-        -ResourceGroupName $logicAppRG `
-        -AppSettings $updateSettings `
-        -WarningAction:SilentlyContinue `
-        -ErrorAction:Stop | Out-Null
-
     #-----------------------------------------------------------
     # Deploy logic app implementation using 'run-from-package'
     #-----------------------------------------------------------
@@ -260,12 +266,22 @@
     $tries = 0
     do {
         try {
+
+            Set-AzWebApp `
+                -DefaultProfile $azCtx `
+                -Name $logicAppName `
+                -ResourceGroupName $logicAppRG `
+                -AppSettings $updateSettings `
+                -WarningAction:SilentlyContinue 
+            #| Out-Null
+            
             Publish-AzWebApp -Force `
                 -DefaultProfile $azCtx `
                 -Name $logicAppName `
                 -ResourceGroupName $logicAppRG `
                 -ArchivePath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
-                -WarningAction:SilentlyContinue | Out-Null
+                -WarningAction:SilentlyContinue 
+            #| Out-Null
             break
         }
         catch {

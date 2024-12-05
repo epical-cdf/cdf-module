@@ -57,6 +57,28 @@
         [string] $TemplateDir = "."
     )
 
+    if ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed) {
+        Write-Error "Service configuration is not deployed. Please deploy the service infrastructure first."
+        return
+    }
+    if (-not $CdfConfig.Config.serviceTemplate -match 'container-.*') {
+        Write-Error "Service mismatch - does not match a Container AppService implementation."
+        return
+    }
+
+    ## Adjust these if template changes regarding placement of logicapp for the service
+    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
+
+
+    Write-Host "appServiceRG: $appServiceRG"
+    Write-Host "appServiceName: $appServiceName"
+
+    if ($null -eq $appServiceRG -or $null -eq $appServiceName) {
+        Write-Error "Service configuration is missing AppService resource group or name. Please check the service configuration."
+        return
+    }
+
     Write-Host "Preparing Container App Service implementation deployment."
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
@@ -68,13 +90,6 @@
         'app.settings.json'
     )
     Copy-Item -Force -Recurse -Include $containerFiles -Path $InputPath/* -Destination $OutputPath
-
-    ## Adjust these if template changes regarding placement of appService for the service
-    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup
-    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName
-
-    Write-Host "appServiceRG: $appServiceRG"
-    Write-Host "appServiceName: $appServiceName"
 
     #--------------------------------------
     # Preparing appsettings for target env
@@ -129,7 +144,6 @@
         -WarningAction:SilentlyContinue | Out-Null
 
     $webConfig = Get-AzResource  -DefaultProfile $azCtx -Id "$($app.Id)/config" -ExpandProperties
-    $webConfig.Properties.linuxFxVersion
     $webConfig.Properties.linuxFxVersion = "DOCKER|${imageName}:${imageTag}"
     $webConfig.Properties.numberOfWorkers = $CdfConfig.Service.Config.numberOfWorkers ?? 1
     $webConfig | Set-AzResource -DefaultProfile $azCtx -Force | Out-Null
