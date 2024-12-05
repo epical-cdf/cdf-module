@@ -75,12 +75,10 @@ Function ConvertTo-DotEnv {
             }
         }
         elseif ($DotEnvSource.GetType().Name -match '.*Hashtable' -or $DotEnvSource.GetType().Name -match '.*Dictionary' ) {
-
             foreach ($key in $DotEnvSource.Keys) {
                 $DotEnvString.Append($key) | Out-Null
                 $DotEnvString.Append('=') | Out-Null
                 $DotEnvString.AppendLine($DotEnvSource[$key]) | Out-Null
-                # $DotEnvString.AppendLine($([Environment]::NewLine))| Out-Null
             }
         }
     }
