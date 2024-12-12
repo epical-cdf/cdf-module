@@ -54,7 +54,7 @@ jobs:
         shell: pwsh
         run: |
           cd release
-          Publish-Module -Path ./CDFModule -NuGetApiKey $env:NUGET_KEY -Verbose
+          Publish-Module -Path ./CDFModule -NuGetApiKey $env:NUGET_KEY -Verbose -Force
 
       - name: Upload templates artifact
         uses: actions/upload-release-asset@v1
