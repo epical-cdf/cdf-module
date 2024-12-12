@@ -186,7 +186,7 @@ Function Import-APIMDeveloperPortal {
     $publishResponse = Invoke-AzRestMethod -Path "$baseUri/portalRevisions/$($revision)?api-version=$APIVersion" -Method PUT -Payload $body
     $publishResponse
 
-    if (202 -eq $publishResponse.StatusCode) {
+    if ($publishResponse.StatusCode -gt 299) {
         'Import completed'
         return
     }
@@ -248,10 +248,7 @@ Function Import-ApimPortalConfig {
         [string] $BuildVersion = $null,
 
         [Parameter(Mandatory = $false)]
-        [string] $TemplateDir = ".",
-
-        [Parameter(Mandatory = $false)]
-        [string] $SourceDir = "./src"
+        [string] $TemplateDir = "."
     )
 
     $portalConfigPath = "$TemplateDir/application/$($CdfConfig.Application.Config.templateName)/$($CdfConfig.Application.Config.templateVersion)/templates/$PortalConfig"
