@@ -32,7 +32,7 @@ jobs:
           {
             Install-Module -Name Az.ResourceGraph -Force
           }
-          Update-ModuleManifest -ModuleVersion $releaseVersion -Path CDFModule/CDFModule.psd1
+          Update-ModuleManifest -Prerelease $null -ModuleVersion $releaseVersion -Path CDFModule/CDFModule.psd1
           zip -r ../CDFModule.zip CDFModule
           Write-Host "Release CDFModule version: $releaseVersion"
           Write-Output "CDFModuleVersion=$releaseVersion" >> $Env:GITHUB_OUTPUT
