@@ -95,25 +95,25 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @()
+            Tags                       = @()
 
             # A URL to the license for this module.
-            LicenseUri = 'https://github.com/epical-cdf/cdf-module/LICENSE'
+            LicenseUri                 = 'https://github.com/epical-cdf/cdf-module/LICENSE'
 
             # A URL to the main website for this project.
-            ProjectUri = 'https://github.com/epical-cdf/cdf-module'
+            ProjectUri                 = 'https://github.com/epical-cdf/cdf-module'
 
             # A URL to an icon representing this module.
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'https://github.com/epical-cdf/cdf-module/RELEASE_NOTES'
+            ReleaseNotes               = 'https://github.com/epical-cdf/cdf-module/RELEASE_NOTES'
 
             # Prerelease string of this module
-            Prerelease = 'pre'
+            Prerelease                 = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-            RequireLicenseAcceptance = $false
+            RequireLicenseAcceptance   = $false
 
             # External dependent modules of this module
             ExternalModuleDependencies = @('Az', 'Az.ResourceGraph', 'DnsClient-PS', 'ACME-PS')
