@@ -48,7 +48,10 @@
 
     )
 
-    # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precendens
+    # Initiate Service Deployment CDF Config
+    $SvcCdfConfig = $CdfConfig.Clone()
+
+    # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precedence
     $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
     if (Test-Path $cdfConfigFile) {
         Write-Host "Loading service settings from cdf-config.json"
@@ -83,9 +86,9 @@
     New-Item -Force -Type Directory $outputPath -ErrorAction SilentlyContinue | Out-Null
 
     $isApi = $ServiceTemplate.StartsWith('api-') # API Management has a slightly difference handling and currently does not require domain infra deployment config.
-    if ($null -eq $CdfConfig) {
+    if ($null -eq $SvcCdfConfig) {
         Write-Host "Get Platform Config [$PlatformId$PlatformInstance]"
-        $CdfConfig = Get-CdfConfigPlatform `
+        $SvcCdfConfig = Get-CdfConfigPlatform `
             -Region $Region `
             -PlatformId $PlatformId `
             -Instance $PlatformInstance `
@@ -93,13 +96,13 @@
             -SourceDir $CdfInfraSourcePath `
             -Deployed -ErrorAction Continue
 
-        if ($null -eq $CdfConfig.Platform -or $false -eq $CdfConfig.Platform.IsDeployed) {
+        if ($null -eq $SvcCdfConfig.Platform -or $false -eq $SvcCdfConfig.Platform.IsDeployed) {
             throw "Missing Platform configuration for deployed runtime instance."
         }
 
         Write-Host "Get Application Config [$ApplicationId$ApplicationInstance]"
-        $CdfConfig = Get-CdfConfigApplication `
-            -CdfConfig $CdfConfig `
+        $SvcCdfConfig = Get-CdfConfigApplication `
+            -CdfConfig $SvcCdfConfig `
             -Region $Region `
             -ApplicationId $ApplicationId  `
             -InstanceId $ApplicationInstance `
@@ -107,42 +110,69 @@
             -SourceDir $CdfInfraSourcePath `
             -Deployed -ErrorAction Continue
 
-        if ($null -eq $CdfConfig.Application -or $false -eq $CdfConfig.Application.IsDeployed) {
+        if ($null -eq $SvcCdfConfig.Application -or $false -eq $SvcCdfConfig.Application.IsDeployed) {
             throw "Missing Application configuration for deployed runtime instance."
         }
 
         if ($false -eq $isApi) {
             Write-Host "Get Domain Config [$DomainName]"
-            $CdfConfig = Get-CdfConfigDomain `
-                -CdfConfig $CdfConfig `
+            $SvcCdfConfig = Get-CdfConfigDomain `
+                -CdfConfig $SvcCdfConfig `
                 -DomainName $DomainName `
                 -SourceDir $CdfInfraSourcePath `
                 -Deployed -ErrorAction Continue
 
-            if ($null -eq $CdfConfig.Domain -or $false -eq $CdfConfig.Domain.IsDeployed) {
+            if ($null -eq $SvcCdfConfig.Domain -or $false -eq $SvcCdfConfig.Domain.IsDeployed) {
                 throw "Missing Domain configuration for deployed runtime instance."
             }
         }
     }
 
     # API Management does not have infrastructure configuration for service
-    if ($false -eq $isApi) {
+    if ($true -eq $isApi) {
+        # Setup a dummy domain and service configuration for API
+        $SvcCdfConfig.Domain = @{
+            IsDeployed = $false
+            Config     = @{
+                templateScope   = 'domain'
+                templateName    = $SvcCdfConfig.Application.Config.templateName
+                templateVersion = $SvcCdfConfig.Application.Config.templateVersion
+                domainName      = $DomainName
+            }
+            Env        = $SvcCdfConfig.Application.Env
+        }
+        $SvcCdfConfig.Service = @{
+            IsDeployed = $false
+            Config     = @{
+                templateScope   = 'service'
+                templateName    = $SvcCdfConfig.Application.Config.templateName
+                templateVersion = $SvcCdfConfig.Application.Config.templateVersion
+                serviceName     = $ServiceName
+                serviceGroup    = $ServiceGroup
+                serviceType     = $ServiceType
+                serviceTemplate = $ServiceTemplate
+            }
+            Env        = $SvcCdfConfig.Application.Env
+        }
+    }
+    elseif ($false -eq $isApi -and ($null -eq $SvcCdfConfig.Service -or $false -eq $SvcCdfConfig.Service.IsDeployed )) {
+        # We're missing Deployed Service configuration in CdfConfig. Try fetching or deploy infra.
         try {
             Write-Host "Get Service Config [$ServiceName]"
-            $CdfConfig = Get-ConfigService `
-                -CdfConfig $CdfConfig `
+            $SvcCdfConfig = Get-ConfigService `
+                -CdfConfig $SvcCdfConfig `
                 -ServiceName $ServiceName `
                 -SourceDir $CdfInfraSourcePath `
                 -Deployed -ErrorAction Stop
 
-            if ($null -eq $CdfConfig.Service -or !$CdfConfig.Service.IsDeployed) {
+            if ($null -eq $SvcCdfConfig.Service -or !$SvcCdfConfig.Service.IsDeployed) {
                 throw "Service infrastructure not deployed."
             }
         }
         catch {
             Write-Host "Deploying CDF Infrastructure for [$ServiceTemplate] service [$ServiceName]"
-            $CdfConfig = Deploy-TemplateService `
-                -CdfConfig $CdfConfig `
+            $SvcCdfConfig = Deploy-TemplateService `
+                -CdfConfig $SvcCdfConfig `
                 -ServiceName $ServiceName `
                 -ServiceType $ServiceType `
                 -ServiceGroup $ServiceGroup `
@@ -151,52 +181,29 @@
                 -SourceDir $CdfInfraSourcePath `
                 -ErrorAction:Stop
 
-            if ($null -eq $CdfConfig.Service -or $false -eq $CdfConfig.Service.IsDeployed) {
+            if ($null -eq $SvcCdfConfig.Service -or $false -eq $SvcCdfConfig.Service.IsDeployed) {
                 throw "Deployment of Service runtime infrastructure template failed."
             }
 
         }
-    }
-    else {
-        # Setup a dummy domain and service configuration for API
-        $CdfConfig.Domain = @{
-            IsDeployed = $false
-            Config     = @{
-                templateScope   = 'domain'
-                templateName    = $CdfConfig.Application.Config.templateName
-                templateVersion = $CdfConfig.Application.Config.templateVersion
-                domainName      = $DomainName
-            }
-            Env        = $CdfConfig.Application.Env
-        }
-        $CdfConfig.Service = @{
-            IsDeployed = $false
-            Config     = @{
-                templateScope   = 'service'
-                templateName    = $CdfConfig.Application.Config.templateName
-                templateVersion = $CdfConfig.Application.Config.templateVersion
-                serviceName     = $ServiceName
-                serviceGroup    = $ServiceGroup
-                serviceType     = $ServiceType
-                serviceTemplate = $ServiceTemplate
-            }
-            Env        = $CdfConfig.Application.Env
-        }
+        # Set current ServiceGroup
+        $SvcCdfConfig.Service.Config.serviceGroup = $ServiceGroup
     }
 
-    if ($true -eq $isApi -and $null -ne $CdfConfig.Service) {
+
+    if ($true -eq $isApi -and $null -ne $SvcCdfConfig.Service) {
         # Ensure we are using any override values as we move on
-        $CdfConfig.Service.Config.serviceName = $ServiceName
-        $CdfConfig.Service.Config.serviceGroup = $ServiceGroup
-        $CdfConfig.Service.Config.serviceType = $ServiceType
-        $CdfConfig.Service.Config.serviceTemplate = $ServiceTemplate
+        $SvcCdfConfig.Service.Config.serviceName = $ServiceName
+        $SvcCdfConfig.Service.Config.serviceGroup = $ServiceGroup
+        $SvcCdfConfig.Service.Config.serviceType = $ServiceType
+        $SvcCdfConfig.Service.Config.serviceTemplate = $ServiceTemplate
     }
 
     if (!$ServiceOnly) {
         # TODO: Iterate multiple occurances "storageaccount*.config.json"
         if (Test-Path "$ServiceSrcPath/storageaccount.config.json" ) {
             Deploy-StorageAccountConfig `
-                -CdfConfig $CdfConfig `
+                -CdfConfig $SvcCdfConfig `
                 -InputPath $ServiceSrcPath `
                 -OutputPath $outputPath `
                 -TemplateDir $CdfSharedPath/modules/storageaccount-config `
@@ -207,7 +214,7 @@
         # TODO: Iterate multiple occurances "servicebus*.config.json"
         if (Test-Path "$ServiceSrcPath/servicebus.config.json" ) {
             Deploy-ServiceBusConfig `
-                -CdfConfig $CdfConfig `
+                -CdfConfig $SvcCdfConfig `
                 -InputPath $ServiceSrcPath  `
                 -OutputPath $outputPath `
                 -TemplateDir $CdfSharedPath/modules/servicebus-config `
@@ -217,7 +224,7 @@
 
     if ($ServiceTemplate -eq 'logicapp-standard') {
         Deploy-ServiceLogicAppStd `
-            -CdfConfig $CdfConfig `
+            -CdfConfig $SvcCdfConfig `
             -InputPath $ServiceSrcPath `
             -OutputPath $outputPath `
             -TemplateDir $CdfSharedPath/modules `
@@ -225,7 +232,15 @@
     }
     elseif ($ServiceTemplate -eq 'functionapp') {
         Deploy-ServiceFunctionApp `
-            -CdfConfig $CdfConfig `
+            -CdfConfig $SvcCdfConfig `
+            -InputPath $ServiceSrcPath `
+            -OutputPath $outputPath `
+            -TemplateDir $CdfSharedPath/modules `
+            -ErrorAction Stop
+    }
+    elseif ($ServiceTemplate.StartsWith('containerapp-')) {
+        Deploy-ServiceContainerApp `
+            -CdfConfig $SvcCdfConfig `
             -InputPath $ServiceSrcPath `
             -OutputPath $outputPath `
             -TemplateDir $CdfSharedPath/modules `
@@ -233,31 +248,30 @@
     }
     elseif ($ServiceTemplate.StartsWith('container-')) {
         Deploy-ServiceContainerAppService `
-            -CdfConfig $CdfConfig `
+            -CdfConfig $SvcCdfConfig `
             -InputPath $ServiceSrcPath `
             -OutputPath $outputPath `
             -TemplateDir $CdfSharedPath/modules `
             -ErrorAction Stop
     }
     elseif ($true -eq $isApi) {
-
         # Default is to deploy service dependencies (ServiceOnly = false)
         if (!$ServiceOnly) {
-            $CdfConfig | Build-ApimDomainBackendTemplates `
+            $SvcCdfConfig | Build-ApimDomainBackendTemplates `
                 -DomainName $DomainName `
                 -DomainPath (Resolve-Path "$ServiceSrcPath/..") `
                 -SharedPath $CdfSharedPath `
                 -BuildPath "$OutputPath/domain-backends" `
                 -ErrorAction:Stop
 
-            $CdfConfig | Build-ApimDomainProductTemplates `
+            $SvcCdfConfig | Build-ApimDomainProductTemplates `
                 -DomainName $DomainName `
                 -DomainPath (Resolve-Path "$ServiceSrcPath/..") `
                 -SharedPath $CdfSharedPath `
                 -BuildPath "$OutputPath/domain-products" `
                 -ErrorAction:Stop
 
-            $CdfConfig | Build-ApimDomainNamedValuesTemplate `
+            $SvcCdfConfig | Build-ApimDomainNamedValuesTemplate `
                 -DomainName $DomainName `
                 -DomainPath (Resolve-Path "$ServiceSrcPath/..") `
                 -SharedPath $CdfSharedPath `
@@ -265,11 +279,11 @@
                 -ErrorAction:Stop
 
             # Deploy Domain Named Values to KeyVault
-            $CdfConfig | Deploy-ApimKeyVaultDomainNamedValues `
+            $SvcCdfConfig | Deploy-ApimKeyVaultDomainNamedValues `
                 -DomainName $DomainName `
                 -ConfigPath "$OutputPath/domain-namedvalues/"
 
-            $azCtx = Get-AzureContext $CdfConfig.Platform.Env.subscriptionId
+            $azCtx = Get-AzureContext $SvcCdfConfig.Platform.Env.subscriptionId
 
             # Deploy Products
             if (Test-Path "$OutputPath/domain-products") {
@@ -281,7 +295,7 @@
                     New-AzResourceGroupDeployment `
                         -DefaultProfile $azCtx `
                         -Name "domain-$DomainName-product-$ProductName" `
-                        -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
+                        -ResourceGroupName $SvcCdfConfig.Application.ResourceNames.appResourceGroupName `
                         -TemplateFile "$OutputPath/domain-products/$Template" `
                         -TemplateParameterFile "$OutputPath/domain-products/$Params" `
                         -ErrorAction:Stop `
@@ -300,7 +314,7 @@
                     New-AzResourceGroupDeployment `
                         -DefaultProfile $azCtx `
                         -Name "domain-$DomainName-backend-$BackendName" `
-                        -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
+                        -ResourceGroupName $SvcCdfConfig.Application.ResourceNames.appResourceGroupName `
                         -TemplateFile "$OutputPath/domain-backends/$Template" `
                         -TemplateParameterFile "$OutputPath/domain-backends/$Params" `
                         -ErrorAction:Stop `
@@ -314,7 +328,7 @@
                 New-AzResourceGroupDeployment `
                     -DefaultProfile $azCtx `
                     -Name "domain-$DomainName-namedvalues" `
-                    -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
+                    -ResourceGroupName $SvcCdfConfig.Application.ResourceNames.appResourceGroupName `
                     -TemplateFile "$OutputPath/domain-namedvalues/namedvalues.domain.bicep" `
                     -TemplateParameterFile "$OutputPath/domain-namedvalues/namedvalues.domain.params.json" `
                     -ErrorAction:Stop `
@@ -325,7 +339,7 @@
 
 
         # Build API templates
-        $CdfConfig | Build-ApimServiceTemplates `
+        $SvcCdfConfig | Build-ApimServiceTemplates `
             -DomainName $DomainName `
             -ServiceName $ServiceName `
             -ServicePath $ServiceSrcPath `
@@ -334,7 +348,7 @@
             -ErrorAction Stop
 
         # Replace CDF tokens in policy xml
-        $CdfTokens = $CdfConfig | Get-TokenValues
+        $CdfTokens = $SvcCdfConfig | Get-TokenValues
         Update-ConfigFileTokens `
             -InputFile "$OutputPath/domain-api/$ServiceName.params.json" `
             -OutputFile "$OutputPath/domain-api/$ServiceName.subst.params.json" `
@@ -345,7 +359,7 @@
             -WarningAction:SilentlyContinue
 
         # Deploy Service Named Values to KeyVault
-        $CdfConfig | Deploy-ApimKeyVaultServiceNamedValues `
+        $SvcCdfConfig | Deploy-ApimKeyVaultServiceNamedValues `
             -DomainName $DomainName `
             -ServiceName $ServiceName `
             -ConfigPath "$OutputPath/domain-api"
@@ -355,18 +369,18 @@
         New-AzResourceGroupDeployment `
             -DefaultProfile $azCtx `
             -Name "api-$DomainName-$ServiceName" `
-            -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
+            -ResourceGroupName $SvcCdfConfig.Application.ResourceNames.appResourceGroupName `
             -TemplateFile "$OutputPath/domain-api/$ServiceName.bicep" `
             -TemplateParameterFile "$OutputPath/domain-api/$ServiceName.subst.params.json" `
             -ErrorAction:Stop `
         | Out-Null
 
         # Indicate is deployed...
-        $CdfConfig.Domain.IsDeployed = $true
-        $CdfConfig.Service.IsDeployed = $true
+        $SvcCdfConfig.Domain.IsDeployed = $true
+        $SvcCdfConfig.Service.IsDeployed = $true
     }
     else {
         Write-Error "Unable to determine service implementation. Supported ServiceTemplate keywords include 'api-*', 'logicapp-standard', 'container-*'."
     }
-    return $CdfConfig
+    return $SvcCdfConfig
 }
