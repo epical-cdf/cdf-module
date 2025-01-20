@@ -49,7 +49,9 @@
     )
 
     # Initiate Service Deployment CDF Config
-    $SvcCdfConfig = $CdfConfig.Clone()
+    if ($null -ne $CdfConfig) {
+        $SvcCdfConfig = $CdfConfig.Clone()
+    }
 
     # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precedence
     $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
