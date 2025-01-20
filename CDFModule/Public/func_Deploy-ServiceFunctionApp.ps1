@@ -89,8 +89,8 @@
     Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath
 
     ## Adjust these if template changes regarding placement of appService runtime for the service
-    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
-    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
+    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.functionAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
+    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.functionAppName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Host "AppServiceRG: $appServiceRG"
     Write-Host "AppServiceName: $appServiceName"
@@ -125,12 +125,7 @@
     $updateSettings["SVC_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
-    $updateSettings["SVC_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
-
-    # Run from package. Not to be used with .net functions app
-    #$updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
-    #$updateSettings["SCM_DO_BUILD_DURING_DEPLOYMENT"] = "true"
-    #$updateSettings["ENABLE_ORYX_BUILD"] = "true"
+    $updateSettings["SVC_API_BASEURLS"] = [string] ($BaseUrls | Join-String -Separator ',')
 
     #-------------------------------------------------------------
     # Update the app settings
@@ -155,7 +150,15 @@
     # '*/node_modules/azure-functions-core-tools/*'
     # '*/node_modules/typescript/*'
     [string[]]$exclude = @(
-        'app.settings.*'
+        '.vscode',
+        '.gitignore',
+        '.funcignore',
+        '.dockerignore',
+        'Dockerfile',
+        'app.settings.*',
+        'local.settings.json',
+        'cdf-config.json',
+        'cdf-secrets.json'
     )
     $OutputPath = Resolve-Path $OutputPath
     New-Zip `
