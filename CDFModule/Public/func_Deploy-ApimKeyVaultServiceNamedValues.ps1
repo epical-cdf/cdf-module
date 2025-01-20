@@ -82,14 +82,14 @@
             elseif ($NamedValue.value -eq $CurrentSecret) {
                 Write-Host ' - Existing, match, no change'
             }
+            elseif ($null -eq $NamedValue.value ) {
+                Write-Host ' - No value provided, continue'
+            }
             else {
-                Write-Host ' - Existing, diff, update'
                 $SecretValue = ConvertTo-SecureString $NamedValue.value -AsPlainText -Force
                 $SetSecret = Set-AzKeyVaultSecret -VaultName $CdfConfig.Application.ResourceNames.keyVaultName -Name $NamedValue.secretName -SecretValue $SecretValue
                 #TODO: Handle error response
             }
         }
-
     }
-
 }
