@@ -79,7 +79,7 @@
     Copy-Item -Force -Recurse -Include $containerFiles -Path $InputPath/* -Destination $OutputPath
 
     ## Adjust these if template changes regarding placement of appService for the service
-    $containerAppRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $containerAppRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
     $containerAppName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Host "containerAppRG: $containerAppRG"

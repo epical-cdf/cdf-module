@@ -2,7 +2,7 @@
     <#
         .SYNOPSIS
         Deploys a Container App Service implementation and condfiguration
-        
+
         .SYNOPSIS
         Deploys a Container service to an App Service implementation and configuration
 
@@ -67,7 +67,7 @@
     }
 
     ## Adjust these if template changes regarding placement of logicapp for the service
-    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
     $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
 
@@ -105,15 +105,13 @@
 
     $appSettings = $app.SiteConfig.AppSettings
 
-    # Preparing hashtable with existing app config
+    # Preparing hashtable with exsting config
     $updateSettings = ConvertFrom-Json -InputObject "{}" -AsHashtable
     foreach ($setting in $appSettings) {
         $updateSettings[$setting.Name] = $setting.Value
     }
 
-    # Update with CDF Standard settings
-    $updateSettings = $CdfConfig `
-    | Get-ServiceConfigSettings `
+    $updateSettings = $CdfConfig | Get-ServiceConfigSettings `
         -UpdateSettings $updateSettings `
         -InputPath $InputPath `
         -ErrorAction:Stop
