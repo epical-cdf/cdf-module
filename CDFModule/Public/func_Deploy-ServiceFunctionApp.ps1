@@ -66,7 +66,7 @@
         Write-Error "Service mismatch - does not match a FunctionApp implementation."
         return
     }
-    
+
     Write-Host "Preparing Function App Service implementation deployment."
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
@@ -89,8 +89,8 @@
     Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath
 
     ## Adjust these if template changes regarding placement of appService runtime for the service
-    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
-    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
+    $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.functionAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
+    $appServiceName = $CdfConfig.Service.ResourceNames.appServiceName ?? $CdfConfig.Service.ResourceNames.functionAppName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Host "AppServiceRG: $appServiceRG"
     Write-Host "AppServiceName: $appServiceName"
@@ -109,61 +109,29 @@
 
     $appSettings = $app.SiteConfig.AppSettings
 
+
     # Preparing hashtable with exsting config
     $updateSettings = ConvertFrom-Json -InputObject "{}" -AsHashtable
     foreach ($setting in $appSettings) {
         $updateSettings[$setting.Name] = $setting.Value
     }
 
-    Get-ServiceConfigSettings -CdfConfig $CdfConfig -UpdateSettings $updateSettings -InputPath $InputPath -Deployed
+    $updateSettings = $CdfConfig | Get-ServiceConfigSettings `
+        -UpdateSettings $updateSettings `
+        -InputPath $InputPath `
+        -ErrorAction:Stop
+
     # Configure service API URLs
     $updateSettings["SVC_API_BASEURL"] = "https://$($app.HostNames[0])"
     $BaseUrls = @()
     foreach ($hostName in $app.HostNames) { $BaseUrls += "https://$hostName" }
-    $updateSettings["SVC_API_BASEURLS"] = $BaseUrls | Join-String -Separator ','
+    $updateSettings["SVC_API_BASEURLS"] = [string] ($BaseUrls | Join-String -Separator ',')
 
-    # Run from package. Not to be used with .net functions app
-    #$updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "0"
-    #$updateSettings["SCM_DO_BUILD_DURING_DEPLOYMENT"] = "true"
-    #$updateSettings["ENABLE_ORYX_BUILD"] = "true"
-
-
-    # Add default app settings if exists - override any generated app settings
-    if (Test-Path "$OutputPath/app.settings.json") {
-        Write-Host "Loading settings from app.settings.json"
-        $defaultSettings = Get-Content -Raw "$OutputPath/app.settings.json" | ConvertFrom-Json -AsHashtable
-        foreach ($key in $defaultSettings.Keys) {
-            Write-Verbose "Adding parameter appsetting for [$key] value [$($defaultSettings[$key])]"
-            $updateSettings[$key] = $defaultSettings[$key]
-        }
-    }
     #-------------------------------------------------------------
     # Update the app settings
     #-------------------------------------------------------------
     $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.gen.json"
     Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
-
-    #-------------------------------------------------------------
-    # Preparing the app settings
-    #-------------------------------------------------------------
-
-    $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.raw.json"
-
-    # Substitute Tokens in the app.settings file
-    $tokenValues = $CdfConfig | Get-TokenValues
-    Update-ConfigFileTokens `
-        -InputFile "$OutputPath/app.settings.raw.json" `
-        -OutputFile "$OutputPath/app.settings.json" `
-        -Tokens $tokenValues `
-        -StartTokenPattern '{{' `
-        -EndTokenPattern '}}' `
-        -NoWarning `
-        -WarningAction:SilentlyContinue
-
-    Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
-
-    # Read generated app.settings file with token substitutions
-    $updateSettings = Get-Content -Path "$OutputPath/app.settings.json" | ConvertFrom-Json -Depth 10 -AsHashtable
 
     Set-AzWebApp `
         -Name $appServiceName `
@@ -176,14 +144,21 @@
     #--------------------------------------
     Write-Host "Deploying functions."
 
-
     # '*.ts'
     # '*/tsconfig.json'
     # '*/node_modules/@types/*'
     # '*/node_modules/azure-functions-core-tools/*'
     # '*/node_modules/typescript/*'
     [string[]]$exclude = @(
-        'app.settings.*'
+        '.vscode',
+        '.gitignore',
+        '.funcignore',
+        '.dockerignore',
+        'Dockerfile',
+        'app.settings.*',
+        'local.settings.json',
+        'cdf-config.json',
+        'cdf-secrets.json'
     )
     $OutputPath = Resolve-Path $OutputPath
     New-Zip `

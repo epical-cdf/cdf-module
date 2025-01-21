@@ -197,11 +197,10 @@ Function Get-ServiceConfigSettings {
     # Add default/override app settings if exists - override any generated app settings
     if (Test-Path "$OutputPath/app.settings.json") {
         Write-Host "Loading settings from app.settings.json"
-        $defaultSettings = (`
-                Get-Content "$OutputPath/app.settings.json" `
-            | ConvertFrom-Json -AsHashtable `
-            | Update-ConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
-        )
+        $defaultSettings = Get-Content -Path "$OutputPath/app.settings.json" -Raw `
+        | Update-ConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
+        | ConvertFrom-Json -AsHashtable
+
         foreach ($key in $defaultSettings.Keys) {
             Write-Verbose "Adding/overriding parameter appsetting for [$key] value [$($defaultSettings[$key])]"
             $UpdateSettings[$key] = [string] $defaultSettings[$key]

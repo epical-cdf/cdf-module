@@ -65,9 +65,9 @@
         Write-Error "Service mismatch - does not match a Logic App Standard implementation."
         return
     }
-    
+
     ## Adjust these if template changes regarding placement of logicapp for the service
-    $logicAppRG = $CdfConfig.Service.ResourceNames.logicAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup 
+    $logicAppRG = $CdfConfig.Service.ResourceNames.logicAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
     $logicAppName = $CdfConfig.Service.ResourceNames.logicAppName ?? $CdfConfig.Service.ResourceNames.serviceResourceName
 
     Write-Verbose "logicAppRG: $logicAppRG"
@@ -140,15 +140,14 @@
 
     # Preparing hashtable with exsting config
     $updateSettings = ConvertFrom-Json -InputObject "{}" -AsHashtable
-    $updateSettings = $CdfConfig `
-    | Get-ServiceConfigSettings `
-        -UpdateSettings $updateSettings `
-        -InputPath $InputPath `
-        -ErrorAction:Stop
-
     foreach ($setting in $appSettings) {
         $updateSettings[$setting.Name] = $setting.Value
     }
+
+    $updateSettings = $CdfConfig | Get-ServiceConfigSettings `
+        -UpdateSettings $updateSettings `
+        -InputPath $InputPath `
+        -ErrorAction:Stop
 
     Set-LogicAppParameters `
         -CdfConfig $CdfConfig `
@@ -272,15 +271,15 @@
                 -Name $logicAppName `
                 -ResourceGroupName $logicAppRG `
                 -AppSettings $updateSettings `
-                -WarningAction:SilentlyContinue 
+                -WarningAction:SilentlyContinue
             #| Out-Null
-            
+
             Publish-AzWebApp -Force `
                 -DefaultProfile $azCtx `
                 -Name $logicAppName `
                 -ResourceGroupName $logicAppRG `
                 -ArchivePath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
-                -WarningAction:SilentlyContinue 
+                -WarningAction:SilentlyContinue
             #| Out-Null
             break
         }
