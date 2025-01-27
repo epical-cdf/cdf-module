@@ -5,52 +5,49 @@
     [string] $SubscriptionId
   )
 
-  $test = Get-AzContext -WarningAction:SilentlyContinue
-  [Microsoft.Azure.Common.Authentication.AzureSession]::ClientFactory.AddUserAgent("pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb")
+  # Epical CDF Module CUA/PID for tracking usage
+  if ($null -eq $env:CDF_TELEMETRY_OPT_OUT -or $env:CDF_TELEMETRY_OPT_OUT -ne 'true') {
+    $env:AZURE_HTTP_USER_AGENT = 'pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb'
+  }
 
-  $azSub = Get-AzSubscription -WarningAction:SilentlyContinue `
-  | Where-Object { $_.Name -eq $SubscriptionId -or $_.Id -eq $SubscriptionId }
+  if ((Get-AzContext).Subscription.Id -eq $SubscriptionId) {
+    Write-Verbose "Subscription [$SubscriptionId] is already selected."
+    return (Get-AzContext)
+  }
 
-  if ( $null -eq $azSub) {
+  try {
+    Set-AzContext -SubscriptionId $SubscriptionId -WarningAction:SilentlyContinue | Out-Null
+  }
+  catch {
     Get-AzSubscription -WarningAction:SilentlyContinue | Format-Table
     Get-AzContext -WarningAction:SilentlyContinue -ListAvailable | Format-Table
     throw "Could not find subscription [$SubscriptionId] in available azure subscriptions."
   }
-  $env:AZURE_HTTP_USER_AGENT = 'pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb'
-  Set-AzContext -SubscriptionObject $azSub -WarningAction:SilentlyContinue | Out-Null
+
+  # The following code is a workaround for sync/propagation issue where client credentials for app registrations/service principals are not immediately available after creation.
+  # When the Select-AzSubscription is called for a new AzureContext it may warn for bad ClientCredentials until credentials propagation is completed.
+  Write-Verbose 'Selecting subscription...'
+  $warnClientSecretCredentialAuthFailed = $true; $attempt = 0; $maxAttempts = 15
+  while ($warnClientSecretCredentialAuthFailed) {
+    try {
+      Select-AzSubscription -SubscriptionId $SubscriptionId -WarningAction Stop | Out-Null
+      Write-Verbose "...done."
+      $warnClientSecretCredentialAuthFailed = $false
+    }
+    catch {
+      if ($_.Exception.Message.indexOf('ClientSecretCredential authentication failed') -gt 0) {
+        Write-Verbose "...client credentials not yet synced, waiting for propagation attempt $attempt/$maxAttempts."
+        $warnClientSecretCredentialAuthFailed = $true
+      }
+      Start-Sleep -Seconds 15
+    }
+
+    if ($attempt -gt $maxAttempts) {
+      Write-Verbose "Giving up on exception: $($_.Exception.Message)"
+      $warnClientSecretCredentialAuthFailed = $false
+    }
+  }
   $azCtx = Get-AzContext -WarningAction:SilentlyContinue
 
   return $azCtx
 }
-
-
-## Alternative implementation which will list all matching contexts and require additional filter on Account.
-# Function Get-AzureContext {
-#   [CmdletBinding()]
-#   Param(
-#     [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
-#     [hashtable]$CdfConfig,
-#     [Parameter(Mandatory = $false)]
-#     [string] $SubscriptionId
-#   )
-
-#   $triggerAzureSession = Get-AzContext -WarningAction:SilentlyContinue
-#   $triggerAzureSession -or [Microsoft.Azure.Common.Authentication.AzureSession]::ClientFactory.AddUserAgent("pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb") | Out-Null
-#   $env:AZURE_HTTP_USER_AGENT = 'pid-af839e51-6ff3-40ff-89d9-8b1afdb8adeb'
-
-#   if ($CdfConfig -and $CdfConfig.Platform -and $CdfConfig.Platform.Env) {
-#     $SubscriptionId = $CdfConfig.Platform.Env.subscriptionId
-#     Write-Verbose "Setting Azure Context from CdfConfig subscription: $SubscriptionId"
-#     $azCtx = Get-AzContext -ListAvailable | Where-Object { $_.Subscription.Id -eq $CdfConfig.Platform.Env.subscriptionId -and $_.Tenant.Id -eq $CdfConfig.Platform.Env.tenantId }
-#   }
-#   else {
-#     $azCtx = Get-AzContext -ListAvailable | Where-Object { $_.Subscription.Id -eq $CdfConfig.Platform.Env.subscriptionId -and $_.Tenant.Id -eq $CdfConfig.Platform.Env.tenantId }
-#   }
-
-#   if ( $null -eq $azCtx) {
-#     Get-AzSubscription -WarningAction:SilentlyContinue | Format-Table
-#     Get-AzContext -WarningAction:SilentlyContinue -ListAvailable | Format-Table
-#     throw "Could not find subscription [$SubscriptionId] in available azure subscriptions."
-#   }
-#   return $azCtx
-# }
