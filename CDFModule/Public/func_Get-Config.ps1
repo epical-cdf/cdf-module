@@ -125,7 +125,7 @@
       -ErrorAction Stop
   }
 
-  if ($DomainName -and $config.Application.IsDeployed) {
+  if ($DomainName) {
 
 
     if ($Deployed) {
