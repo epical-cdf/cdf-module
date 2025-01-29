@@ -208,7 +208,7 @@
       # Continue Domain configuration
     }
 
-    if ($Deployed) {
+    if ($Deployed -and $config.Domain -and $config.Domain.Env -and $config.Domain.Env.Count -gt 0) {
       $config = Get-ConfigDomain `
         -CdfConfig $config `
         -DomainName $DomainName `
