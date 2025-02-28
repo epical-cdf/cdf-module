@@ -87,10 +87,6 @@
                 $env = [ordered] @{
                     tenantId                      = $platformEnv.tenantId
                     subscriptionId                = $platformEnv.subscriptionId
-                    cdfInfraDeployerName          = $platformEnv.cdfInfraDeployerName
-                    cdfInfraDeployerAppId         = $platformEnv.cdfInfraDeployerAppId
-                    cdfSolutionDeployerName       = $platformEnv.cdfSolutionDeployerName
-                    cdfSolutionDeployerAppId      = $platformEnv.cdfSolutionDeployerAppId
 
                     platformEnvKey                = "$platformKey$($platformEnv.nameId)"
                     platformEnvDefinitionId       = $platformEnv.definitionId
@@ -112,6 +108,31 @@
                     applicationEnvPurpose         = $applicationEnv.purpose
                     applicationEnvReleaseApproval = $applicationEnv.releaseApproval
                 }
+
+                # Keep cdf-prefixed properties for backwards compatibiltity (incl new output)
+                if ($platformEnv.cdfInfraDeployerName) {
+                    $env.cdfInfraDeployerName = $platformEnv.cdfInfraDeployerName
+                    $env.cdfInfraDeployerAppId = $platformEnv.cdfInfraDeployerAppId
+                    $env.infraDeployerName = $platformEnv.cdfInfraDeployerName
+                    $env.infraDeployerAppId = $platformEnv.cdfInfraDeployerAppId
+                }
+                if ($platformEnv.cdfSolutionDeployerName) {
+                    $env.cdfSolutionDeployerName = $platformEnv.cdfSolutionDeployerName
+                    $env.cdfSolutionDeployerAppId = $platformEnv.cdfSolutionDeployerAppId
+                    $env.solutionDeployerName = $platformEnv.cdfSolutionDeployerName
+                    $env.solutionDeployerAppId = $platformEnv.cdfSolutionDeployerName
+                }
+
+                # Adding new properties without prefix to align naming conventions
+                if ($platformEnv.infraDeployerName) {
+                    $env.infraDeployerName = $platformEnv.infraDeployerName
+                    $env.infraDeployerAppId = $platformEnv.infraDeployerAppId
+                }
+                if ( $platformEnv.solutionDeployerName) {
+                    $env.solutionDeployerName = $platformEnv.solutionDeployerName
+                    $env.solutionDeployerAppId = $platformEnv.solutionDeployerAppId
+                }
+
                 $matrix += $env
             }
 
@@ -125,10 +146,6 @@
                 $env = [ordered] @{
                     tenantId                   = $platformEnv.tenantId
                     subscriptionId             = $platformEnv.subscriptionId
-                    cdfInfraDeployerName       = $platformEnv.cdfInfraDeployerName
-                    cdfInfraDeployerAppId      = $platformEnv.cdfInfraDeployerAppId
-                    cdfSolutionDeployerName    = $platformEnv.cdfSolutionDeployerName
-                    cdfSolutionDeployerAppId   = $platformEnv.cdfSolutionDeployerAppId
 
                     platformEnvKey             = "$platformKey$($platformEnv.nameId)"
                     platformEnvDefinitionId    = $platformEnv.definitionId
@@ -139,7 +156,30 @@
                     platformEnvQuality         = $platformEnv.quality
                     platformEnvPurpose         = $platformEnv.purpose
                     platformEnvReleaseApproval = $platformEnv.releaseApproval
+                }
 
+                # Keep cdf-prefixed properties for backwards compatibiltity (incl new output)
+                if ($platformEnv.cdfInfraDeployerName) {
+                    $env.cdfInfraDeployerName = $platformEnv.cdfInfraDeployerName
+                    $env.cdfInfraDeployerAppId = $platformEnv.cdfInfraDeployerAppId
+                    $env.infraDeployerName = $platformEnv.cdfInfraDeployerName
+                    $env.infraDeployerAppId = $platformEnv.cdfInfraDeployerAppId
+                }
+                if ($platformEnv.cdfSolutionDeployerName) {
+                    $env.cdfSolutionDeployerName = $platformEnv.cdfSolutionDeployerName
+                    $env.cdfSolutionDeployerAppId = $platformEnv.cdfSolutionDeployerAppId
+                    $env.solutionDeployerName = $platformEnv.cdfSolutionDeployerName
+                    $env.solutionDeployerAppId = $platformEnv.cdfSolutionDeployerAppId
+                }
+
+                # Adding new properties without prefix to align naming conventions
+                if ($platformEnv.infraDeployerName) {
+                    $env.infraDeployerName = $platformEnv.infraDeployerName
+                    $env.infraDeployerAppId = $platformEnv.infraDeployerAppId
+                }
+                if ( $platformEnv.solutionDeployerName) {
+                    $env.solutionDeployerName = $platformEnv.solutionDeployerName
+                    $env.solutionDeployerAppId = $platformEnv.solutionDeployerAppId
                 }
                 $matrix += $env
             }
