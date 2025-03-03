@@ -108,12 +108,23 @@
     $templateParams.domainAccessControl = $CdfConfig.Domain.AccessControl
     $templateParams.domainResourceNames = $CdfConfig.Domain.ResourceNames
 
+    $templateParams.serviceConfig = $CdfConfig.Service -and $CdfConfig.Service.Config ? $CdfConfig.Service.Config ?? @{} : @{}
+    $templateParams.serviceConfig.serviceName = $ServiceName
+    $templateParams.serviceConfig.serviceType = $ServiceType
+    $templateParams.serviceConfig.serviceGroup = $ServiceGroup
+    $templateParams.serviceConfig.serviceTemplate = $ServiceTemplate
+
+    $templateParams.serviceFeatures = $CdfConfig.Service -and $CdfConfig.Service.serviceFeatures ? $CdfConfig.Service.serviceFeatures ?? @{} : @{}
+    $templateParams.serviceNetworkConfig = $CdfConfig.Service -and $CdfConfig.Service.serviceNetworkConfig ? $CdfConfig.Service.serviceNetworkConfig ?? @{} : @{}
+    $templateParams.serviceAccessControl = $CdfConfig.Service -and $CdfConfig.Service.serviceAccessControl ? $CdfConfig.Service.serviceAccessControl ?? @{} : @{}
+
     $templateParams.serviceTags = @{} # TODO: Implement default configurable service tags or inherit domain default tags??
     $templateParams.serviceTags.BuildCommit = $env:GITHUB_SHA ?? $env:BUILD_SOURCEVERSION ?? $(git -C $TemplateDir rev-parse --short HEAD)
     $templateParams.serviceTags.BuildRun = $env:GITHUB_RUN_ID ?? $env:BUILD_BUILDNUMBER ?? "local"
     $templateParams.serviceTags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
     $templateParams.serviceTags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
 
+    # TODO: Remove these - deprecated. Kept for now not to break compatbility with old templates.
     $templateParams.serviceName = $ServiceName
     $templateParams.serviceType = $ServiceType
     $templateParams.serviceGroup = $ServiceGroup
