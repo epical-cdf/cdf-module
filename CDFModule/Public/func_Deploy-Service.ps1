@@ -383,7 +383,7 @@
         $SvcCdfConfig.Service.IsDeployed = $true
     }
     else {
-        Write-Error "Unable to determine service implementation. Supported ServiceTemplate keywords include 'api-*', 'logicapp-standard', 'container-*'."
+        Write-Error "Unable to determine service implementation [$ServiceTemplate]. Supported ServiceTemplate prefixes are 'api-', 'logicapp-', 'container-' and 'functionapp-'."
     }
     return $SvcCdfConfig
 }
