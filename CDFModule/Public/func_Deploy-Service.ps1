@@ -224,7 +224,8 @@
         }
     }
 
-    if ($ServiceTemplate -eq 'logicapp-standard') {
+    # TODO: Refactor in a registration pattern for supported service template commands
+    if ($ServiceTemplate.StartsWith('logicapp-')) {
         Deploy-ServiceLogicAppStd `
             -CdfConfig $SvcCdfConfig `
             -InputPath $ServiceSrcPath `
@@ -232,7 +233,7 @@
             -TemplateDir $CdfSharedPath/modules `
             -ErrorAction Stop
     }
-    elseif ($ServiceTemplate -eq 'functionapp') {
+    elseif ($ServiceTemplate.StartsWith('functionapp-')) {
         Deploy-ServiceFunctionApp `
             -CdfConfig $SvcCdfConfig `
             -InputPath $ServiceSrcPath `
