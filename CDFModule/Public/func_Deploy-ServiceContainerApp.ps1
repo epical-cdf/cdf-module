@@ -116,7 +116,7 @@
             -Settings $updateSettings `
             -VarName $envKey `
             -VarValue $envValue
-
+        Write-Verbose "Setting container app env setting: $envKey"
         if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal].+)[)|;].*') {
             $kvSecretName = $Matches[1]
             $envVar = $updateSettings | Where-Object { $_.Name -eq $envKey }
@@ -145,15 +145,15 @@
                 else {
                     $containerAppSecret.KeyVaultUrl = $secretUrl
                 }
-            }
-
-            if ($null -eq $envVar) {
-                $updateSettings += New-AzContainerAppEnvironmentVarObject `
-                    -Name "$($isInternal ? 'SVC_' : 'EXT_')_$externalSettingKey" `
-                    -SecretRef $secret.Name.ToLower()
-            }
-            else {
-                $envVar.SecretRef = $secret.Name.ToLower()
+    
+                if ($null -eq $envVar) {
+                    $updateSettings += New-AzContainerAppEnvironmentVarObject `
+                        -Name "$($isInternal ? 'SVC_' : 'EXT_')_$externalSettingKey" `
+                        -SecretRef $secret.Name.ToLower()
+                }
+                else {
+                    $envVar.SecretRef = $secret.Name.ToLower()
+                }
             }
         }
     }
@@ -169,8 +169,10 @@
     $cdfEnvId = $cdfConfig.Application.Env.definitionId
     $cdfDomainName = $cdfConfig.Domain.Config.domainName
     $cdfServiceName = $CdfConfig.Service.Config.serviceName
-    $imageTag = $CdfConfig.Service.Config.imageTag ?? 'latest'
-    $imageName = "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$cdfServiceName"
+    $imageTag = $env:CDF_IMAGE_TAG ?? $CdfConfig.Service.Config.imageTag ?? 'latest'
+    $imageName = $null -eq $env:CDF_IMAGE_NAME ? "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$cdfServiceName" : "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$($env:CDF_IMAGE_NAME)"
+    $replicasMin = $CdfConfig.Service.Config.replicasMin ?? 2
+    $replicasMax = $CdfConfig.Service.Config.replicasMin ?? 5
 
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_NAME' -VarValue  $imageName
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_TAG' -VarValue  $imageTag
@@ -179,16 +181,23 @@
     if ($null -eq $containerPort) {
         $containerPort = 8080
         $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'PORT' -VarValue "$containerPort"
-
-        # # For publicly exposed container apps... ??
-        # $app.Configuration = New-AzContainerAppConfigurationObject
-        # $app.Configuration.IngressExposedPort = $containerPort
     }
 
-    $containerProbe = New-AzContainerAppProbeObject `
+    $app.Configuration.IngressTargetPort = $containerPort
+
+    $containerLivenessProbe = New-AzContainerAppProbeObject `
         -Type Liveness `
         -HttpGetPort $containerPort `
-        -HttpGetPath '/healthz/Liveness' `
+        -HttpGetPath '/healthz/liveness' `
+        -HttpGetScheme HTTP `
+        -InitialDelaySecond 30 `
+        -PeriodSecond 15 `
+        -FailureThreshold 3 `
+        -TimeoutSecond 1
+    $containerReadinessProbe = New-AzContainerAppProbeObject `
+        -Type Readiness `
+        -HttpGetPort $containerPort `
+        -HttpGetPath '/healthz/readiness' `
         -HttpGetScheme HTTP `
         -InitialDelaySecond 30 `
         -PeriodSecond 15 `
@@ -199,7 +208,7 @@
         -Name $CdfConfig.Service.Config.serviceName `
         -Image "${imageName}:${imageTag}" `
         -Env $updateSettings `
-        -Probe $containerProbe
+        -Probe @($containerLivenessProbe, $containerReadinessProbe)
 
     if ($null -eq $app.TemplateContainer -or $app.TemplateContainer.Count -eq 0) {
         $app.TemplateContainer += $container
@@ -217,6 +226,8 @@
         -ResourceGroupName $CdfConfig.Service.ResourceNames.appServiceResourceGroup `
         -Configuration $app.Configuration `
         -TemplateContainer  $app.TemplateContainer[0] `
+        -ScaleMinReplica $replicasMin `
+        -ScaleMaxReplica $replicasMax `
         -WarningAction:SilentlyContinue
 
     Write-Host "Container App Service implementation deployment done."
