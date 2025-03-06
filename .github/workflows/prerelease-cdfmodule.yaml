@@ -56,7 +56,7 @@ jobs:
           cd release
           Publish-Module -Path ./CDFModule -NuGetApiKey $env:NUGET_KEY -Verbose
 
-      - name: Upload templates artifact
+      - name: Upload release assets
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -66,9 +66,8 @@ jobs:
           asset_name: CDFModule.zip
           asset_content_type: application/zip
 
-      # Artifact name is used in pwsh scripts/cmdlet, see/search reference REF-ARTIFACT-05
       - name: Upload deployment artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdf-module-${{ steps.prepare-release.outputs.CdfModuleVersion }}
           path: ./release/CDFModule
