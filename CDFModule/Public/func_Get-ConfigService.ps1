@@ -59,15 +59,35 @@
     if (!$haveCdfParameters) {
       throw("Missing required CDF parameters")
     }
-
+  }
+  Process {
+    if (!$CdfConfig.Domain.IsDeployed) {
+      Write-Warning "Domain config is not deployed, this may cause errors in using the service configuration."
+    }
+    
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
     $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
     $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
-    $region = $CdfConfig.Platform.Env.region
     $regionCode = $CdfConfig.Platform.Env.regionCode
+    $region = $CdfConfig.Platform.Env.region
     $applicationEnv = $CdfConfig.Application.Env
-  }
-  Process {
+    $DomainName = $CdfConfig.Domain.Config.domainName
+    
+    # Get service configuration
+    if (Test-Path "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" ) {
+      Write-Verbose "Loading configuration file"
+      $CdfService = Get-Content "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" | ConvertFrom-Json -AsHashtable
+    }
+    else {
+      Write-Verbose "No service configuration file found '$ServiceName' with platform key '$platformEnvKey', application key '$applicationEnvKey', domain name '$DomainName' and region code '$regionCode'."
+      $CdfService = [ordered] @{
+        IsDeployed = $false
+        Env        = [ordered] @{}
+        Config     = [ordered] @{}
+        Features   = [ordered] @{}
+      }
+    }
+
     if ($Deployed) {
       # Get latest deployment result outputs
       $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
@@ -113,8 +133,9 @@
       }
     }
     else {
-      $serviceConfigFile = "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode.json"
-      $CdfService = Get-Content $serviceConfigFile | ConvertFrom-Json -AsHashtable
+      if ($CdfService.IsDeployed) {
+        Write-Warning "Service config on file is a deployed version, use -Deployed to get latest"
+      }
     }
 
     $CdfConfig.Service = $CdfService

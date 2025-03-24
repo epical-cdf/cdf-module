@@ -124,6 +124,11 @@
             $order | Update-ACMEOrder $state -PassThru
         }
 
+        if ($order.Status -ieq ("invalid")) {
+            $order | Get-ACMEAuthorizationError -State $state;
+            throw "Order was invalid";
+        }
+
         # We should have a valid order now and should be able to complete it
         # Therefore we need a certificate key
         $certKey = New-ACMECertificateKey -Path (Join-Path $tempPath "$CertName.key.xml")
@@ -169,6 +174,7 @@
             -Password $securePassword
 
         # Write-Verbose 'KeyVault Results:' ($kvCert | ConvertTo-Json -Depth 10)
+        # TODO: Move to separate command
         if ($null -ne $CdfConfig) {
             $region = $CdfConfig.Platform.Env.region
             $regionCode = $CdfConfig.Platform.Env.regionCode
@@ -178,39 +184,33 @@
             $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
 
             $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName
-            $keyVault | ConvertTo-Json -Depth 5
+            # $keyVault | ConvertTo-Json -Depth 5
 
-            $appServicePlan = Get-AzAppServicePlan -Name $CdfConfig.Application.ResourceNames.laAppServicePlanName
-            $appServicePlan | ConvertTo-Json -Depth 5
-
-            $certProperties = @{
-                serverFarmId       = $appServicePlan.Id
-                keyVaultId         = $keyVault.ResourceId
-                keyVaultSecretName = $CertName
+            if ($null -ne $CdfConfig.Application.ResourceNames.laAppServicePlanName) {
+                $appServicePlan = Get-AzAppServicePlan -Name $CdfConfig.Application.ResourceNames.laAppServicePlanName
+                $appServicePlan | ConvertTo-Json -Depth 5
+    
+                $certProperties = @{
+                    serverFarmId       = $appServicePlan.Id
+                    keyVaultId         = $keyVault.ResourceId
+                    keyVaultSecretName = $CertName
+                }
+                $certProperties | ConvertTo-Json -Depth 5
+    
+                Invoke-AzRestMethod `
+                    -Method PUT `
+                    -Uri "https://management.azure.com/subscriptions/$($CdfConfig.Platform.Env.subscriptionId)/resourceGroups/$($CdfConfig.Application.ResourceNames.appResourceGroupName)/providers/Microsoft.Web/certificates/$($platformEnvKey)-$($applicationEnvKey)-certificate?api-version=2024-04-01" `
+                    -Payload (@{
+                        type       = 'Microsoft.Web/certificates'
+                        name       = "$($platformEnvKey)-$($applicationEnvKey)-certificate"
+                        location   = $region
+                        properties = $certProperties
+                    } | ConvertTo-Json -Depth 10) `
+                    -WaitForCompletion
             }
-            $certProperties | ConvertTo-Json -Depth 5
-
-            New-AzResource `
-                -Location $region `
-                -ResourceName "$platformEnvKey-$applicationEnvKey-certificate" `
-                -ResourceType "Microsoft.Web/certificates" `
-                -ResourceGroupName $CdfConfig.Application.ResourceNames.appResourceGroupName `
-                -Properties $certProperties -Force
-
-            # // Setup certificate in the application
-            # resource logicAppWildCardCert 'Microsoft.Web/certificates@2023-12-01' = {
-            #   name: '${platformEnvKey}-${applicationEnvKey}-certificate'
-            #   location: location
-            #   properties: {
-            #     keyVaultId: applicationKeyVault.id
-            #     keyVaultSecretName: 'wildcard-intg01-axlint02-dev-axlint-cloud'
-            #     serverFarmId: applicationAppServicePlan.id
-            #   }
-            # }
         }
 
-
-        return $kvCert
+        return $certificateFile
     }
     catch {
         Write-Error 'An error occurred:'
@@ -224,10 +224,4 @@
             -ZoneName $DomainName `
             -ResourceGroupName $DnsRG
     }
-
-    # Instance axlint03-dev
-    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint03.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint03-platform-dev-we' -KeyVaultName 'kvaxlint03devwe' -CertName 'wildcard-axlint03-dev-axlint-cloud'
-    #
-    # Instance axlint02-dev
-    # New-LetsEncryptCertificate -HostName '*' -DomainName 'axlint02.dev.axlint.cloud' -EmailAddress 'andreas.stenlund@epicalgroup.com' -DnsRG 'rg-axlint02-platform-dev-we' -KeyVaultName 'kvaxlint02devwe' -CertName 'wildcard-axlint02-dev-axlint-cloud'
 }

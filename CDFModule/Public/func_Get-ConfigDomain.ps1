@@ -75,10 +75,6 @@
     $region = $CdfConfig.Platform.Env.region
     $applicationEnv = $CdfConfig.Application.Env
 
-    if (!$CdfConfig.Application.IsDeployed) {
-      Write-Warning "Application config is not deployed, this may cause errors in using the domain configuration."
-    }
-
     # Get domain configuration
     if (Test-Path "$sourcePath/domain/domain.$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode.json" ) {
       Write-Verbose "Loading configuration file"
