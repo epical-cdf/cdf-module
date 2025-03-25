@@ -171,44 +171,18 @@
     $cdfServiceName = $CdfConfig.Service.Config.serviceName
     $imageTag = $env:CDF_IMAGE_TAG ?? $CdfConfig.Service.Config.imageTag ?? 'latest'
     $imageName = $null -eq $env:CDF_IMAGE_NAME ? "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$cdfServiceName" : "$acrName.azurecr.io/$cdfEnvId/$cdfDomainName/$($env:CDF_IMAGE_NAME)"
-    $replicasMin = $CdfConfig.Service.Config.replicasMin ?? 2
-    $replicasMax = $CdfConfig.Service.Config.replicasMin ?? 5
+    $replicasMin = $CdfConfig.Service.Config.replicasMin ?? $app.ScaleMinReplica
+    $replicasMax = $CdfConfig.Service.Config.replicasMin ?? $app.ScaleMaxReplica
 
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_NAME' -VarValue  $imageName
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_TAG' -VarValue  $imageTag
 
-    $containerPort = $updateSettings['PORT']
-    if ($null -eq $containerPort) {
-        $containerPort = 8080
-        $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'PORT' -VarValue "$containerPort"
-    }
-
-    $app.Configuration.IngressTargetPort = $containerPort
-
-    $containerLivenessProbe = New-AzContainerAppProbeObject `
-        -Type Liveness `
-        -HttpGetPort $containerPort `
-        -HttpGetPath '/healthz/liveness' `
-        -HttpGetScheme HTTP `
-        -InitialDelaySecond 30 `
-        -PeriodSecond 15 `
-        -FailureThreshold 3 `
-        -TimeoutSecond 1
-    $containerReadinessProbe = New-AzContainerAppProbeObject `
-        -Type Readiness `
-        -HttpGetPort $containerPort `
-        -HttpGetPath '/healthz/readiness' `
-        -HttpGetScheme HTTP `
-        -InitialDelaySecond 30 `
-        -PeriodSecond 15 `
-        -FailureThreshold 3 `
-        -TimeoutSecond 1
-
+    $template = $app.TemplateContainer[0]
     $container = New-AzContainerAppTemplateObject `
         -Name $CdfConfig.Service.Config.serviceName `
         -Image "${imageName}:${imageTag}" `
         -Env $updateSettings `
-        -Probe @($containerLivenessProbe, $containerReadinessProbe)
+        -Probe  $template.Probe
 
     if ($null -eq $app.TemplateContainer -or $app.TemplateContainer.Count -eq 0) {
         $app.TemplateContainer += $container
