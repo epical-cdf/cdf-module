@@ -178,11 +178,32 @@
     $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'CDF_IMAGE_TAG' -VarValue  $imageTag
 
     $template = $app.TemplateContainer[0]
-    $container = New-AzContainerAppTemplateObject `
-        -Name $CdfConfig.Service.Config.serviceName `
-        -Image "${imageName}:${imageTag}" `
-        -Env $updateSettings `
-        -Probe  $template.Probe
+    $templateParams = @{
+        Name           = $CdfConfig.Service.Config.serviceName
+        Image          = "${imageName}:${imageTag}"
+        Env            = $updateSettings
+        ResourceCpu    = $template.ResourceCpu
+        ResourceMemory = $template.ResourceMemory
+    }
+    # Probe          = $template.Probe
+    if ($null -ne $template.VolumeMount) {
+        $templateParams.VolumeMount = $template.VolumeMount
+    }
+    elseif ($null -ne $CdfConfig.Service.Config.volumeMount) {
+        $templateParams.VolumeMount = New-AzContainerAppVolumeMountObject `
+            -Name $CdfConfig.Service.Config.volumeMount.name `
+            -MountPath $CdfConfig.Service.Config.volumeMount.mountPath `
+            -ReadOnly $CdfConfig.Service.Config.volumeMount.readOnly
+    }
+    if ($null -ne $template.Arg) {
+        $templateParams.Arg = $template.Arg
+    }
+    if ($null -ne $template.Command) {
+        $templateParams.Command = $template.Command
+    }
+ 
+    $templateParams | ConvertTo-Json -Depth 10 | Set-Content -Path ./debug.json
+    $container = New-AzContainerAppTemplateObject -Probe $template.Probe @templateParams
 
     if ($null -eq $app.TemplateContainer -or $app.TemplateContainer.Count -eq 0) {
         $app.TemplateContainer += $container
