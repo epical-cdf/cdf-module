@@ -102,6 +102,8 @@
         # Add settings from the enterprise configuration for the spoke network / landing zone
         if ( $CdfConfig.Platform.SpokeNetworkConfig ) { $templateParams.enterpriseSpokeConfig = $CdfConfig.Platform.SpokeNetworkConfig }
 
+        # Add Public IP of Host for Postgres
+        if ( $CdfConfig.Platform.Features.enablePostgres ) {$templateParams.buildAgentIP = (Invoke-WebRequest ifconfig.me/ip).Content } else {$templateParams.buildAgentIP = ''}
         # TODO: Standardize this ugly workaround to provide DevOps Build Env Token
         if ( $env:PLATFORM_BUILDAGENT_PAT ) {
             $templateParams.platformEnv.platformDeploymentAccessToken = $env:PLATFORM_BUILDAGENT_PAT
