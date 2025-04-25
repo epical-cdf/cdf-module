@@ -64,8 +64,10 @@
         [switch] $UseCS,
         [Parameter(Mandatory = $true)]
         [string]$SubscriptionId,
+        # [Parameter(Mandatory = $true)]
+        # [hashtable]$Config,
         [Parameter(Mandatory = $true)]
-        [hashtable]$Config,
+        [hashtable]$ConnectionDefinition,
         [Parameter(Mandatory = $true)]
         [hashtable]$Settings,
         [Parameter(Mandatory = $true)]
@@ -76,12 +78,13 @@
         [string] $ParameterName
     )
 
-    $connectionParams = $Config.Config[$ParameterName]
+    # $connectionParams = $Config.Config[$ParameterName]
+    $connectionParams = $ConnectionDefinition.connectionConfig
 
-    $azCtx = Get-CdfAzureContext -SubscriptionId $SubscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $SubscriptionId
 
     if ($UseCS) {
-        switch ($ServiceProvider.ToLower()) {
+        switch ($ConnectionDefinition.ServiceProvider.ToLower()) {
             'keyvault' {
                 # No support for connection string
                 $Settings["$($ConnectionName)Uri"] = "$($connectionParams.name).vault.azure.net"
@@ -157,7 +160,9 @@
                 $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
             }
             default {
-                Write-Warning "Unsupported service provider: $ServiceProvider"
+                if($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
+                    Write-Warning "Unsupported service provider: $ServiceProvider"
+                }
             }
         }
 
