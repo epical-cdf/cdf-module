@@ -167,7 +167,8 @@
                 $connectionConfig.parameterValues.connectionString = "@appsetting('$($connectionName)_connectionString')"
             }
             Default {
-                $connectionConfig.parameterValues.connectionString = "@appsetting('$($ConnectionName)Uri')"
+                # # It is common for custom connections to not use connection strings
+                # $connectionConfig.parameterValues.connectionString = "@appsetting('$($ConnectionName)Uri')"
             }
         }
     }

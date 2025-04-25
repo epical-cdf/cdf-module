@@ -259,10 +259,10 @@
     if ($null -eq $parameters.Environment) { $parameters.Environment = [ordered] @{ "type" = "object"; "value" = [ordered] @{} } }
     if ($null -eq $parameters.BuildContext) { $parameters.BuildContext = [ordered] @{ "type" = "object"; "value" = [ordered] @{} } }
 
-    Set-CdfLogicAppParameters `
+    Set-LogicAppParameters `
         -CdfConfig $CdfConfig `
-        -ServiceConfig $serviceConfig `
-        -Parameters $parameters
+        -AppSettings $updateSettings `
+        -Parameters $parameters | Out-Null
 
     $parameters.Environment.value = [ordered] @{
         definitionId   = $CdfConfig.Application.Env.definitionId
@@ -302,175 +302,6 @@
     #############################################################
     Write-Host "Prepare connections.json"
 
-    # TODO: Make these configurable using a "platform services" definition file
-    # Proposal for definition.json:
-    #   {
-    #     ServiceBus: [
-    #       {
-    #         "Name": "PlatformServiceBus",
-    #         "ServiceProvider": "servicebus",
-    #         "Scope": "Platform
-    #       }
-    #     ],
-    #     KeyVault: [
-    #       {
-    #         "Name": "PlatformKeyVault",
-    #         "ServiceProvider": "keyvault",
-    #         "Scope": "Platform
-    #       },
-    #       {
-    #         "Name": "ApplicationKeyVault",
-    #         "ServiceProvider": "keyvault",
-    #         "Scope": "Application
-    #       },
-    #       {
-    #         "Name": "DomainKeyVault",
-    #         "ServiceProvider": "keyvault",
-    #         "Scope": "Domain
-    #       }
-    #     ]
-    #   }
-
-    $connectionDefinitions = @{
-        PlatformKeyVault             = @{
-            ConnectionKey   = "platformKeyVault"
-            ServiceProvider = "keyvault"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableKeyVault
-        }
-        PlatformServiceBus           = @{
-            ConnectionKey   = "platformServiceBus"
-            ServiceProvider = "servicebus"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableServiceBus
-        }
-        PlatformEventGridTopicApi    = @{
-            ConnectionKey   = "platformEventGridTopic"
-            ServiceProvider = "azureeventgridpublish"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableEventGridTopic
-            IsApiConnection = $true
-        }
-        PlatformEventGridTopic       = @{
-            ConnectionKey   = "platformEventGridTopic"
-            ServiceProvider = "eventGridPublisher"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableEventGridTopic
-            IsApiConnection = $false
-        }
-        PlatformStorageAccountBlob   = @{
-            ConnectionKey   = "platformStorageAccount"
-            ServiceProvider = "AzureBlob"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableStorageAccount
-        }
-        PlatformStorageAccountFile   = @{
-            ConnectionKey   = "platformStorageAccount"
-            ServiceProvider = "azurefile"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableStorageAccount
-        }
-        PlatformStorageAccountQueues = @{
-            ConnectionKey   = "platformStorageAccount"
-            ServiceProvider = "azurequeues"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableStorageAccount
-        }
-        PlatformStorageAccountTables = @{
-            ConnectionKey   = "platformStorageAccount"
-            ServiceProvider = "azureTables"
-            Scope           = "Platform"
-            IsEnabled       = $CdfConfig.Platform.Features.enableStorageAccount
-        }
-        ApplicationKeyVault          = @{
-            ConnectionKey   = "applicationKeyVault"
-            ServiceProvider = "keyvault"
-            Scope           = "Application"
-            IsEnabled       = $CdfConfig.Application.Features.enableKeyVault
-        }
-        AppSftpStorageAccountBlob    = @{
-            ConnectionKey   = "sftpStorageAccount"
-            ServiceProvider = "AzureBlob"
-            Scope           = "Application"
-            IsEnabled       = $CdfConfig.Application.Features.enableSftpStorageAccount
-        }
-        DomainKeyVault               = @{
-            ConnectionKey   = "domainKeyVault"
-            ServiceProvider = "keyvault"
-            Scope           = "Domain"
-            IsEnabled       = $CdfConfig.Domain.Features.enableKeyVault
-        }
-        DomainStorageAccountBlob     = @{
-            ConnectionKey   = "domainStorageAccount"
-            ServiceProvider = "AzureBlob"
-            Scope           = "Domain"
-            IsEnabled       = $CdfConfig.Domain.Features.enableStorageAccount
-        }
-        DomainStorageAccountFile     = @{
-            ConnectionKey   = "domainStorageAccount"
-            ServiceProvider = "azurefile"
-            Scope           = "Domain"
-            IsEnabled       = $CdfConfig.Domain.Features.enableStorageAccount
-        }
-        DomainStorageAccountQueues   = @{
-            ConnectionKey   = "domainStorageAccount"
-            ServiceProvider = "azurequeues"
-            Scope           = "Domain"
-            IsEnabled       = $CdfConfig.Domain.Features.enableStorageAccount
-        }
-        DomainStorageAccountTables   = @{
-            ConnectionKey   = "domainStorageAccount"
-            ServiceProvider = "azureTables"
-            Scope           = "Domain"
-            IsEnabled       = $CdfConfig.Domain.Features.enableStorageAccount
-        }
-    }
-
-    $svcConns = $serviceConfig.Connections ?? $connectionDefinitions.Keys
-
-    # Loop through all Platform, Application and Domain connections
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`t$connectionName"
-
-            # Add ServiceProviderConnection
-            Add-LogicAppServiceProviderConnection `
-                -Connections $connections `
-                -ConnectionName $connectionName `
-                -serviceProvider $definition.ServiceProvider `
-                -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
-
-            # Add duplicate connection config for API Connections
-            $config = $CdfConfig | Get-ManagedApiConnection -ConnectionKey $definition.ConnectionKey
-            if ($definition.IsEnabled -and $definition.IsApiConnection -and $null -ne $config) {
-                $config.Identity = $CdfConfig.Domain.Config.domainIdentityResourceId
-                Add-LogicAppManagedApiConnection `
-                    -Connections $connections `
-                    -ConnectionName $connectionName `
-                    -ConnectionConfig $config
-            }
-        }
-    }
-
-    # Loop through any External connections referenced
-    foreach ( $connectionName in $svcConns ) {
-        if ($connectionName.StartsWith('Enterprise') -or $connectionName.StartsWith('External') -or $connectionName.StartsWith('Internal') ) {
-            $config = Get-CdfManagedApiConnection -ConnectionKey $connectionName
-            $config.Identity = $CdfConfig.Domain.Config.domainIdentityResourceId
-            if ($null -ne $config) {
-                Write-Host "`t$connectionName"
-                Add-LogicAppManagedApiConnection `
-                    -Connections $connections `
-                    -ConnectionName $connectionName `
-                    -ConnectionConfig $config
-            }
-            else {
-                Write-Host "`t$connectionName - missing connection configuration" -ForegroundColor Yellow
-            }
-        }
-    }
-
     $connections | ConvertTo-Json -Depth 5 | Set-Content -Path "$ServicePath/connections.json"
     Write-Debug "Connections: $($connections | ConvertTo-Json -Depth 5 | Out-String)"
     Write-Host "Wrote updated connections.json"
@@ -479,8 +310,36 @@
     # Update local.setting.json with connection uri parameters
     #############################################################
     Write-Host "Prepare local.setting.json"
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
+    $svcConns = $serviceConfig.Connections
 
-    # TODO: Make these configurable using a "platform services" definition file
+    foreach ( $connectionName in $serviceConfig.Connections ) {
+        $definition = $connectionDefinitions[$connectionName]
+        if ($definition) {
+            Write-Host "`t$connectionName"
+            # Add Managed API Connections
+            $config = $CdfConfig | Get-ManagedApiConnection -ConnectionKey $definition.ConnectionKey
+            if ($true -eq $definition.IsApiConnection -and $null -ne $config) {
+                $config.Identity = $CdfConfig.Domain.Config.domainIdentityResourceId
+                Add-LogicAppManagedApiConnection `
+                    -UseCS `
+                    -Connections $connections `
+                    -ConnectionName $connectionName `
+                    -ConnectionConfig $config
+            }
+            else {
+                # Add ServiceProviderConnection
+                Add-LogicAppServiceProviderConnection `
+                    -UseCS `
+                    -Connections $connections `
+                    -ConnectionName $connectionName `
+                    -serviceProvider $definition.ServiceProvider `
+                    -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
+            }
+        }
+    }
+
+    # Add app settings for Logic App Connections
     foreach ( $connectionName in $connectionDefinitions.Keys ) {
         $definition = $connectionDefinitions[$connectionName]
         if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
@@ -488,7 +347,7 @@
             Add-LogicAppAppSettings `
                 -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
                 -Settings $appSettings.Values  `
-                -Config $CdfConfig[$definition.Scope] `
+                -ConnectionDefinition $definition `
                 -ConnectionName $connectionName `
                 -ParameterName $definition.ConnectionKey `
                 -ServiceProvider $definition.ServiceProvider
