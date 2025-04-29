@@ -64,6 +64,8 @@
                 $DomainDbPassword = GeneratePassword
                 $DatabaseName = $DomainName
                 $DatabaseUser = $DomainName
+                $DatabaseUserSecretName = "Domain-$DomainName-Postgres-UserName"
+                $DatabasePasswordSecretName = "Domain-$DomainName-Postgres-Password"
                 Write-Host "Preparing Postgres database, user and permissions."
                 $PlainDomainDbPassword = (New-Object System.Net.NetworkCredential("", $DomainDbPassword)).Password
                 $env:PGPASSWORD = $AdminPassword
@@ -95,8 +97,6 @@
                                     if ($LASTEXITCODE -ne 0) {
                                         throw $output
                                     }
-                                    $DatabaseUserSecretName = "Domain-$DomainName-Postgres-UserName"
-                                    $DatabasePasswordSecretName = "Domain-$DomainName-Postgres-Password"
                                     $null = Set-AzKeyVaultSecret `
                                         -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
                                         -Name $DatabasePasswordSecretName `
@@ -106,9 +106,6 @@
                                         -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
                                         -Name  $DatabaseUserSecretName `
                                         -SecretValue $DatabaseUserName
-                                    $OutputDetails.Add("Postgres-UserSecretName", $DatabaseUserSecretName)
-                                    $OutputDetails.Add("Postgres-PasswordSecretName", $DatabasePasswordSecretName)
-                                    $OutputDetails.Add("Postgres-Database", $DatabaseName)
                                 }
                                 else {
                                     Write-Host 'Domain user already exists.'
@@ -117,6 +114,9 @@
                         }
                     }
                 }
+                $OutputDetails.Add("Postgres-UserSecretName", $DatabaseUserSecretName)
+                $OutputDetails.Add("Postgres-PasswordSecretName", $DatabasePasswordSecretName)
+                $OutputDetails.Add("Postgres-Database", $DatabaseName)
             }
             return ,$OutputDetails;
         }
