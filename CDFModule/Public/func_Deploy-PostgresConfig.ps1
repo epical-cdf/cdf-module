@@ -38,46 +38,45 @@
 
     [CmdletBinding()]
     Param(
-        [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [Object]$CdfConfig,
-        [Parameter(Mandatory = $true)]
-        [string] $Scope
+        [Parameter(Mandatory = $false)]
+        [string] $Scope = 'Platform'
     )
 
     Begin {}
     Process {
         try {
+            $OutputDetails = [ordered]@{}
             if ($CdfConfig.Domain.Features.usePostgres) {
-                $ServerName = $CdfConfig.Platform.ResourceNames.postgresFQDN
-                $DefaultDatabase = 'postgres'
+                $ServerName = $CdfConfig.Platform.Config.platformPostgres.databaseServerFQDN
+                $DefaultDatabase = $CdfConfig.Platform.Config.platformPostgres.database
                 $Port = 5432
                 $DomainName = $CdfConfig.Domain.Config.domainName
                 $AdminUserName = Get-AzKeyVaultSecret `
                     -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
-                    -Name $CdfConfig.Platform.Config.platformPostgres.adminUserSecretName `
+                    -Name $CdfConfig.Platform.Config.platformPostgres.userSecretName `
                     -AsPlainText
                 $AdminPassword = Get-AzKeyVaultSecret `
                     -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
-                    -Name $CdfConfig.Platform.Config.platformPostgres.adminPasswordSecretName `
+                    -Name $CdfConfig.Platform.Config.platformPostgres.passwordSecretName `
                     -AsPlainText
-                #$AdminPassword = ConvertTo-SecureString -String $AdminPassword -AsPlainText -Force
                 $DomainDbPassword = GeneratePassword
-                
+                $DatabaseName = $DomainName
+                $DatabaseUser = $DomainName
                 Write-Host "Preparing Postgres database, user and permissions."
                 $PlainDomainDbPassword = (New-Object System.Net.NetworkCredential("", $DomainDbPassword)).Password
-                #$plainAdminPassword = (New-Object System.Net.NetworkCredential("", $AdminPassword)).Password
-                # Environment variable PGPASSWORD is needed for Login
                 $env:PGPASSWORD = $AdminPassword
                 #Command to check if database exists
-                $checkDbQuery = "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '$DomainName');"
-                $checkRoleQuery = "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = '$DomainName');"
+                $checkDbQuery = "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '$DatabaseName');"
+                $checkRoleQuery = "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = '$DatabaseUser');"
                 $databaseExists = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c $checkDbQuery
                 if ($LASTEXITCODE -ne 0) {
                     throw $databaseExists
                 }
                 else {
                     if ($databaseExists -match "f") {
-                        $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "CREATE DATABASE $DomainName;"
+                        $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "CREATE DATABASE $DatabaseName;"
                         if ($LASTEXITCODE -ne 0) {
                             throw $output
                         }
@@ -88,34 +87,38 @@
                             }
                             else {
                                 if ($roleExists -match "f") {
-                                    $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "CREATE USER $DomainName WITH PASSWORD '$plainDomainDbPassword';"
+                                    $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "CREATE USER $DatabaseUser WITH PASSWORD '$plainDomainDbPassword';"
                                     if ($LASTEXITCODE -ne 0) {
                                         throw $output
                                     }
-                                    $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "GRANT ALL PRIVILEGES ON DATABASE $DomainName TO $DomainName;"
+                                    $output = & psql -h $ServerName -U $AdminUserName -d $DefaultDatabase -p $Port -c "GRANT ALL PRIVILEGES ON DATABASE $DatabaseName TO $DatabaseUser;"
                                     if ($LASTEXITCODE -ne 0) {
                                         throw $output
                                     }
-                                    Set-AzKeyVaultSecret `
-                                        -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                                        -Name "Domain-Postgres-Password" `
+                                    $DatabaseUserSecretName = "Domain-$DomainName-Postgres-UserName"
+                                    $DatabasePasswordSecretName = "Domain-$DomainName-Postgres-Password"
+                                    $null = Set-AzKeyVaultSecret `
+                                        -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
+                                        -Name $DatabasePasswordSecretName `
                                         -SecretValue $DomainDbPassword
                                     $DatabaseUserName = ConvertTo-SecureString -String $DomainName -AsPlainText -Force
-                                    Set-AzKeyVaultSecret `
-                                        -VaultName $CdfConfig.Domain.ResourceNames.keyVaultName `
-                                        -Name "Domain-Postgres-UserName" `
+                                    $null = Set-AzKeyVaultSecret `
+                                        -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
+                                        -Name  $DatabaseUserSecretName `
                                         -SecretValue $DatabaseUserName
+                                    $OutputDetails.Add("Postgres-UserSecretName", $DatabaseUserSecretName)
+                                    $OutputDetails.Add("Postgres-PasswordSecretName", $DatabasePasswordSecretName)
+                                    $OutputDetails.Add("Postgres-Database", $DatabaseName)
                                 }
                                 else {
                                     Write-Host 'Domain user already exists.'
-                                    return $false
                                 }
                             }
                         }
                     }
                 }
-                return $true;
             }
+            return ,$OutputDetails;
         }
         catch {
             Write-Host $_;

@@ -77,7 +77,7 @@ Function Deploy-TemplateDomain {
         $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
         $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "domain-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$regionCode"
-
+        $postgresConfigOutput = $CdfConfig | Deploy-PostgresConfig
         # Setup platform parameters from envrionment and params file
         $templateParams = [ordered] @{}
 
@@ -95,6 +95,11 @@ Function Deploy-TemplateDomain {
 
         $templateParams.domainConfig = $CdfConfig.Domain.Config
         $templateParams.domainFeatures = $CdfConfig.Domain.Features
+        if($postgresConfigOutput.Count -ne 0){
+            $templateParams.domainConfig.Add("postgresDatabaseName",$postgresConfigOutput["Postgres-Database"])
+            $templateParams.domainConfig.Add("postgresUserSecretName",$postgresConfigOutput["Postgres-UserSecretName"])
+            $templateParams.domainConfig.Add("postgresPasswordSecretName",$postgresConfigOutput["Postgres-PasswordSecretName"])
+        }
         $templateParams.domainNetworkConfig = $CdfConfig.Domain.NetworkConfig ?? @{}
         $templateParams.domainAccessControl = $CdfConfig.Domain.AccessControl ?? @{}
 
