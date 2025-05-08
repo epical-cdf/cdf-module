@@ -95,10 +95,17 @@ Function Deploy-TemplateDomain {
 
         $templateParams.domainConfig = $CdfConfig.Domain.Config
         $templateParams.domainFeatures = $CdfConfig.Domain.Features
-        if($postgresConfigOutput.Count -ne 0){
-            $templateParams.domainConfig.Add("postgresDatabaseName",$postgresConfigOutput["Postgres-Database"])
-            $templateParams.domainConfig.Add("postgresUserSecretName",$postgresConfigOutput["Postgres-UserSecretName"])
-            $templateParams.domainConfig.Add("postgresPasswordSecretName",$postgresConfigOutput["Postgres-PasswordSecretName"])
+        if ($postgresConfigOutput.Count -ne 0) {
+            if ($templateParams.domainConfig.ContainsKey("postgresDatabaseName")) {
+                $templateParams.domainConfig["postgresDatabaseName"] = $postgresConfigOutput["Postgres-Database"]
+                $templateParams.domainConfig["postgresUserSecretName"] = $postgresConfigOutput["Postgres-UserSecretName"]
+                $templateParams.domainConfig["postgresPasswordSecretName"] = $postgresConfigOutput["Postgres-PasswordSecretName"]
+            }
+            else {
+                $templateParams.domainConfig.Add("postgresDatabaseName", $postgresConfigOutput["Postgres-Database"])
+                $templateParams.domainConfig.Add("postgresUserSecretName", $postgresConfigOutput["Postgres-UserSecretName"])
+                $templateParams.domainConfig.Add("postgresPasswordSecretName", $postgresConfigOutput["Postgres-PasswordSecretName"])
+            }
         }
         $templateParams.domainNetworkConfig = $CdfConfig.Domain.NetworkConfig ?? @{}
         $templateParams.domainAccessControl = $CdfConfig.Domain.AccessControl ?? @{}
