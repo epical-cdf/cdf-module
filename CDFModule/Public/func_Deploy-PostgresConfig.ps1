@@ -1,25 +1,16 @@
 ﻿Function Deploy-PostgresConfig {
     <#
     .SYNOPSIS
-    Deploy service bus queues, topics and subscriptions
+    Deploy postgres database, user and permission for a domain and a schema under domain database.
 
     .DESCRIPTION
-    The cmdlet makes token substitution for the Platform config environment.
-    Then deploys the service bus queues, topics and subscriptions for the service bus resource.
+    The cmdlet Deploy postgres database, user and permission for a domain and a schema under domain database.
 
     .PARAMETER CdfConfig
     The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
-    .PARAMETER InputPath
-    The deployment package path, where servicebus.config.json is located.
-    Optional, defaults to "./build"
-
-    .PARAMETER OutputPath
-    Output path for the environment specific config file servicebus.config.<env nameId>.json
-    Optional, defaults to "./build"
-
-    .PARAMETER TemplateDir
-    Path to the bicep template folder where main.bicep is found. Defaults to ".".
+    .PARAMETER Scope
+    Target scope : Domain or Service
 
     .INPUTS
     None. You cannot pipe objects.
@@ -30,10 +21,15 @@
     .EXAMPLE
     Deploy-CdfPostgresConfig `
         -CdfConfig $config `
-        -Scope "Platform"
+        -Scope "Domain"
+
+    Deploy-CdfPostgresConfig `
+        -CdfConfig $config `
+        -Scope "Service"
 
     .LINK
     Deploy-CdfTemplateDomain
+    Deploy-CdfService
     #>
 
     [CmdletBinding()]
@@ -62,7 +58,7 @@
                     $RuleName = "BuildAgentIP-$Scope-$DomainName-Deployment"
                 }
                 else {
-                    $ServiceName = 'test'#$CdfConfig.Service.Config.serviceName
+                    $ServiceName = $CdfConfig.Service.Config.serviceName
                     $RuleName = "BuildAgentIP-$Scope-$DomainName-Deployment"
                 }
 
