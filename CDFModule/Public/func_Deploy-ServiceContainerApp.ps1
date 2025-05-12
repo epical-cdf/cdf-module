@@ -85,6 +85,8 @@
     Write-Host "containerAppRG: $containerAppRG"
     Write-Host "containerAppName: $containerAppName"
 
+    $serviceConfig = Get-Content -Path "$OutputPath/cdf-config.json" | ConvertFrom-Json -AsHashtable
+
     #--------------------------------------
     # Preparing servicesettings for target env
     #--------------------------------------
@@ -109,6 +111,21 @@
     #-------------------------------------------------------------
     $envSettings = $CdfConfig | Get-CdfServiceConfigSettings -InputPath $OutputPath
 
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
+    $svcConns = $serviceConfig.Connections
+    foreach ( $connectionName in $connectionDefinitions.Keys ) {
+        $definition = $connectionDefinitions[$connectionName]
+        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
+            Write-Host "`tConnection setting for $connectionName"
+            Add-ServiceConnectionSettings `
+                -Settings $envSettings `
+                -CdfConfig $CdfConfig `
+                -ConnectionDefinition $definition `
+                -ConnectionName $connectionName `
+                -ParameterName $definition.ConnectionKey
+        }
+    }
+
     foreach ($envKey in $envSettings.Keys) {
         $envValue = $envSettings[$envKey]
 
@@ -117,7 +134,7 @@
             -VarName $envKey `
             -VarValue $envValue
         Write-Verbose "Setting container app env setting: $envKey"
-        if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal].+)[)|;].*') {
+        if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal|Cdf].+)[)|;].*') {
             $kvSecretName = $Matches[1]
             $envVar = $updateSettings | Where-Object { $_.Name -eq $envKey }
             $isInternal = $envValue -match 'Internal'
@@ -145,7 +162,7 @@
                 else {
                     $containerAppSecret.KeyVaultUrl = $secretUrl
                 }
-    
+
                 if ($null -eq $envVar) {
                     $updateSettings += New-AzContainerAppEnvironmentVarObject `
                         -Name "$($isInternal ? 'SVC_' : 'EXT_')_$externalSettingKey" `
@@ -201,7 +218,7 @@
     if ($null -ne $template.Command) {
         $templateParams.Command = $template.Command
     }
- 
+
     $templateParams | ConvertTo-Json -Depth 10 | Set-Content -Path ./debug.json
     $container = New-AzContainerAppTemplateObject -Probe $template.Probe @templateParams
 
