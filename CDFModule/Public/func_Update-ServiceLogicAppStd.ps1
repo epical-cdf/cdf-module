@@ -318,7 +318,7 @@
                     -UseCS `
                     -Connections $connections `
                     -ConnectionName $connectionName `
-                    -serviceProvider $definition.ServiceProvider `
+                    -ConnectionDefinition $definition `
                     -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
             }
         }
@@ -338,22 +338,20 @@
         Write-Verbose "Adding parameter appsetting for [$settingKey] value [$($paramAppSettings[$settingKey])]"
         $appSettings.Values[$settingKey] = $paramAppSettings[$settingKey]
     }
-
-    # Add app settings for connections
-    foreach ( $connectionName in $serviceConfig.Connections ) {
+    # Add app settings for Logic App Connections
+    foreach ( $connectionName in $connectionDefinitions.Keys ) {
         $definition = $connectionDefinitions[$connectionName]
-        if ($definition) {
+        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
             Write-Host "`tConnection setting for $connectionName"
-            Add-LogicAppAppSettings `
-                -UseCS `
-                -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-                -Settings $appSettings.Values  `
+            Add-ServiceConnectionSettings `
+                -Settings $appSettings.Values `
+                -CdfConfig $CdfConfig `
                 -ConnectionDefinition $definition `
                 -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey `
-                -ServiceProvider $definition.ServiceProvider
+                -ParameterName $definition.ConnectionKey
         }
     }
+
 
     $appSettings.Values.WORKFLOWS_TENANT_ID = $CdfConfig.Platform.Env.tenantId
     $appSettings.Values.WORKFLOWS_SUBSCRIPTION_ID = $CdfConfig.Platform.Env.subscriptionId
