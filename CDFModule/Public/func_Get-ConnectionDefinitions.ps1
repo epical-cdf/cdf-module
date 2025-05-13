@@ -17,7 +17,7 @@ Function Get-ConnectionDefinitions {
             $_.DeploymentName -like "$applicationKey-connection-*" -or `
             $_.DeploymentName -like "$domainKey-connection-*"
     } `
-    | ForEach-Object { 
+    | ForEach-Object {
         if ($_.DeploymentName -match '.+-connection-(.+)') {
             $deploymentName = $_.DeploymentName
             $connectionName = $matches[1]
@@ -36,10 +36,13 @@ Function Get-ConnectionDefinitions {
                 if ($_ -like '*tags*') {
                     $connectionScope = $templateParameters[$_].Value.TemplateScope
                     # TODO: Add Provider Type check for ManagedApiConnection or ServiceProviderConnection to be used?
-                    $isManagedApiConnection = $false 
+                    $isManagedApiConnection = $false
                     Write-Verbose "Connection Scope: $connectionScope"
                 }
-            } 
+            }
+            if($connectionConfig.isManagedApiConnection){
+                $isManagedApiConnection = $true
+            }
             if (!$connectionScope -and $connectionName -like 'External*') {
                 $connectionScope = 'external'
                 $isManagedApiConnection = $true
