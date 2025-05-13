@@ -111,21 +111,6 @@
     #-------------------------------------------------------------
     $envSettings = $CdfConfig | Get-CdfServiceConfigSettings -InputPath $OutputPath
 
-    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
-    $svcConns = $serviceConfig.Connections
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`tConnection setting for $connectionName"
-            Add-ServiceConnectionSettings `
-                -Settings $envSettings `
-                -CdfConfig $CdfConfig `
-                -ConnectionDefinition $definition `
-                -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey
-        }
-    }
-
     foreach ($envKey in $envSettings.Keys) {
         $envValue = $envSettings[$envKey]
 
