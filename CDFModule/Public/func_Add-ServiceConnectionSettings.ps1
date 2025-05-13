@@ -37,13 +37,6 @@
         -ConnectionName  "PlatformKeyVault" `
         -ParameterName "platformKeyVault" `
         -ConnectionDefinition $definition
-    $appSettings = Add-CdfLogicAppAppSettings `
-        -CdfConfig $cdfConfig `
-        -Settings $appSettings `
-        -ConnectionName  "DomainStorageAccount" `
-        -ParameterName "domainStorageAccount" `
-        -ConnectionDefinition $definition
-
     $appSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "appsettings.json"
 
     appsettings.json (result):
@@ -56,6 +49,7 @@
 
     .LINK
     Deploy-CdfServiceContainerApp
+    Deploy-CdfServiceFunctionApp
     Deploy-CdfServiceLogicAppStd
     #>
 
