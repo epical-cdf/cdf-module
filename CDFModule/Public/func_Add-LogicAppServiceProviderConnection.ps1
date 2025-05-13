@@ -9,17 +9,14 @@
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
 
-    .PARAMETER CdfConfig
-    The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
-
     .PARAMETER Connections
     Hashtable with contents of logic app standard connection.json. See examples.
 
     .PARAMETER ConnectionName
     The name of the service provider connection
 
-    .PARAMETER ServiceProvider
-    The azure service provider identified e.g. AzureBlob, servicebus, keyvault
+    .PARAMETER ConnectionDefinition
+    connection definition
 
     .PARAMETER ManagedIdentityResourceId
     ResourceId of the user managed indentity to use for access
@@ -32,10 +29,13 @@
     }
 
     $connections = Get-Content "connections.json" | ConvertFrom-Json -AsHashtable
-    Get-CdfServiceProviderConnection `
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
+
+    Add-CdfLogicAppServiceProviderConnection `
         -Connections $connections `
         -ConnectionName "PlatformServiceBus" `
-        -ServiceProvider "servicebus"
+        -ConnectionDefinition $connectionDefinitions[index] `
+        -ManagedIdentityResourceId "identity id"
 
     $connections | ConvertTo-Json -Depth 10 | Set-Content -Path "connections.json"
 
@@ -69,7 +69,7 @@
         [Parameter(Mandatory = $true)]
         [string] $ConnectionName,
         [Parameter(Mandatory = $true)]
-        [string] $ServiceProvider,
+        [hashtable]$ConnectionDefinition,
         [Parameter(Mandatory = $true)]
         [string] $ManagedIdentityResourceId
     )
@@ -79,7 +79,8 @@
         $providerSettings = [ordered] @{}
         $Connections.serviceProviderConnections = $providerSettings
     }
-
+    $ServiceProvider = $ConnectionDefinition.ServiceProvider
+    $SettingName = 'CON_' + $ConnectionDefinition.Scope.ToUpper() + '_' + $ServiceProvider.ToUpper() + '_'
     if ($UseCS) {
         $connectionConfig = [ordered] @{
             displayName      = "$($ConnectionName) Connection"
@@ -97,7 +98,7 @@
             'keyvault' {
                 # No support for connection string
                 $connectionConfig.parameterSetName = "ManagedServiceIdentity"
-                $connectionConfig.parameterValues.VaultUri = "@appsetting('$($ConnectionName)Uri')"
+                $connectionConfig.parameterValues.VaultUri = "@appsetting('$($SettingName)URI')"
                 $connectionConfig.parameterValues.authProvider = @{
                     Identity = $ManagedIdentityResourceId
                     Type     = "ManagedServiceIdentity"
@@ -105,11 +106,11 @@
             }
             'eventGridPublisher' {
                 $connectionConfig.parameterSetName = "accessKey"
-                $connectionConfig.parameterValues.accessKey = "@appsetting('$($ConnectionName)_accessKey')"
-                $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($ConnectionName)_topicEndpoint')"
+                $connectionConfig.parameterValues.accessKey = "@appsetting('$($SettingName)ACCESSKEY')"
+                $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($SettingName)TOPICENDPOINT')"
             }
             Default {
-                $connectionConfig.parameterValues.connectionString = "@appsetting('$($ConnectionName)_connectionString')"
+                $connectionConfig.parameterValues.connectionString = "@appsetting('$($SettingName)CONNECTIONSTRING')"
             }
         }
     }
@@ -133,30 +134,30 @@
 
         switch ($ServiceProvider.ToLower()) {
             'keyvault' {
-                $connectionConfig.parameterValues.VaultUri = "@appsetting('$($ConnectionName)Uri')"
+                $connectionConfig.parameterValues.VaultUri = "@appsetting('$($SettingName)URI')"
             }
             'eventGridPublisher' {
                 # No support for manged identity
                 $connectionConfig.parameterSetName = "accessKey"
-                $connectionConfig.parameterValues.accessKey = "@appsetting('$($ConnectionName)_accessKey')"
-                $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($ConnectionName)_topicEndpoint')"
+                $connectionConfig.parameterValues.accessKey = "@appsetting('$($SettingName)ACCESSKEY')"
+                $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($SettingName)TOPICENDPOINT')"
             }
             'servicebus' {
-                $connectionConfig.parameterValues.fullyQualifiedNamespace = "@appsetting('$($ConnectionName)_fullyQualifiedNamespace')"
+                $connectionConfig.parameterValues.fullyQualifiedNamespace = "@appsetting('$($SettingName)FULLYQUALIFIEDNAMESPACE')"
             }
             'azureblob' {
-                $connectionConfig.parameterValues.blobStorageEndpoint = "@appsetting('$($connectionName)Uri')"
+                $connectionConfig.parameterValues.blobStorageEndpoint = "@appsetting('$($SettingName)URI')"
             }
             'azuretables' {
-                $connectionConfig.parameterValues.tableStorageEndpoint = "@appsetting('$($connectionName)Uri')"
+                $connectionConfig.parameterValues.tableStorageEndpoint = "@appsetting('$($SettingName)URI')"
             }
             'azurequeues' {
-                $connectionConfig.parameterValues.queueStorageEndpoint = "@appsetting('$($connectionName)Uri')"
+                $connectionConfig.parameterValues.queueStorageEndpoint = "@appsetting('$($SettingName)URI')"
             }
             'azurefile' {
                 # Azure Storage Account File Shares do not support managed identities, must always use connection string
                 $Connections.serviceProviderConnections["$ConnectionName"] = [ordered] @{
-                    displayName      = "$($ConnectionName) Connection"
+                    displayName      = "$($SettingName) Connection"
                     parameterSetName = "connectionString"
                     parameterValues  = @{
                     }
@@ -164,11 +165,11 @@
                         id = "/serviceProviders/$ServiceProvider"
                     }
                 }
-                $connectionConfig.parameterValues.connectionString = "@appsetting('$($connectionName)_connectionString')"
+                $connectionConfig.parameterValues.connectionString = "@appsetting('$($SettingName)CONNECTIONSTRING')"
             }
             Default {
                 # # It is common for custom connections to not use connection strings
-                # $connectionConfig.parameterValues.connectionString = "@appsetting('$($ConnectionName)Uri')"
+                # $connectionConfig.parameterValues.connectionString = "@appsetting('$($SettingName)Uri')"
             }
         }
     }
