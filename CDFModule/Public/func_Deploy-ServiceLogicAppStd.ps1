@@ -170,13 +170,12 @@
     Write-Host "Preparing connections."
     $connections = Get-Content -Raw "$InputPath/connections.json" | ConvertFrom-Json -AsHashtable
     $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
-    $svcConns = $serviceConfig.Connections
 
     foreach ( $connectionName in $serviceConfig.Connections ) {
         $definition = $connectionDefinitions[$connectionName]
         if ($definition) {
             Write-Host "`t$connectionName"
-         
+
             # Add duplicate connection config for API Connections
             $config = $CdfConfig | Get-ManagedApiConnection -ConnectionKey $definition.ConnectionKey
             if ($true -eq $definition.IsApiConnection -and $null -ne $config) {
@@ -190,7 +189,7 @@
                 Add-LogicAppServiceProviderConnection `
                 -Connections $connections `
                 -ConnectionName $connectionName `
-                -ServiceProvider $definition.ServiceProvider `
+                -ConnectionDefinition $definition `
                 -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
             }
         }
@@ -200,21 +199,6 @@
     $connections | ConvertTo-Json -Depth 10 `
     | Update-CdfConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
     | Set-Content -Path "$OutputPath/connections.json"
-
-    # TODO: Make these configurable using a "platform services" definition file
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`tConnection setting for $connectionName"
-            Add-LogicAppAppSettings `
-                -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-                -Settings $updateSettings `
-                -ConnectionDefinition $definition `
-                -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey `
-                -ServiceProvider $definition.ServiceProvider
-        }
-    }
 
     if ($CdfConfig.Application.Env.purpose -eq 'production') {
         $updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "1"
