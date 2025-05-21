@@ -184,13 +184,14 @@
                     -Connections $connections `
                     -ConnectionName $connectionName `
                     -ConnectionConfig $config
-            } else {
+            }
+            else {
                 # Add ServiceProviderConnection
                 Add-LogicAppServiceProviderConnection `
-                -Connections $connections `
-                -ConnectionName $connectionName `
-                -ConnectionDefinition $definition `
-                -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
+                    -Connections $connections `
+                    -ConnectionName $connectionName `
+                    -ConnectionDefinition $definition `
+                    -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
             }
         }
     }
