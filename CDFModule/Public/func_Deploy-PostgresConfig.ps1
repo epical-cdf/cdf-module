@@ -63,21 +63,24 @@
                 $DomainDatabaseName = $DomainKey
                 $DomainDatabaseUser = $DomainKey
 
-                $BuildAgentIP = Get-IP
+
                 if ($Scope -eq 'Service') {
                     $ServiceName = $CdfConfig.Service.Config.serviceName
                 }
-                $FullRuleName = "BuildAgentIP-$Scope-$DomainKey-Deployment"
-                $RuleName = $FullRuleName.Substring(0, [Math]::Min(80, $FullRuleName.Length))
+                if (!$CdfConfig.Platform.Features.enablePostgresPE) {
+                    $BuildAgentIP = Get-IP
 
-                $null = New-AzPostgreSqlFlexibleServerFirewallRule `
-                    -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
-                    -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
-                    -Name $RuleName `
-                    -StartIpAddress $BuildAgentIP `
-                    -EndIpAddress $BuildAgentIP `
-                    -ErrorAction:Stop
+                    $FullRuleName = "BuildAgentIP-$Scope-$DomainKey-Deployment"
+                    $RuleName = $FullRuleName.Substring(0, [Math]::Min(80, $FullRuleName.Length))
 
+                    $null = New-AzPostgreSqlFlexibleServerFirewallRule `
+                        -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
+                        -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
+                        -Name $RuleName `
+                        -StartIpAddress $BuildAgentIP `
+                        -EndIpAddress $BuildAgentIP `
+                        -ErrorAction:Continue
+                }
 
                 if ($Scope -eq 'Domain') {
                     $AdminUserName = Get-AzKeyVaultSecret `
@@ -157,11 +160,13 @@
                         Invoke-PostgresQuery -Query "CREATE SCHEMA $ServiceName;" | Out-Null
                     }
                 }
-                $null = Remove-AzPostgreSqlFlexibleServerFirewallRule `
-                    -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
-                    -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
-                    -Name $RuleName `
-                    -ErrorAction:Stop
+                if (!$CdfConfig.Platform.Features.enablePostgresPE) {
+                    $null = Remove-AzPostgreSqlFlexibleServerFirewallRule `
+                        -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
+                        -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
+                        -Name $RuleName `
+                        -ErrorAction:Continue
+                }
 
             }
             return $OutputDetails
