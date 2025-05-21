@@ -81,7 +81,7 @@
                 # No support for connection string
                 $Settings["$($SettingName)Uri"] = "$($connectionParams.name).vault.azure.net"
             }
-            'eventgridpublisher' {
+            'azureeventgridpublish' {
                 switch ($connectionParams.type) {
                     'EventGridTopic' {
                         Write-Host "DEBUG: Adding ConnectionString for '$ConnectionName' [$($connectionParams.type)]"
@@ -114,6 +114,16 @@
                     -WarningAction:SilentlyContinue
 
                 $Settings["$($SettingName)_connectionString"] = $serviceBusKey.PrimaryConnectionString
+            }
+            'eventhubs' {
+                $eventHubKey = Get-AzEventHubKey `
+                    -SubscriptionId $AzCtx.Subscription.Id `
+                    -ResourceGroupName $connectionParams.resourceGroup `
+                    -NamespaceName $connectionParams.name `
+                    -Name RootManageSharedAccessKey `
+                    -WarningAction:SilentlyContinue
+
+                $Settings["$($ConnectionName)_connectionString"] = $eventHubKey.PrimaryConnectionString
             }
             'azureblob' {
                 $storageContext = (
@@ -154,7 +164,7 @@
             'postgresql' {
                 $Settings["$($SettingName)_ServerName"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)_Database"] = $connectionParams.database
-                if($ConnectionDefinition.Scope.ToLower() -eq 'platform'){
+                if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }
                 else {
@@ -164,7 +174,7 @@
                 $Settings["$($SettingName)_Password"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.passwordSecretName))"
             }
             default {
-                if($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
+                if ($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
                     Write-Warning "Unsupported service provider: $($ConnectionDefinition.ServiceProvider)"
                 }
             }
@@ -177,7 +187,7 @@
             'keyvault' {
                 $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).vault.azure.net"
             }
-            'eventgridpublisher' {
+            'azureeventgridpublish' {
                 switch ($connectionParams.type) {
                     'EventGridTopic' {
                         Write-Host "DEBUG: Adding ManagedIdentity for '$ConnectionName' [$($connectionParams.type)]"
@@ -211,6 +221,9 @@
                 }
             }
             'servicebus' {
+                $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
+            }
+            'eventhubs' {
                 $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
             }
             'azureblob' {
@@ -256,7 +269,7 @@
                 #No support for managed identity
                 $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)DATABASE"] = $connectionParams.database
-                if($ConnectionDefinition.Scope.ToLower() -eq 'platform'){
+                if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }
                 else {

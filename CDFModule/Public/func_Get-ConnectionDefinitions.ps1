@@ -1,4 +1,4 @@
-Function Get-ConnectionDefinitions {
+﻿Function Get-ConnectionDefinitions {
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
@@ -21,6 +21,7 @@ Function Get-ConnectionDefinitions {
         if ($_.DeploymentName -match '.+-connection-(.+)') {
             $deploymentName = $_.DeploymentName
             $connectionName = $matches[1]
+            $parameters = $_.Parameters
             $connectionConfig = ($_.Outputs.connectionConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json -AsHashtable).Value
             $templateParameters = ($_.Parameters | ConvertTo-Json -Depth 10 | ConvertFrom-Json -AsHashtable)
             $connectionIds = @()
@@ -32,15 +33,25 @@ Function Get-ConnectionDefinitions {
                     $connectionIds += $_
                 }
             }
-            $_.Parameters.Keys | ForEach-Object {
+
+            $parameters.Keys | ForEach-Object {
                 if ($_ -like '*tags*') {
                     $connectionScope = $templateParameters[$_].Value.TemplateScope
-                    # TODO: Add Provider Type check for ManagedApiConnection or ServiceProviderConnection to be used?
-                    $isManagedApiConnection = $false
-                    Write-Verbose "Connection Scope: $connectionScope"
                 }
             }
-            if($connectionConfig.isManagedApiConnection){
+            # The connectionInfo attribute "useManagedApiConnection" is used to indicate when Logic Apps should use the managed API connection
+            # Alternatively, the connectionInfo attribute "isManagedApiConnection" is used to indicate when a resource cannot identify using managed identity
+            $tagUseManagedApiConnection = $connectionConfig.useManagedApiConnection
+            if ( $tagUseManagedApiConnection ) {
+                $isManagedApiConnection = $true
+            }
+            else {
+                $isManagedApiConnection = $false
+            }
+
+            Write-Verbose "Connection [$connectionName] IsManagedApiConnection: $isManagedApiConnection"
+
+            if ($connectionConfig.isManagedApiConnection) {
                 $isManagedApiConnection = $true
             }
             if (!$connectionScope -and $connectionName -like 'External*') {

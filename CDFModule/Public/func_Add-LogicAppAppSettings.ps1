@@ -89,7 +89,7 @@
                 # No support for connection string
                 $Settings["$($ConnectionName)Uri"] = "$($connectionParams.name).vault.azure.net"
             }
-            'eventgridpublisher' {
+            'azureeventgridpublish' {
                 switch ($connectionParams.type) {
                     'EventGridTopic' {
                         Write-Host "DEBUG: Adding ConnectionString for '$ConnectionName' [$($connectionParams.type)]"
@@ -114,14 +114,24 @@
                 }
             }
             'servicebus' {
-                $serviceBusKey = Get-AzServiceBusKey `
+                $eventHubKey = Get-AzServiceBusKey `
                     -SubscriptionId $AzCtx.Subscription.Id `
                     -ResourceGroupName $connectionParams.resourceGroup `
                     -NamespaceName $connectionParams.name `
                     -Name RootManageSharedAccessKey `
                     -WarningAction:SilentlyContinue
 
-                $Settings["$($ConnectionName)_connectionString"] = $serviceBusKey.PrimaryConnectionString
+                $Settings["$($ConnectionName)_connectionString"] = $eventHubKey.PrimaryConnectionString
+            }
+            'eventhubs' {
+                $eventHubKey = Get-AzEventHubKey `
+                    -SubscriptionId $AzCtx.Subscription.Id `
+                    -ResourceGroupName $connectionParams.resourceGroup `
+                    -NamespaceName $connectionParams.name `
+                    -Name RootManageSharedAccessKey `
+                    -WarningAction:SilentlyContinue
+
+                $Settings["$($ConnectionName)_connectionString"] = $eventHubKey.PrimaryConnectionString
             }
             'azureblob' {
                 $storageContext = (
@@ -160,7 +170,7 @@
                 $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
             }
             default {
-                if($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
+                if ($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
                     Write-Warning "Unsupported service provider: $ServiceProvider"
                 }
             }
@@ -173,7 +183,7 @@
             'keyvault' {
                 $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).vault.azure.net"
             }
-            'eventgridpublisher' {
+            'azureeventgridpublish' {
                 switch ($connectionParams.type) {
                     'EventGridTopic' {
                         Write-Host "DEBUG: Adding ManagedIdentity for '$ConnectionName' [$($connectionParams.type)]"
@@ -207,6 +217,9 @@
                 }
             }
             'servicebus' {
+                $Settings["$($ConnectionName)_fullyQualifiedNamespace"] = "$($connectionParams.name).servicebus.windows.net"
+            }
+            'eventhubs' {
                 $Settings["$($ConnectionName)_fullyQualifiedNamespace"] = "$($connectionParams.name).servicebus.windows.net"
             }
             'azureblob' {

@@ -104,7 +104,7 @@
                     Type     = "ManagedServiceIdentity"
                 }
             }
-            'eventGridPublisher' {
+            'azureeventgridpublish' {
                 $connectionConfig.parameterSetName = "accessKey"
                 $connectionConfig.parameterValues.accessKey = "@appsetting('$($SettingName)ACCESSKEY')"
                 $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($SettingName)TOPICENDPOINT')"
@@ -136,13 +136,16 @@
             'keyvault' {
                 $connectionConfig.parameterValues.VaultUri = "@appsetting('$($SettingName)URI')"
             }
-            'eventGridPublisher' {
+            'azureeventgridpublish' {
                 # No support for manged identity
                 $connectionConfig.parameterSetName = "accessKey"
                 $connectionConfig.parameterValues.accessKey = "@appsetting('$($SettingName)ACCESSKEY')"
                 $connectionConfig.parameterValues.topicEndpoint = "@appsetting('$($SettingName)TOPICENDPOINT')"
             }
             'servicebus' {
+                $connectionConfig.parameterValues.fullyQualifiedNamespace = "@appsetting('$($SettingName)FULLYQUALIFIEDNAMESPACE')"
+            }
+            'eventhubs' {
                 $connectionConfig.parameterValues.fullyQualifiedNamespace = "@appsetting('$($SettingName)FULLYQUALIFIEDNAMESPACE')"
             }
             'azureblob' {
