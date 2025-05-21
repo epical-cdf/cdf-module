@@ -81,11 +81,19 @@
     $regionCode = $CdfConfig.Platform.Env.regionCode
     $regionName = $CdfConfig.Platform.Env.regionName
 
+
+    # If provided parameters are not set, use the default values from the CDF Config object
+    $ServiceName = $ServiceName ? $ServiceName : $CdfConfig.Service.Config.serviceName
+    $ServiceType = $ServiceType ? $ServiceType : $CdfConfig.Service.Config.serviceType
+    $ServiceGroup = $ServiceGroup ? $ServiceGroup : $CdfConfig.Service.Config.serviceGroup
+    $ServiceTemplate = $ServiceTemplate ? $ServiceTemplate : $CdfConfig.Service.Config.serviceTemplate
+
     $templateFile = "$templatePath/$ServiceTemplate.bicep"
     $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
     $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
 
     $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
+
 
     # Setup platform parameters from envrionment and params file
     $templateParams = [ordered] @{}
@@ -109,10 +117,10 @@
     $templateParams.domainResourceNames = $CdfConfig.Domain.ResourceNames
 
     $templateParams.serviceConfig = $CdfConfig.Service -and $CdfConfig.Service.Config ? $CdfConfig.Service.Config ?? @{} : @{}
-    $templateParams.serviceConfig.serviceName = $ServiceName
-    $templateParams.serviceConfig.serviceType = $ServiceType
-    $templateParams.serviceConfig.serviceGroup = $ServiceGroup
-    $templateParams.serviceConfig.serviceTemplate = $ServiceTemplate
+    $templateParams.serviceConfig.serviceName = $ServiceName ? $ServiceName : $CdfConfig.Service.Config.serviceName
+    $templateParams.serviceConfig.serviceType = $ServiceType ? $ServiceType : $CdfConfig.Service.Config.serviceType
+    $templateParams.serviceConfig.serviceGroup = $ServiceGroup ? $ServiceGroup : $CdfConfig.Service.Config.serviceGroup
+    $templateParams.serviceConfig.serviceTemplate = $ServiceTemplate ? $ServiceTemplate : $CdfConfig.Service.Config.serviceTemplate
 
     $templateParams.serviceFeatures = $CdfConfig.Service -and $CdfConfig.Service.serviceFeatures ? $CdfConfig.Service.serviceFeatures ?? @{} : @{}
     $templateParams.serviceNetworkConfig = $CdfConfig.Service -and $CdfConfig.Service.serviceNetworkConfig ? $CdfConfig.Service.serviceNetworkConfig ?? @{} : @{}

@@ -1,11 +1,11 @@
-Function ConvertTo-DotEnv {
+﻿Function ConvertTo-DotEnv {
     <#
         .SYNOPSIS
         Converts array or hashtable to .env file format.
 
         .DESCRIPTION
-        Converts array or hashtable to .env file format. Arrays are tested for either a list of name-value pair arrays or array of name and value column. 
-        For 2x2 arrays it will be treated as name-value pairs. To be able to pipe 
+        Converts array or hashtable to .env file format. Arrays are tested for either a list of name-value pair arrays or array of name and value column.
+        For 2x2 arrays it will be treated as name-value pairs. To be able to pipe
 
         .PARAMETER DotEnvSource
         The input object that holds the content to be converted to .env file format. It can be a Dictionary/Hashtable or Array.

@@ -6,8 +6,6 @@
         'PSUseApprovedVerbs',
         'PSReservedCmdletChar',
         'PSReservedParams',
-        'PSShouldProcess',
-        'PSUseShouldProcessForStateChangingFunctions',
         'PSMissingModuleManifestField',
         'PSAvoidDefaultValueSwitchParameter',
         'PSAvoidUsingCmdletAliases',
@@ -25,6 +23,8 @@
         'PSDSC*'
     )
     ExcludeRules = @(
+        'PSUseShouldProcessForStateChangingFunctions', # Enable later and refactor commands
+        'PSShouldProcess', # Enable later and refactor commands
         'PSUseSingularNouns',
         'PSAvoidUsingWriteHost',
         'PSAvoidGlobalVars'

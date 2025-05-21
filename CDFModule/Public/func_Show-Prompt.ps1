@@ -1,4 +1,4 @@
-Function Show-Prompt {
+﻿Function Show-Prompt {
     <#
         .SYNOPSIS
             Prompt Function for PowerShell CDF Sessions.
@@ -27,8 +27,8 @@ Function Show-Prompt {
     $Result += "$([char]0x1b)]633;A`a"
 
     # Powershell Version
-    $PSVersion = $PSVersionTable.PSVersion.ToString() 
-    $Result += "`e[34mPowerShell `e[37mv$PSVersion" 
+    $PSVersion = $PSVersionTable.PSVersion.ToString()
+    $Result += "`e[34mPowerShell `e[37mv$PSVersion"
 
     # CDF Version and Context
     $cdfModule = Get-Module -Name CDFModule
@@ -36,9 +36,9 @@ Function Show-Prompt {
         $CdfConfig = Get-CdfConfigPlatform -ErrorAction:SilentlyContinue -WarningAction:SilentlyContinue
         $CdfConfig = $CdfConfig | Get-CdfConfigApplication -ErrorAction:SilentlyContinue -WarningAction:SilentlyContinue
 
-        $Result += " | `e[34mCDF`e[37m v$($cdfModule.Version)" 
+        $Result += " | `e[34mCDF`e[37m v$($cdfModule.Version)"
         if ($cdfModule.PrivateData.PSData.Prerelease ) {
-            $Result += "-$($cdfModule.PrivateData.PSData.Prerelease)" 
+            $Result += "-$($cdfModule.PrivateData.PSData.Prerelease)"
         }
 
         $Result += $env:CDF_PLATFORM_ID ? " | ${env:CDF_PLATFORM_ID}${env:CDF_PLATFORM_INSTANCE}" : ''
@@ -95,7 +95,7 @@ Function Show-Prompt {
     }
 
     # VSCode, datetime and duration of last command
-    $Result += "PWSH: " 
+    $Result += "PWSH: "
     $Result += (Get-Date -Format HH:mm:ss)
     if (Get-History) {
         $Result += " [`e[36m"

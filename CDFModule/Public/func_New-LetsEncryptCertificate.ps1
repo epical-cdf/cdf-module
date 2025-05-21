@@ -183,20 +183,45 @@
             $applicationKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)"
             $applicationEnvKey = "$applicationKey$($CdfConfig.Application.Env.nameId)"
 
-            $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName
-            # $keyVault | ConvertTo-Json -Depth 5
 
             if ($null -ne $CdfConfig.Application.ResourceNames.laAppServicePlanName) {
+                $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName
+
                 $appServicePlan = Get-AzAppServicePlan -Name $CdfConfig.Application.ResourceNames.laAppServicePlanName
                 $appServicePlan | ConvertTo-Json -Depth 5
-    
+
                 $certProperties = @{
                     serverFarmId       = $appServicePlan.Id
                     keyVaultId         = $keyVault.ResourceId
                     keyVaultSecretName = $CertName
                 }
                 $certProperties | ConvertTo-Json -Depth 5
-    
+
+                Invoke-AzRestMethod `
+                    -Method PUT `
+                    -Uri "https://management.azure.com/subscriptions/$($CdfConfig.Platform.Env.subscriptionId)/resourceGroups/$($CdfConfig.Application.ResourceNames.appResourceGroupName)/providers/Microsoft.Web/certificates/$($platformEnvKey)-$($applicationEnvKey)-certificate?api-version=2024-04-01" `
+                    -Payload (@{
+                        type       = 'Microsoft.Web/certificates'
+                        name       = "$($platformEnvKey)-$($applicationEnvKey)-certificate"
+                        location   = $region
+                        properties = $certProperties
+                    } | ConvertTo-Json -Depth 10) `
+                    -WaitForCompletion
+            }
+
+            if ($null -ne $CdfConfig.Application.ResourceNames.hostingEnvPlanName) {
+                $keyVault = Get-AzKeyVault -VaultName $CdfConfig.Application.ResourceNames.keyVaultName
+
+                $appServicePlan = Get-AzAppServicePlan -Name $CdfConfig.Application.ResourceNames.hostingEnvPlanName
+                $appServicePlan | ConvertTo-Json -Depth 5
+
+                $certProperties = @{
+                    serverFarmId       = $appServicePlan.Id
+                    keyVaultId         = $keyVault.ResourceId
+                    keyVaultSecretName = $CertName
+                }
+                $certProperties | ConvertTo-Json -Depth 5
+
                 Invoke-AzRestMethod `
                     -Method PUT `
                     -Uri "https://management.azure.com/subscriptions/$($CdfConfig.Platform.Env.subscriptionId)/resourceGroups/$($CdfConfig.Application.ResourceNames.appResourceGroupName)/providers/Microsoft.Web/certificates/$($platformEnvKey)-$($applicationEnvKey)-certificate?api-version=2024-04-01" `

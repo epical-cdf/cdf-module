@@ -119,7 +119,7 @@ Function Get-ServiceConfigSettings {
     foreach ($serviceSettingKey in $serviceConfig.ServiceSettings.Keys) {
         Write-Verbose "Adding service internal setting: $serviceSettingKey"
         $setting = $serviceConfig.ServiceSettings[$serviceSettingKey]
-        $appSettingKey = "SVC_$serviceSettingKey"
+        $appSettingKey = "SVC_$($serviceSettingKey.ToUpper())"
         switch ($setting.Type) {
             "Constant" {
                 $UpdateSettings[$appSettingKey] = [string] $setting.Value
@@ -158,7 +158,7 @@ Function Get-ServiceConfigSettings {
     foreach ($externalSettingKey in $serviceConfig.ExternalSettings.Keys) {
         Write-Verbose "Adding service external setting: $externalSettingKey"
         $setting = $serviceConfig.ExternalSettings[$externalSettingKey]
-        $appSettingKey = "EXT_$externalSettingKey"
+        $appSettingKey = "EXT_$($externalSettingKey.ToUpper())"
         switch ($setting.Type) {
             "Constant" {
                 $UpdateSettings[$appSettingKey] = [string] $setting.Value
@@ -204,6 +204,21 @@ Function Get-ServiceConfigSettings {
         foreach ($key in $defaultSettings.Keys) {
             Write-Verbose "Adding/overriding parameter appsetting for [$key] value [$($defaultSettings[$key])]"
             $UpdateSettings[$key] = [string] $defaultSettings[$key]
+        }
+    }
+
+    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
+    $svcConns = $serviceConfig.Connections
+    foreach ( $connectionName in $connectionDefinitions.Keys ) {
+        $definition = $connectionDefinitions[$connectionName]
+        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
+            Write-Host "`tConnection setting for $connectionName"
+            Add-ServiceConnectionSettings `
+                -Settings $UpdateSettings `
+                -CdfConfig $CdfConfig `
+                -ConnectionDefinition $definition `
+                -ConnectionName $connectionName `
+                -ParameterName $definition.ConnectionKey
         }
     }
 

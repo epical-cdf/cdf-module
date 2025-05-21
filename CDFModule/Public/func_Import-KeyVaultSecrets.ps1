@@ -1,4 +1,4 @@
-Function Import-KeyVaultSecrets {
+﻿Function Import-KeyVaultSecrets {
     <#
     .SYNOPSIS
 
@@ -6,7 +6,7 @@ Function Import-KeyVaultSecrets {
 
     .DESCRIPTION
 
-    The command takesan array of secrets to import. 
+    The command takesan array of secrets to import.
     The secrets JSON must have the following format.
 
     [
