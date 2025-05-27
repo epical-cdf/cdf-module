@@ -36,5 +36,5 @@ function Get-DotEnv {
         Write-Verbose "Adding '$Name' = '$Value'"
         $EnvHash[$Name] = $Value
     }
-    return $EnvHash
+    Write-Output -InputObject $EnvHash
 }

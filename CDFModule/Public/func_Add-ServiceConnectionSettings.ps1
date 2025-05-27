@@ -62,7 +62,7 @@
         [Parameter(Mandatory = $true)]
         [hashtable]$ConnectionDefinition,
         [Parameter(Mandatory = $true)]
-        [hashtable]$Settings,
+        [object]$Settings,
         [Parameter(Mandatory = $true)]
         [string] $ConnectionName,
         [Parameter(Mandatory = $true)]
@@ -283,5 +283,6 @@
             }
         }
     }
+    Write-Output -InputObject $Settings
 }
 

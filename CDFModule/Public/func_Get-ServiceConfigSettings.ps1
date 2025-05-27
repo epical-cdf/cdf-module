@@ -83,7 +83,7 @@ Function Get-ServiceConfigSettings {
     }
 
     if ($null -eq $UpdateSettings) {
-        $UpdateSettings = @{}
+        $UpdateSettings = [ordered] @{}
     }
 
     # CDF Env details
@@ -213,7 +213,7 @@ Function Get-ServiceConfigSettings {
         $definition = $connectionDefinitions[$connectionName]
         if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
             Write-Host "`tConnection setting for $connectionName"
-            Add-ServiceConnectionSettings `
+            $UpdateSettings = Add-ServiceConnectionSettings `
                 -Settings $UpdateSettings `
                 -CdfConfig $CdfConfig `
                 -ConnectionDefinition $definition `
