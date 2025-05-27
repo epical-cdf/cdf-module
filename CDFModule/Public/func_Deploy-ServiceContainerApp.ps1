@@ -160,9 +160,9 @@
         }
     }
 
-    # Configure service API URLs for the App Service
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURL' -VarValue "https://$($app.Configuration.IngressFqdn)"
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURLS' -VarValue "https://$($app.Configuration.IngressFqdn)"
+    # # Configure service API URLs for the App Service
+    # $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURL' -VarValue "https://$($app.Configuration.IngressFqdn)"
+    # $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURLS' -VarValue "https://$($app.Configuration.IngressFqdn)"
 
     #-------------------------------------------------------------
     # Set default container image and port config if missing
