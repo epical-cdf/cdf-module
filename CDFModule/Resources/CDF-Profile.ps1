@@ -12,7 +12,7 @@ if ($null -ne (Get-Command Set-Culture -ErrorAction:SilentlyContinue)) {
 [System.Threading.Thread]::CurrentThread.CurrentCulture = $myCulture
 
 # Customize output colors
-# ANSI escape code are described here: 
+# ANSI escape code are described here:
 # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 
 # $PSStyle.Formatting.FormatAccent = "`e[32;1m"

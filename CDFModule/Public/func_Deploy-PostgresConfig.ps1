@@ -48,28 +48,39 @@
                 $ServerName = $CdfConfig.Platform.Config.platformPostgres.databaseServerFQDN
                 $DefaultDatabase = $CdfConfig.Platform.Config.platformPostgres.database
                 $Port = 5432
+                $ApplicationKey = "{0}{1}-{2}{3}" -f `
+                    $CdfConfig.Platform.Config.platformId, `
+                    $CdfConfig.Platform.Config.instanceId, `
+                    $CdfConfig.Application.Config.applicationId, `
+                    $CdfConfig.Application.Config.instanceId
 
                 $DomainName = $CdfConfig.Domain.Config.domainName
-                $DomainDatabaseName = $DomainName
-                $DomainDatabaseUser = $DomainName
+                $DomainKey = "{0}-{1}-{2}-{3}" -f `
+                    $ApplicationKey, `
+                    $DomainName, `
+                    $CdfConfig.Application.Env.nameId, `
+                    $CdfConfig.Application.Env.regionCode
+                $DomainDatabaseName = $DomainKey
+                $DomainDatabaseUser = $DomainKey
 
-                $BuildAgentIP = Get-IP
-                if ($Scope -eq 'Domain') {
-                    $RuleName = "BuildAgentIP-$Scope-$DomainName-Deployment"
-                }
-                else {
+
+                if ($Scope -eq 'Service') {
                     $ServiceName = $CdfConfig.Service.Config.serviceName
-                    $RuleName = "BuildAgentIP-$Scope-$DomainName-Deployment"
                 }
+                if (!$CdfConfig.Platform.Features.enablePostgresPE) {
+                    $BuildAgentIP = Get-IP
 
-                $null = New-AzPostgreSqlFlexibleServerFirewallRule `
-                    -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
-                    -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
-                    -Name $RuleName `
-                    -StartIpAddress $BuildAgentIP `
-                    -EndIpAddress $BuildAgentIP `
-                    -ErrorAction:Stop
+                    $FullRuleName = "BuildAgentIP-$Scope-$DomainKey-Deployment"
+                    $RuleName = $FullRuleName.Substring(0, [Math]::Min(80, $FullRuleName.Length))
 
+                    $null = New-AzPostgreSqlFlexibleServerFirewallRule `
+                        -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
+                        -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
+                        -Name $RuleName `
+                        -StartIpAddress $BuildAgentIP `
+                        -EndIpAddress $BuildAgentIP `
+                        -ErrorAction:Continue
+                }
 
                 if ($Scope -eq 'Domain') {
                     $AdminUserName = Get-AzKeyVaultSecret `
@@ -81,8 +92,8 @@
                         -Name $CdfConfig.Platform.Config.platformPostgres.passwordSecretName `
                         -AsPlainText
 
-                    $DatabaseUserSecretName = "Cdf-Domain-$DomainName-Postgres-UserName"
-                    $DatabasePasswordSecretName = "Cdf-Domain-$DomainName-Postgres-Password"
+                    $DatabaseUserSecretName = "Cdf-Domain-$DomainKey-Postgres-UserName"
+                    $DatabasePasswordSecretName = "Cdf-Domain-$DomainKey-Postgres-Password"
 
                     Write-Host "Preparing Postgres database, user and permissions."
                     $DomainDbPassword = GeneratePassword
@@ -95,9 +106,9 @@
                     #PSQL Commands
                     $checkDbQuery = "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '$DomainDatabaseName');"
                     $checkRoleQuery = "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = '$DomainDatabaseUser');"
-                    $createDb = "CREATE DATABASE $DomainDatabaseName;"
-                    $createUser = "CREATE USER $DomainDatabaseUser WITH PASSWORD '$plainDomainDbPassword';"
-                    $grantPermissions = "GRANT ALL PRIVILEGES ON DATABASE $DomainDatabaseName TO $DomainDatabaseUser;"
+                    $createDb = "CREATE DATABASE `"$DomainDatabaseName`";"
+                    $createUser = "CREATE USER `"$DomainDatabaseUser`" WITH PASSWORD '$plainDomainDbPassword';"
+                    $grantPermissions = "GRANT ALL PRIVILEGES ON DATABASE `"$DomainDatabaseName`" TO `"$DomainDatabaseUser`";"
 
                     $databaseExists = Invoke-PostgresQuery -Query $checkDbQuery
                     if ($databaseExists -match "f") {
@@ -110,7 +121,7 @@
                                 -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
                                 -Name $DatabasePasswordSecretName `
                                 -SecretValue $DomainDbPassword
-                            $DatabaseUserName = ConvertTo-SecureString -String $DomainName -AsPlainText -Force
+                            $DatabaseUserName = ConvertTo-SecureString -String $DomainDatabaseUser -AsPlainText -Force
                             $null = Set-AzKeyVaultSecret `
                                 -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
                                 -Name  $DatabaseUserSecretName `
@@ -138,7 +149,7 @@
                         -AsPlainText
                     $env:PGPASSWORD = $DomainPassword
                     $env:CDF_PG_SERVER_NAME = $ServerName
-                    $env:CDF_PG_DATABASE = $DomainDatabase
+                    $env:CDF_PG_DATABASE = $DomainDatabaseName
                     $env:CDF_PG_USER_NAME = $DomainUserName
 
                     Write-Host "Preparing Postgres database schema for service $ServiceName."
@@ -149,11 +160,13 @@
                         Invoke-PostgresQuery -Query "CREATE SCHEMA $ServiceName;" | Out-Null
                     }
                 }
-                $null = Remove-AzPostgreSqlFlexibleServerFirewallRule `
-                    -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
-                    -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
-                    -Name $RuleName `
-                    -ErrorAction:Stop
+                if (!$CdfConfig.Platform.Features.enablePostgresPE) {
+                    $null = Remove-AzPostgreSqlFlexibleServerFirewallRule `
+                        -ResourceGroupName $CdfConfig.Platform.ResourceNames.platformResourceGroupName `
+                        -ServerName $CdfConfig.Platform.Config.platformPostgres.name `
+                        -Name $RuleName `
+                        -ErrorAction:Continue
+                }
 
             }
             return $OutputDetails

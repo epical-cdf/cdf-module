@@ -64,7 +64,7 @@
     if (!$CdfConfig.Domain.IsDeployed) {
       Write-Warning "Domain config is not deployed, this may cause errors in using the service configuration."
     }
-    
+
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
     $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
     $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
@@ -72,11 +72,26 @@
     $region = $CdfConfig.Platform.Env.region
     $applicationEnv = $CdfConfig.Application.Env
     $DomainName = $CdfConfig.Domain.Config.domainName
-    
+
     # Get service configuration
     if (Test-Path "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" ) {
       Write-Verbose "Loading configuration file"
       $CdfService = Get-Content "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" | ConvertFrom-Json -AsHashtable
+    }
+    if (Test-Path "cdf-config.json" ) {
+      Write-Verbose "Loading cdf-config.json file"
+      $serviceConfig = Get-Content "cdf-config.json" | ConvertFrom-Json -AsHashtable
+      $CdfService = [ordered] @{
+        IsDeployed = $false
+        Env        = [ordered] @{}
+        Config     = [ordered] @{
+          serviceName     = $serviceConfig.ServiceDefaults.ServiceName
+          serviceType     = $serviceConfig.ServiceDefaults.ServiceType
+          serviceGroup    = $serviceConfig.ServiceDefaults.ServiceGroup
+          serviceTemplate = $serviceConfig.ServiceDefaults.ServiceTemplate
+        }
+        Features   = [ordered] @{}
+      }
     }
     else {
       Write-Verbose "No service configuration file found '$ServiceName' with platform key '$platformEnvKey', application key '$applicationEnvKey', domain name '$DomainName' and region code '$regionCode'."
@@ -129,7 +144,12 @@
       }
       else {
         Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-        Write-Warning "Returning configuration from file, if available."
+        if (Test-Path "cdf-config.json") {
+          Write-Warning "Using service defaults in cdf-config.json ."
+        }
+        else {
+          Write-Warning "Returning service configuration from file, if available."
+        }
       }
     }
     else {

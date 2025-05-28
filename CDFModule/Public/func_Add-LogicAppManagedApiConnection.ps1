@@ -58,6 +58,20 @@
             }
             connectionRuntimeUrl = $ConnectionConfig.connectionRuntimeUrl
         }
+        $serviceProvider = $ConnectionConfig.connectionApiId.split('/')[-1]
+        switch ($serviceProvider.ToLower()) {
+            'azureeventgridpublish' {
+            }
+            'eventhubs' {
+                $connectionDef.connectionProperties = @{
+                    authentication = @{
+                        audience = 'https://eventhubs.azure.net/'
+                        identity = $ConnectionConfig.Identity
+                        type     = 'ManagedServiceIdentity'
+                    }
+                }
+            }
+        }
 
         # $connectionConfig = $connectionConfigJson | ConvertFrom-Json -AsHashtable
         $Connections.managedApiConnections["$ConnectionName"] = $connectionDef

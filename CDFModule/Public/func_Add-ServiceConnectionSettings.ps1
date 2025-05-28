@@ -1,18 +1,15 @@
-﻿Function Add-LogicAppAppSettings {
+﻿Function Add-ServiceConnectionSettings {
     <#
     .SYNOPSIS
-    Update logic app parameters for domain and environment
+    Add connection parameters for service
 
     .DESCRIPTION
 
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
 
-    .PARAMETER Config
+    .PARAMETER CdfConfig
     The Config object from the target scope (Platform, Application and Domain)
-
-    .PARAMETER SubscriptionId
-    Platform subscriptionId
 
     .PARAMETER Settings
     Hashtable with app settings. See examples.
@@ -20,8 +17,8 @@
     .PARAMETER ConnectionName
     The name of the service provider connection
 
-    .PARAMETER ServiceProvider
-    The azure service provider identified e.g. AzureBlob, servicebus, keyvault
+    .PARAMETER ConnectionDefinition
+    Connection details
 
     .PARAMETER ParameterName
     Name of parameter within the target scope Config object.
@@ -34,19 +31,12 @@
     }
 
     $appSettings = Get-Content "appsettings.json" | ConvertFrom-Json -AsHashtable
-    $appSettings = Add-CdfLogicAppAppSettings `
-        -Config $platformConfig `
+    $appSettings = Add-CdfServiceConnectionSettings `
+        -CdfConfig $cdfConfig `
         -Settings $appSettings `
         -ConnectionName  "PlatformKeyVault" `
         -ParameterName "platformKeyVault" `
-        -ServiceProvider "keyvault"
-    $appSettings = Add-CdfLogicAppAppSettings `
-        -Config $domainConfig `
-        -Settings $appSettings `
-        -ConnectionName  "DomainStorageAccount" `
-        -ParameterName "domainStorageAccount" `
-        -ServiceProvider "AzureBlob"
-
+        -ConnectionDefinition $definition
     $appSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "appsettings.json"
 
     appsettings.json (result):
@@ -56,6 +46,11 @@
         "PlatformKeyVaultUri": "<KeyVaultName>.vault.azure.net"
         "DomainStorageAccountUri": "<StorageAccountName>.vault.azure.net"
     }
+
+    .LINK
+    Deploy-CdfServiceContainerApp
+    Deploy-CdfServiceFunctionApp
+    Deploy-CdfServiceLogicAppStd
     #>
 
     [CmdletBinding()]
@@ -63,17 +58,13 @@
         [Parameter(Mandatory = $false)]
         [switch] $UseCS,
         [Parameter(Mandatory = $true)]
-        [string]$SubscriptionId,
-        # [Parameter(Mandatory = $true)]
-        # [hashtable]$Config,
+        [hashtable]$CdfConfig,
         [Parameter(Mandatory = $true)]
         [hashtable]$ConnectionDefinition,
         [Parameter(Mandatory = $true)]
-        [hashtable]$Settings,
+        [object]$Settings,
         [Parameter(Mandatory = $true)]
         [string] $ConnectionName,
-        [Parameter(Mandatory = $true)]
-        [string] $ServiceProvider,
         [Parameter(Mandatory = $true)]
         [string] $ParameterName
     )
@@ -81,13 +72,14 @@
     # $connectionParams = $Config.Config[$ParameterName]
     $connectionParams = $ConnectionDefinition.connectionConfig
 
-    $azCtx = Get-AzureContext -SubscriptionId $SubscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $SettingName = 'CON_' + $ConnectionDefinition.Scope.ToUpper() + '_' + $ConnectionDefinition.ServiceProvider.ToUpper() + '_'
 
     if ($UseCS) {
         switch ($ConnectionDefinition.ServiceProvider.ToLower()) {
             'keyvault' {
                 # No support for connection string
-                $Settings["$($ConnectionName)Uri"] = "$($connectionParams.name).vault.azure.net"
+                $Settings["$($SettingName)Uri"] = "$($connectionParams.name).vault.azure.net"
             }
             'azureeventgridpublish' {
                 switch ($connectionParams.type) {
@@ -98,8 +90,8 @@
                             -Name $connectionParams.name
                         $eventGridTopicKeys = Get-AzEventGridTopicKey $eventGridTopic
 
-                        $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
-                        $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
+                        $Settings["$($SettingName)_accessKey"] = $eventGridTopicKeys.Key1
+                        $Settings["$($SettingName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
                     default {
                         Write-Host "DEBUG: Adding ConnectionString for '$ConnectionName' [$($connectionParams.type)]"
@@ -108,20 +100,20 @@
                             -Name $connectionParams.name
                         $eventGridTopicKeys = Get-AzEventGridTopicKey $eventGridTopic
 
-                        $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
-                        $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
+                        $Settings["$($SettingName)_accessKey"] = $eventGridTopicKeys.Key1
+                        $Settings["$($SettingName)_topicEndpoint"] = $eventGridTopic.Endpoint
                     }
                 }
             }
             'servicebus' {
-                $eventHubKey = Get-AzServiceBusKey `
+                $serviceBusKey = Get-AzServiceBusKey `
                     -SubscriptionId $AzCtx.Subscription.Id `
                     -ResourceGroupName $connectionParams.resourceGroup `
                     -NamespaceName $connectionParams.name `
                     -Name RootManageSharedAccessKey `
                     -WarningAction:SilentlyContinue
 
-                $Settings["$($ConnectionName)_connectionString"] = $eventHubKey.PrimaryConnectionString
+                $Settings["$($SettingName)_connectionString"] = $serviceBusKey.PrimaryConnectionString
             }
             'eventhubs' {
                 $eventHubKey = Get-AzEventHubKey `
@@ -140,7 +132,7 @@
                         -ResourceGroupName $connectionParams.resourceGroup `
                         -Name $connectionParams.name
                 ).Context
-                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
+                $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
             }
             'azurefile' {
                 $storageContext = (
@@ -149,7 +141,7 @@
                         -ResourceGroupName $connectionParams.resourceGroup `
                         -Name $connectionParams.name
                 ).Context
-                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
+                $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
             }
             'azuretables' {
                 $storageContext = (
@@ -158,7 +150,7 @@
                         -ResourceGroupName $connectionParams.resourceGroup `
                         -Name $connectionParams.name
                 ).Context
-                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
+                $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
             }
             'azurequeues' {
                 $storageContext = (
@@ -167,11 +159,23 @@
                         -ResourceGroupName $connectionParams.resourceGroup `
                         -Name $connectionParams.name
                 ).Context
-                $Settings["$($ConnectionName)_connectionString"] = $storageContext.ConnectionString
+                $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
+            }
+            'postgresql' {
+                $Settings["$($SettingName)_ServerName"] = $connectionParams.databaseServerFQDN
+                $Settings["$($SettingName)_Database"] = $connectionParams.database
+                if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
+                    $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
+                }
+                else {
+                    $keyVaultName = $CdfConfig.Domain.ResourceNames.keyVaultName
+                }
+                $Settings["$($SettingName)_UserName"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.userSecretName))"
+                $Settings["$($SettingName)_Password"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.passwordSecretName))"
             }
             default {
                 if ($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
-                    Write-Warning "Unsupported service provider: $ServiceProvider"
+                    Write-Warning "Unsupported service provider: $($ConnectionDefinition.ServiceProvider)"
                 }
             }
         }
@@ -179,9 +183,9 @@
     }
     else {
         # Using managed identity
-        switch ($ServiceProvider.ToLower()) {
+        switch ($ConnectionDefinition.ServiceProvider.ToLower()) {
             'keyvault' {
-                $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).vault.azure.net"
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).vault.azure.net"
             }
             'azureeventgridpublish' {
                 switch ($connectionParams.type) {
@@ -196,8 +200,8 @@
                             -ResourceGroupName $connectionParams.resourceGroup `
                             -TopicName $eventGridTopic.name
 
-                        $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
-                        $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
+                        $Settings["$($SettingName)ACCESSKEY"] = $eventGridTopicKeys.Key1
+                        $Settings["$($SettingName)TOPICENDPOINT"] = $eventGridTopic.Endpoint
                     }
                     default {
                         Write-Host "DEBUG: Adding ConnectionString for '$ConnectionName' [$($connectionParams.type)]"
@@ -211,23 +215,23 @@
                             -TopicName $eventGridTopic.name
 
 
-                        $Settings["$($ConnectionName)_accessKey"] = $eventGridTopicKeys.Key1
-                        $Settings["$($ConnectionName)_topicEndpoint"] = $eventGridTopic.Endpoint
+                        $Settings["$($SettingName)ACCESSKEY"] = $eventGridTopicKeys.Key1
+                        $Settings["$($SettingName)TOPICENDPOINT"] = $eventGridTopic.Endpoint
                     }
                 }
             }
             'servicebus' {
-                $Settings["$($ConnectionName)_fullyQualifiedNamespace"] = "$($connectionParams.name).servicebus.windows.net"
+                $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
             }
             'eventhubs' {
-                $Settings["$($ConnectionName)_fullyQualifiedNamespace"] = "$($connectionParams.name).servicebus.windows.net"
+                $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
             }
             'azureblob' {
-                $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).blob.core.windows.net"
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).blob.core.windows.net"
             }
             'azurefile' {
                 # NOTE: Azure Storage Account File Share does not support managed identities for access yet.
-                $azCtx = Get-AzureContext -SubscriptionId $SubscriptionId
+                $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
                 $storageContext = (
                     Get-AzStorageAccount `
                         -DefaultProfile $AzCtx `
@@ -250,21 +254,35 @@
                 #     -StorageAccountName $connectionParams.name `
                 #     -ValidityDays 60
 
-                $Settings["$($ConnectionName)_connectionString"] = "DefaultEndpointsProtocol=https;EndpointSuffix=$($storageContext.EndPointSuffix);AccountName=$($connectionParams.name);AccountKey=$storageKey"
+                $Settings["$($SettingName)CONNECTIONSTRING"] = "DefaultEndpointsProtocol=https;EndpointSuffix=$($storageContext.EndPointSuffix);AccountName=$($connectionParams.name);AccountKey=$storageKey"
 
-                # $Settings["$($ConnectionName)Uri"] = "FileEndpoint=https://$($connectionParams.name).file.core.windows.net;SharedAccessSignature=$sasToken"
-                # $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).file.core.windows.net$sasToken"
+                # $Settings["$($SettingName)Uri"] = "FileEndpoint=https://$($connectionParams.name).file.core.windows.net;SharedAccessSignature=$sasToken"
+                # $Settings["$($SettingName)Uri"] = "https://$($connectionParams.name).file.core.windows.net$sasToken"
             }
             'azuretables' {
-                $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).table.core.windows.net"
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).table.core.windows.net"
             }
             'azurequeues' {
-                $Settings["$($ConnectionName)Uri"] = "https://$($connectionParams.name).queue.core.windows.net"
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).queue.core.windows.net"
+            }
+            'postgresql' {
+                #No support for managed identity
+                $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
+                $Settings["$($SettingName)DATABASE"] = $connectionParams.database
+                if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
+                    $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
+                }
+                else {
+                    $keyVaultName = $CdfConfig.Domain.ResourceNames.keyVaultName
+                }
+                $Settings["$($SettingName)USERNAME"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.userSecretName))"
+                $Settings["$($SettingName)PASSWORD"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.passwordSecretName))"
             }
             default {
-                Write-Warning "Unsupported service provider: $ServiceProvider"
+                Write-Warning "Unsupported service provider: $($ConnectionDefinition.ServiceProvider)"
             }
         }
     }
+    Write-Output -InputObject $Settings
 }
 

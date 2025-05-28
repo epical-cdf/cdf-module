@@ -85,6 +85,8 @@
     Write-Host "containerAppRG: $containerAppRG"
     Write-Host "containerAppName: $containerAppName"
 
+    $serviceConfig = Get-Content -Path "$OutputPath/cdf-config.json" | ConvertFrom-Json -AsHashtable
+
     #--------------------------------------
     # Preparing servicesettings for target env
     #--------------------------------------
@@ -117,7 +119,7 @@
             -VarName $envKey `
             -VarValue $envValue
         Write-Verbose "Setting container app env setting: $envKey"
-        if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal].+)[)|;].*') {
+        if ($envValue -match '@Microsoft.KeyVault.+SecretName=([External|Internal|Cdf].+)[)|;].*') {
             $kvSecretName = $Matches[1]
             $envVar = $updateSettings | Where-Object { $_.Name -eq $envKey }
             $isInternal = $envValue -match 'Internal'
@@ -145,7 +147,7 @@
                 else {
                     $containerAppSecret.KeyVaultUrl = $secretUrl
                 }
-    
+
                 if ($null -eq $envVar) {
                     $updateSettings += New-AzContainerAppEnvironmentVarObject `
                         -Name "$($isInternal ? 'SVC_' : 'EXT_')_$externalSettingKey" `
@@ -158,9 +160,9 @@
         }
     }
 
-    # Configure service API URLs for the App Service
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURL' -VarValue "https://$($app.Configuration.IngressFqdn)"
-    $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURLS' -VarValue "https://$($app.Configuration.IngressFqdn)"
+    # # Configure service API URLs for the App Service
+    # $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURL' -VarValue "https://$($app.Configuration.IngressFqdn)"
+    # $updateSettings = Set-EnvVarValue -Settings $updateSettings -VarName 'SVC_API_BASEURLS' -VarValue "https://$($app.Configuration.IngressFqdn)"
 
     #-------------------------------------------------------------
     # Set default container image and port config if missing
@@ -201,7 +203,7 @@
     if ($null -ne $template.Command) {
         $templateParams.Command = $template.Command
     }
- 
+
     $templateParams | ConvertTo-Json -Depth 10 | Set-Content -Path ./debug.json
     $container = New-AzContainerAppTemplateObject -Probe $template.Probe @templateParams
 

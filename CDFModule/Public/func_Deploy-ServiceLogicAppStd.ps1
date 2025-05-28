@@ -170,52 +170,28 @@
     Write-Host "Preparing connections."
     $connections = Get-Content -Raw "$InputPath/connections.json" | ConvertFrom-Json -AsHashtable
     $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
-    $svcConns = $serviceConfig.Connections ?? $connectionDefinitions.Keys
 
-    # Loop through all Platform, Application and Domain connections
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
+    foreach ( $connectionName in $serviceConfig.Connections ) {
         $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
+        if ($definition) {
             Write-Host "`t$connectionName"
-
-            # Add ServiceProviderConnection
-            Add-LogicAppServiceProviderConnection `
-                -Connections $connections `
-                -ConnectionName $connectionName `
-                -serviceProvider $definition.ServiceProvider `
-                -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
 
             # Add duplicate connection config for API Connections
             $config = $CdfConfig | Get-ManagedApiConnection -ConnectionKey $definition.ConnectionKey
-            if ($definition.IsEnabled -and $definition.IsApiConnection -and $null -ne $config) {
+            if ($true -eq $definition.IsApiConnection -and $null -ne $config) {
                 $config.Identity = $CdfConfig.Domain.Config.domainIdentityResourceId
                 Add-LogicAppManagedApiConnection `
                     -Connections $connections `
                     -ConnectionName $connectionName `
                     -ConnectionConfig $config
-            }
-        }
-    }
-
-    # Loop through any Custom connections referenced
-    foreach ( $connectionName in $svcConns ) {
-        if ($connectionName.StartsWith('Enterprise') -or $connectionName.StartsWith('External') -or $connectionName.StartsWith('Internal') ) {
-            $config = $CdfConfig | Get-ManagedApiConnection -ConnectionKey $connectionName
-            if ($null -ne $config) {
-                $config.Identity = $CdfConfig.Domain.Config.domainIdentityResourceId
-                Write-Host "`t$connectionName"
-                Add-LogicAppManagedApiConnection `
-                    -Connections $connections `
-                    -ConnectionName $connectionName `
-                    -ConnectionConfig $config
-
-                # Add access policy for logic app domain identity
-                $CdfConfig | Add-ManagedApiConnectionAccess `
-                    -ConnectionName $connectionName `
-                    -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
             }
             else {
-                Write-Host "`t$connectionName - missing connection configuration" -ForegroundColor Yellow
+                # Add ServiceProviderConnection
+                Add-LogicAppServiceProviderConnection `
+                    -Connections $connections `
+                    -ConnectionName $connectionName `
+                    -ConnectionDefinition $definition `
+                    -ManagedIdentityResourceId $CdfConfig.Domain.Config.domainIdentityResourceId
             }
         }
     }
@@ -224,21 +200,6 @@
     $connections | ConvertTo-Json -Depth 10 `
     | Update-CdfConfigToken -NoWarning -Tokens ($CdfConfig | Get-TokenValues) `
     | Set-Content -Path "$OutputPath/connections.json"
-
-    # TODO: Make these configurable using a "platform services" definition file
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`tConnection setting for $connectionName"
-            Add-LogicAppAppSettings `
-                -SubscriptionId $CdfConfig.Platform.Env.subscriptionId `
-                -Settings $updateSettings `
-                -Config $CdfConfig[$definition.Scope] `
-                -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey `
-                -ServiceProvider $definition.ServiceProvider
-        }
-    }
 
     if ($CdfConfig.Application.Env.purpose -eq 'production') {
         $updateSettings["WEBSITE_RUN_FROM_PACKAGE"] = "1"
@@ -272,7 +233,7 @@
                 -ResourceGroupName $logicAppRG `
                 -AppSettings $updateSettings `
                 -WarningAction:SilentlyContinue
-            #| Out-Null
+            | Out-Null
 
             Publish-AzWebApp -Force `
                 -DefaultProfile $azCtx `
@@ -280,7 +241,7 @@
                 -ResourceGroupName $logicAppRG `
                 -ArchivePath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
                 -WarningAction:SilentlyContinue
-            #| Out-Null
+            | Out-Null
             break
         }
         catch {
