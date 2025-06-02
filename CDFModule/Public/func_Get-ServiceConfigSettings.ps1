@@ -207,21 +207,23 @@ Function Get-ServiceConfigSettings {
         }
     }
 
-    $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
-    $svcConns = $serviceConfig.Connections
-    foreach ( $connectionName in $connectionDefinitions.Keys ) {
-        $definition = $connectionDefinitions[$connectionName]
-        if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
-            Write-Host "`tConnection setting for $connectionName"
-            $UpdateSettings = Add-ServiceConnectionSettings `
-                -Settings $UpdateSettings `
-                -CdfConfig $CdfConfig `
-                -ConnectionDefinition $definition `
-                -ConnectionName $connectionName `
-                -ParameterName $definition.ConnectionKey
+    if($serviceConfig.Connections -and $serviceConfig.Connections.Count -gt 0) {
+        Write-Host "Service connections found in config file."
+        $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
+        $svcConns = $serviceConfig.Connections ?? @()
+        foreach ( $connectionName in $connectionDefinitions.Keys ) {
+            $definition = $connectionDefinitions[$connectionName]
+            if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
+                Write-Host "`tConnection setting for $connectionName"
+                $UpdateSettings = Add-ServiceConnectionSettings `
+                    -Settings $UpdateSettings `
+                    -CdfConfig $CdfConfig `
+                    -ConnectionDefinition $definition `
+                    -ConnectionName $connectionName `
+                    -ParameterName $definition.ConnectionKey
+            }
         }
     }
-
 
     Write-Output -InputObject $UpdateSettings
 }

@@ -62,7 +62,7 @@
         Write-Error "Service configuration is not deployed. Please deploy the service infrastructure first."
         return
     }
-    if (-not $CdfConfig.Config.serviceTemplate -match 'functionapp.*') {
+    if (-not $CdfConfig.Service.Config.serviceTemplate -match 'functionapp.*') {
         Write-Error "Service mismatch - does not match a FunctionApp implementation."
         return
     }
@@ -70,23 +70,6 @@
     Write-Host "Preparing Function App Service implementation deployment."
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-
-    # Copy service/logicapp implementation
-
-    # 'dist'
-    # 'node_modules',
-    [string[]]$functionFiles = @(
-        'src'
-        '.npmrc',
-        'package.json',
-        'package-lock.json',
-        'app.settings.json',
-        'host.json',
-        'tsconfig.json'
-        '.funcignore'
-    )
-
-    Copy-Item -Force -Recurse -Path $InputPath/* -Destination $OutputPath
 
     ## Adjust these if template changes regarding placement of appService runtime for the service
     $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.functionAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
@@ -130,25 +113,20 @@
     #-------------------------------------------------------------
     # Update the app settings
     #-------------------------------------------------------------
-    $updateSettings | ConvertTo-Json -Depth 10 | Set-Content -Path "$OutputPath/app.settings.gen.json"
-    Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
-
+    
     Set-AzWebApp `
         -Name $appServiceName `
         -ResourceGroupName $appServiceRG `
         -AppSettings $updateSettings `
         -WarningAction:SilentlyContinue | Out-Null
-
+    
     #--------------------------------------
     # Deploy function app implementation
     #--------------------------------------
     Write-Host "Deploying functions."
 
-    # '*.ts'
-    # '*/tsconfig.json'
-    # '*/node_modules/@types/*'
-    # '*/node_modules/azure-functions-core-tools/*'
-    # '*/node_modules/typescript/*'
+    # Copy service/logicapp implementation
+
     [string[]]$exclude = @(
         '.vscode',
         '.gitignore',
@@ -160,16 +138,48 @@
         'cdf-config.json',
         'cdf-secrets.json'
     )
-    $OutputPath = Resolve-Path $OutputPath
-    New-Zip `
-        -Exclude $exclude `
-        -FolderPath $OutputPath `
-        -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
-        -IncludeHidden
 
-    # Compress-Archive -Force  `
-    #     -Path "$OutputPath/*"  `
-    #     -DestinationPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip"
+    if ($CdfConfig.Service.Config.serviceType -match '.*dotnet.*') {
+        if ($false -eq (Test-Path -Path "$InputPath/publish" -PathType Container)) {
+            Write-Verbose "Missing functionapp 'publish' folder. Running default dotnet publish."
+            dotnet publish --verbosity q -c "Debug" --output "$InputPath/publish"
+        }
+
+        Copy-Item -Force -Recurse -Path $InputPath/cdf-*.json -Destination $OutputPath
+        if (Test-Path app.settings.json) {
+            Copy-Item -Force -Path $InputPath/app.settings.json -Destination $OutputPath
+        }
+        $OutputPath = Resolve-Path $OutputPath
+        Push-Location -Path $InputPath/publish
+        New-Zip `
+            -Exclude $exclude `
+            -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
+            -IncludeHidden
+        Pop-Location
+    }
+    else {
+        if ($false -eq (Test-Path -Path './dist' -PathType Container)) {
+            Write-Verbose "Missing functionapp 'dist' folder. Running default npm build."
+            npm install
+            npm run build
+        }
+
+        Copy-Item -Force -Recurse -Path $InputPath/cdf-*.json -Destination $OutputPath
+        if (Test-Path app.settings.json) {
+            Copy-Item -Force -Path $InputPath/app.settings.json -Destination $OutputPath
+        }
+        $OutputPath = Resolve-Path $OutputPath
+        $exclude += @(
+            'src',
+            'package-lock.json',
+            'tsconfig*.json'
+        )
+        New-Zip `
+            -Exclude $exclude `
+            -ZipPath "$OutputPath/deployment-package-$($CdfConfig.Service.Config.serviceName).zip" `
+            -IncludeHidden
+    }
+    Remove-Item -Path "$OutputPath/local.settings.json" -ErrorAction SilentlyContinue
 
     Publish-AzWebApp -Force `
         -Name $appServiceName `
