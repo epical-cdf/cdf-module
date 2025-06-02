@@ -204,7 +204,6 @@
         $templateParams.Command = $template.Command
     }
 
-    $templateParams | ConvertTo-Json -Depth 10 | Set-Content -Path ./debug.json
     $container = New-AzContainerAppTemplateObject -Probe $template.Probe @templateParams
 
     if ($null -eq $app.TemplateContainer -or $app.TemplateContainer.Count -eq 0) {
