@@ -176,7 +176,7 @@
             $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose
 
             #Save to external config store
-            if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+            if ($CdfConfig.Platform.Config.configStoreType) {
                 $regionDetails = [ordered] @{
                     region = $region
                     code   = $regionCode

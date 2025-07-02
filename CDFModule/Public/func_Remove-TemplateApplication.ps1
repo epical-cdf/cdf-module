@@ -304,7 +304,7 @@
             Write-Host "-- End Phase #3"
         }
 
-        if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT' -and $false -eq $DryRun) {
+        if ($CdfConfig.Platform.Config.configStoreType -and $false -eq $DryRun) {
             $regionDetails = [ordered] @{
               region = $region
               code   = $regionCode

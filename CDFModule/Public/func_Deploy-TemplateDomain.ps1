@@ -187,7 +187,7 @@ Function Deploy-TemplateDomain {
             $CdfDomain = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
             $CdfDomain | ConvertTo-Json -Depth 10 | Write-Verbose
 
-            if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+            if ($CdfConfig.Platform.Config.configStoreType) {
                 $regionDetails = [ordered] @{
                     region = $region
                     code   = $regionCode

@@ -110,7 +110,7 @@
 
     if ($Deployed) {
 
-      if ($CdfPlatform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+      if ($CdfPlatform.Config.configStoreType) {
         $regionDetails = [ordered] @{
           region = $region
           code   = $regionCode
@@ -124,7 +124,7 @@
           -ErrorAction Continue
       }
 
-      if ($CdfPlatform.Config.configStoreType.ToUpper() -eq 'DEPLOYMENTOUTPUT' -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+      if ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0) {
         # Get latest deployment result outputs
         $deploymentName = "platform-$platformEnvKey-$regionCode"
 

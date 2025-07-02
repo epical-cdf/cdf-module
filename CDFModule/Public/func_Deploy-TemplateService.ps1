@@ -217,7 +217,7 @@
         $CdfService = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
         $CdfService | ConvertTo-Json -Depth 10 | Write-Verbose
 
-        if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+        if ($CdfConfig.Platform.Config.configStoreType) {
             $regionDetails = [ordered] @{
                 region = $region
                 code   = $regionCode
