@@ -175,6 +175,23 @@
             $CdfApplication = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
             $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose
 
+            #Save to external config store
+            if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+                $regionDetails = [ordered] @{
+                    region = $region
+                    code   = $regionCode
+                    name   = $regionName
+                }
+                Save-ConfigToStore `
+                    -CdfConfig $CdfConfig `
+                    -ScopeConfig $CdfApplication `
+                    -Scope 'Application' `
+                    -OutputConfigFilePath $configOutput `
+                    -EnvKey "$($platformEnvKey)-$($applicationEnvKey)" `
+                    -RegionDetails $regionDetails `
+                    -ErrorAction Continue
+            }
+
             $CdfConfig.Application = $CdfApplication
             return $CdfConfig
         }
