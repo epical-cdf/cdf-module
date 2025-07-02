@@ -113,40 +113,59 @@
     }
 
     if ($Deployed) {
-      # Get latest deployment result outputs
-      $deploymentName = "application-$platformEnvKey-$applicationEnvKey-$regionCode"
-
-      $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-      Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-
-      $result = Get-AzSubscriptionDeployment  `
-        -DefaultProfile $azCtx `
-        -Name "$deploymentName" `
-        -ErrorAction SilentlyContinue
-
-      if ($result -and $result.ProvisioningState -eq 'Succeeded') {
-        # Setup application definitions
-        $CdfApplication = [ordered] @{
-          IsDeployed    = $true
-          Env           = $result.Outputs.applicationEnv.Value
-          Tags          = $result.Outputs.applicationTags.Value
-          Config        = $result.Outputs.applicationConfig.Value
-          Features      = $result.Outputs.applicationFeatures.Value
-          ResourceNames = $result.Outputs.applicationResourceNames.Value
-          NetworkConfig = $result.Outputs.applicationNetworkConfig.Value
-          AccessControl = $result.Outputs.applicationAccessControl.Value
+      if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+        $regionDetails = [ordered] @{
+          region = $region
+          code   = $regionCode
+          name   = $regionName
         }
-
-        # Convert to normalized hashtable
-        $CdfApplication = $CdfApplication | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+        $cdfConfigOutput = Get-ConfigFromStore `
+          -CdfConfig $CdfConfig `
+          -Scope 'Application' `
+          -EnvKey "$($platformEnvKey)-$($applicationEnvKey)" `
+          -RegionDetails $regionDetails `
+          -ErrorAction Continue
       }
-      elseif ($result -and $result.ProvisioningState -ne 'Succeeded') {
-        Write-Warning "Deployment state is [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-        Write-Warning "Returning configuration from file."
+      if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -eq 'DEPLOYMENTOUTPUT' -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+
+        # Get latest deployment result outputs
+        $deploymentName = "application-$platformEnvKey-$applicationEnvKey-$regionCode"
+
+        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+
+        $result = Get-AzSubscriptionDeployment  `
+          -DefaultProfile $azCtx `
+          -Name "$deploymentName" `
+          -ErrorAction SilentlyContinue
+
+        if ($result -and $result.ProvisioningState -eq 'Succeeded') {
+          # Setup application definitions
+          $CdfApplication = [ordered] @{
+            IsDeployed    = $true
+            Env           = $result.Outputs.applicationEnv.Value
+            Tags          = $result.Outputs.applicationTags.Value
+            Config        = $result.Outputs.applicationConfig.Value
+            Features      = $result.Outputs.applicationFeatures.Value
+            ResourceNames = $result.Outputs.applicationResourceNames.Value
+            NetworkConfig = $result.Outputs.applicationNetworkConfig.Value
+            AccessControl = $result.Outputs.applicationAccessControl.Value
+          }
+
+          # Convert to normalized hashtable
+          $CdfApplication = $CdfApplication | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+        }
+        elseif ($result -and $result.ProvisioningState -ne 'Succeeded') {
+          Write-Warning "Deployment state is [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+          Write-Warning "Returning configuration from file."
+        }
+        else {
+          Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+          Write-Warning "Returning configuration from file."
+        }
       }
       else {
-        Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-        Write-Warning "Returning configuration from file."
+        $CdfApplication = $cdfConfigOutput
       }
     }
     else {

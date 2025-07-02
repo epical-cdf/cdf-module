@@ -104,6 +104,21 @@
     }
 
     if ($Deployed) {
+      if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+        $regionDetails = [ordered] @{
+            region = $region
+            code   = $regionCode
+            name   = $regionName
+        }
+        $cdfConfigOutput = Get-ConfigFromStore `
+            -CdfConfig $CdfConfig `
+            -Scope 'Service' `
+            -EnvKey "$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName" `
+            -RegionDetails $regionDetails `
+            -ErrorAction Continue
+    }
+    if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -eq 'DEPLOYMENTOUTPUT' -or ($cdfConfigOutput -ne $null -and  $cdfConfigOutput.Count -eq 0)) {
+
       # Get latest deployment result outputs
       $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
 
@@ -151,6 +166,10 @@
           Write-Warning "Returning service configuration from file, if available."
         }
       }
+    }
+    else{
+      $CdfService = $cdfConfigOutput
+    }
     }
     else {
       if ($CdfService.IsDeployed) {

@@ -91,6 +91,21 @@
     }
 
     if ($Deployed) {
+      if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT') {
+        $regionDetails = [ordered] @{
+            region = $region
+            code   = $regionCode
+            name   = $regionName
+        }
+        $cdfConfigOutput = Get-ConfigFromStore `
+            -CdfConfig $CdfConfig `
+            -Scope 'Domain' `
+            -EnvKey "$platformEnvKey-$applicationEnvKey-$DomainName" `
+            -RegionDetails $regionDetails `
+            -ErrorAction Continue
+    }
+    if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -eq 'DEPLOYMENTOUTPUT' -or ($cdfConfigOutput -ne $null -and  $cdfConfigOutput.Count -eq 0)) {
+
       # Get latest deployment result outputs
       $deploymentName = "domain-$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode"
 
@@ -126,6 +141,10 @@
         Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
         Write-Warning "Returning configuration from file."
       }
+    }
+    else{
+      $CdfDomain = $cdfConfigOutput
+    }
     }
     else {
       if ($CdfDomain.IsDeployed) {
