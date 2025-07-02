@@ -275,6 +275,20 @@
             }
             Write-Host " Done."
         }
+
+        if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT' -and $false -eq $DryRun) {
+            $regionDetails = [ordered] @{
+              region = $region
+              code   = $regionCode
+              name   = $region
+            }
+            Remove-ConfigFromStore `
+              -CdfConfig $CdfConfig `
+              -Scope 'Platform' `
+              -EnvKey $platformEnvKey `
+              -RegionDetails $regionDetails `
+              -ErrorAction Continue
+          }
     }
     End {
     }

@@ -215,6 +215,19 @@ Function Remove-TemplateDomain {
                     -Name $deploymentName `
                     -ErrorAction SilentlyContinue
             }
+            if ($CdfConfig.Platform.Config.configStoreType.ToUpper() -ne 'DEPLOYMENTOUTPUT' -and $false -eq $DryRun) {
+                $regionDetails = [ordered] @{
+                  region = $region
+                  code   = $regionCode
+                  name   = $region
+                }
+                Remove-ConfigFromStore `
+                  -CdfConfig $CdfConfig `
+                  -Scope 'Domain' `
+                  -EnvKey $platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName) `
+                  -RegionDetails $regionDetails `
+                  -ErrorAction Continue
+              }
         }
         catch {
             Write-Error $_
