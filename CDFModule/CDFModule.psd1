@@ -113,7 +113,7 @@
             Prerelease                 = ''
 
             # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-            RequireLicenseAcceptance   = $false
+            RequireLicenseAcceptance   = $true
 
             # External dependent modules of this module
             ExternalModuleDependencies = @('Az', 'Az.ResourceGraph', 'DnsClient-PS', 'ACME-PS')
