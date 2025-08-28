@@ -210,6 +210,19 @@ Function Remove-TemplateService {
                     -Name $deploymentName `
                     -ErrorAction SilentlyContinue
             }
+            if ($CdfConfig.Platform.Config.configStoreType -and $false -eq $DryRun) {
+                $regionDetails = [ordered] @{
+                  region = $region
+                  code   = $regionCode
+                  name   = $region
+                }
+                Remove-ConfigFromStore `
+                  -CdfConfig $CdfConfig `
+                  -Scope 'Service' `
+                  -EnvKey $platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName) `
+                  -RegionDetails $regionDetails `
+                  -ErrorAction Continue
+              }
         }
         catch {
             Write-Error $_

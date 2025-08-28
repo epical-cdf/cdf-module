@@ -304,6 +304,20 @@
             Write-Host "-- End Phase #3"
         }
 
+        if ($CdfConfig.Platform.Config.configStoreType -and $false -eq $DryRun) {
+            $regionDetails = [ordered] @{
+              region = $region
+              code   = $regionCode
+              name   = $region
+            }
+            Remove-ConfigFromStore `
+              -CdfConfig $CdfConfig `
+              -Scope 'Application' `
+              -EnvKey $platformEnvKey-$applicationEnvKey `
+              -RegionDetails $regionDetails `
+              -ErrorAction Continue
+          }
+
         Write-Host "Completed."
     }
     End {
