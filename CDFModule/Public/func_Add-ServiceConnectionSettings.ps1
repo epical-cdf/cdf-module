@@ -164,6 +164,7 @@
             'postgresql' {
                 $Settings["$($SettingName)_ServerName"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)_Database"] = $connectionParams.database
+                $Settings["$($SettingName)_Port"] = $connectionParams.port
                 if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }
@@ -269,6 +270,7 @@
                 #No support for managed identity
                 $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)DATABASE"] = $connectionParams.database
+                $Settings["$($SettingName)PORT"] = $connectionParams.port
                 if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }
