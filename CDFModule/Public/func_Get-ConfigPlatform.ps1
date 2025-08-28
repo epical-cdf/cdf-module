@@ -124,7 +124,7 @@
           -ErrorAction Continue
       }
 
-      if ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0) {
+      if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
         # Get latest deployment result outputs
         $deploymentName = "platform-$platformEnvKey-$regionCode"
 
