@@ -217,6 +217,21 @@
         $CdfService = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
         $CdfService | ConvertTo-Json -Depth 10 | Write-Verbose
 
+        if ($CdfConfig.Platform.Config.configStoreType) {
+            $regionDetails = [ordered] @{
+                region = $region
+                code   = $regionCode
+                name   = $regionName
+            }
+            Save-ConfigToStore `
+                -CdfConfig $CdfConfig `
+                -ScopeConfig $CdfService `
+                -Scope 'Service' `
+                -OutputConfigFilePath $configOutput `
+                -EnvKey $platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName `
+                -RegionDetails $regionDetails `
+                -ErrorAction Continue
+        }
         $CdfConfig.Service = $CdfService
         return $CdfConfig
     }

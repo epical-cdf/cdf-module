@@ -186,6 +186,22 @@
             $CdfPlatform | ConvertTo-Json -Depth 10 | Write-Verbose
             $CdfPlatform = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
 
+            #Save to external config store
+            if ($CdfConfig.Platform.Config.configStoreType) {
+                $regionDetails = [ordered] @{
+                    region = $region
+                    code   = $regionCode
+                    name   = $regionName
+                }
+                Save-ConfigToStore `
+                    -CdfConfig $CdfConfig `
+                    -ScopeConfig $CdfPlatform `
+                    -Scope 'Platform' `
+                    -OutputConfigFilePath $configOutput `
+                    -EnvKey $platformEnvKey `
+                    -RegionDetails $regionDetails `
+                    -ErrorAction Continue
+            }
             $CdfConfig = [ordered] @{
                 Platform = $CdfPlatform
             }
