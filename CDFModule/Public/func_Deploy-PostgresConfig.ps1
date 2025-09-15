@@ -37,7 +37,9 @@
         [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [Object]$CdfConfig,
         [Parameter(Mandatory = $false)]
-        [string] $Scope = 'Domain'
+        [string] $Scope = 'Domain',
+        [Parameter(Mandatory = $false)]
+        [string] $SchemaName = ''
     )
 
     Begin {}
@@ -152,12 +154,12 @@
                     $env:CDF_PG_DATABASE = $DomainDatabaseName
                     $env:CDF_PG_USER_NAME = $DomainUserName
 
-                    Write-Host "Preparing Postgres database schema for service $ServiceName."
+                    Write-Host "Preparing Postgres database schema '$SchemaName' for service $ServiceName."
                     #$PlainDomainDbPassword = (New-Object System.Net.NetworkCredential("", $DomainPassword)).Password
-                    $checkDbSchemaQuery = "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = '$ServiceName');"
+                    $checkDbSchemaQuery = "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = '$SchemaName');"
                     $dbSchemaExists = Invoke-PostgresQuery -Query $checkDbSchemaQuery
                     if ($dbSchemaExists -match "f") {
-                        Invoke-PostgresQuery -Query "CREATE SCHEMA $ServiceName;" | Out-Null
+                        Invoke-PostgresQuery -Query "CREATE SCHEMA $SchemaName;" | Out-Null
                     }
                 }
                 if (!$CdfConfig.Platform.Features.enablePostgresPE) {
