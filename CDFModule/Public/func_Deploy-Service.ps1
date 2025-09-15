@@ -222,10 +222,11 @@
                 -TemplateDir $CdfSharedPath/modules/servicebus-config `
                 -ErrorAction Stop
         }
-        #TODO: Find some other way to identify if service needs postgres config
-        if($svcConfig.Connections -contains "DomainPostgres"){
-            Deploy-PostgresConfig -CdfConfig $SvcCdfConfig -Scope 'Service'
+        if (Test-Path "$ServiceSrcPath/postgres.config.json") {
+            $postgresConfig = Get-Content -Path "$ServiceSrcPath/postgres.config.json" | ConvertFrom-Json -AsHashtable
+            Deploy-PostgresConfig -CdfConfig $SvcCdfConfig -Scope 'Service' -SchemaName $postgresConfig.schemaName
         }
+
     }
 
     # TODO: Refactor in a registration pattern for supported service template commands
