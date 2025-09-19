@@ -79,6 +79,7 @@
     if (Test-Path "$sourcePath/domain/domain.$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode.json" ) {
       Write-Verbose "Loading configuration file"
       $CdfDomain = Get-Content "$sourcePath/domain/domain.$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode.json" | ConvertFrom-Json -AsHashtable
+      $CdfDomain.ConfigSource = "FILE"
     }
     else {
       Write-Warning "No domain configuration file found '$DomainName' with platform key '$platformEnvKey', application key '$applicationEnvKey' and region code '$regionCode'."
@@ -87,10 +88,26 @@
         Env        = [ordered] @{}
         Config     = [ordered] @{}
         Features   = [ordered] @{}
+        ConfigSource = "NO-SOURCE"
       }
     }
 
     if ($Deployed) {
+      if ($CdfConfig.Platform.Config.configStoreType) {
+        $regionDetails = [ordered] @{
+            region = $region
+            code   = $regionCode
+            name   = $regionName
+        }
+        $cdfConfigOutput = Get-ConfigFromStore `
+            -CdfConfig $CdfConfig `
+            -Scope 'Domain' `
+            -EnvKey "$platformEnvKey-$applicationEnvKey-$DomainName" `
+            -RegionDetails $regionDetails `
+            -ErrorAction Continue
+    }
+    if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+
       # Get latest deployment result outputs
       $deploymentName = "domain-$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode"
 
@@ -113,6 +130,7 @@
           ResourceNames = $result.Outputs.domainResourceNames.Value
           NetworkConfig = $result.Outputs.domainNetworkConfig.Value
           AccessControl = $result.Outputs.domainAccessControl.Value
+          ConfigSource = 'DEPLOYMENTOUTPUT'
         }
 
         # Convert to normalized hashtable
@@ -126,6 +144,11 @@
         Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
         Write-Warning "Returning configuration from file."
       }
+    }
+    else{
+      $cdfConfigOutput.Add("ConfigSource",$CdfConfig.Platform.Config.configStoreType.ToUpper())
+      $CdfDomain = $cdfConfigOutput
+    }
     }
     else {
       if ($CdfDomain.IsDeployed) {
