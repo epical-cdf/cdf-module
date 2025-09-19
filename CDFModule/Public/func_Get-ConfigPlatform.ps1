@@ -98,6 +98,7 @@
       Write-Verbose "Loading configuration from output json"
       $CdfPlatform = Get-Content  $platformConfigFile | ConvertFrom-Json -AsHashtable
       $CdfPlatform.Env = $platformEnv
+      $CdfPlatform.ConfigSource = "FILE"
     }
     else {
       Write-Error "Platform configuration file not found. Path: $platformConfigFile"
@@ -147,6 +148,7 @@
             ResourceNames = $result.Outputs.platformResourceNames.Value
             NetworkConfig = $result.Outputs.platformNetworkConfig.Value
             AccessControl = $result.Outputs.platformAccessControl.Value
+            ConfigSource = 'DEPLOYMENTOUTPUT'
           }
           # Convert to normalized hashtable
           $CdfPlatform = $CdfPlatform | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
@@ -161,6 +163,7 @@
         }
       }
       else {
+        $cdfConfigOutput.Add("ConfigSource",$CdfPlatform.Config.configStoreType.ToUpper())
         $CdfPlatform = $cdfConfigOutput
       }
     }

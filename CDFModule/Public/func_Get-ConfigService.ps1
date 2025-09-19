@@ -91,6 +91,7 @@
           serviceTemplate = $serviceConfig.ServiceDefaults.ServiceTemplate
         }
         Features   = [ordered] @{}
+        $CdfService.ConfigSource = "FILE"
       }
     }
     else {
@@ -100,6 +101,7 @@
         Env        = [ordered] @{}
         Config     = [ordered] @{}
         Features   = [ordered] @{}
+        ConfigSource = "NO-SOURCE"
       }
     }
 
@@ -148,6 +150,7 @@
           ResourceNames = $result.Outputs.serviceResourceNames.Value
           NetworkConfig = $result.Outputs.serviceNetworkConfig.Value
           AccessControl = $result.Outputs.serviceAccessControl.Value
+          ConfigSource = 'DEPLOYMENTOUTPUT'
         }
 
         # Convert to normalized hashtable
@@ -168,6 +171,7 @@
       }
     }
     else{
+      $cdfConfigOutput.Add("ConfigSource",$CdfConfig.Platform.Config.configStoreType.ToUpper())
       $CdfService = $cdfConfigOutput
     }
     }

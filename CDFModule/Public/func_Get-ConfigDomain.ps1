@@ -79,6 +79,7 @@
     if (Test-Path "$sourcePath/domain/domain.$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode.json" ) {
       Write-Verbose "Loading configuration file"
       $CdfDomain = Get-Content "$sourcePath/domain/domain.$platformEnvKey-$applicationEnvKey-$DomainName-$regionCode.json" | ConvertFrom-Json -AsHashtable
+      $CdfDomain.ConfigSource = "FILE"
     }
     else {
       Write-Warning "No domain configuration file found '$DomainName' with platform key '$platformEnvKey', application key '$applicationEnvKey' and region code '$regionCode'."
@@ -87,6 +88,7 @@
         Env        = [ordered] @{}
         Config     = [ordered] @{}
         Features   = [ordered] @{}
+        ConfigSource = "NO-SOURCE"
       }
     }
 
@@ -128,6 +130,7 @@
           ResourceNames = $result.Outputs.domainResourceNames.Value
           NetworkConfig = $result.Outputs.domainNetworkConfig.Value
           AccessControl = $result.Outputs.domainAccessControl.Value
+          ConfigSource = 'DEPLOYMENTOUTPUT'
         }
 
         # Convert to normalized hashtable
@@ -143,6 +146,7 @@
       }
     }
     else{
+      $cdfConfigOutput.Add("ConfigSource",$CdfConfig.Platform.Config.configStoreType.ToUpper())
       $CdfDomain = $cdfConfigOutput
     }
     }

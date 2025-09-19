@@ -107,6 +107,7 @@
       Write-Verbose "Loading configuration file"
       $CdfApplication = Get-Content "$sourcePath/application/application.$platformEnvKey-$applicationEnvKey-$regionCode.json" | ConvertFrom-Json -AsHashtable
       $CdfApplication.Env = $applicationEnv
+      $CdfApplication.ConfigSource = "FILE"
     }
     else {
       throw "No application configuration file found for platform key '$platformEnvKey', application key '$applicationEnvKey' and region code '$regionCode'."
@@ -150,6 +151,7 @@
             ResourceNames = $result.Outputs.applicationResourceNames.Value
             NetworkConfig = $result.Outputs.applicationNetworkConfig.Value
             AccessControl = $result.Outputs.applicationAccessControl.Value
+            ConfigSource = 'DEPLOYMENTOUTPUT'
           }
 
           # Convert to normalized hashtable
@@ -165,6 +167,7 @@
         }
       }
       else {
+        $cdfConfigOutput.Add("ConfigSource",$CdfConfig.Platform.Config.configStoreType.ToUpper())
         $CdfApplication = $cdfConfigOutput
       }
     }
