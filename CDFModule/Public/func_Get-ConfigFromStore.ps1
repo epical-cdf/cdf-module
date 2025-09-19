@@ -106,8 +106,8 @@
         $CdfConfigOutput = $CdfConfigOutput | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
       }
       else {
-        Write-Warning "No configuration found in custom config store '$configStoreName' with label '$lableName' in resource group '$configStoreResourceGroupName' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($EnvDetails.nameId)'."
-        Write-Warning "Trying to retrun configuration from deployment output."
+        Write-Warning "No configuration found in custom config store '$configStoreName' with label '$lableName' in resource group '$configStoreResourceGroupName' under subscription [$($azCtx.Subscription.Name)] with key '$EnvKey'."
+        Write-Warning "Trying to return configuration from deployment output."
       }
 
     }
@@ -121,7 +121,7 @@
       }
       else {
         Write-Warning "No configuration found in KeyVault '$configStoreName' with key '$keyName' in resource group '$configStoreResourceGroupName' using subscription [$($azCtx.Subscription.Name)]."
-        Write-Warning "Trying to retrun configuration from deployment output."
+        Write-Warning "Trying to return configuration from deployment output."
       }
 
     }
@@ -139,7 +139,7 @@
       }
       else {
         Write-Warning "No configuration found in Storage Account '$configStoreName' and container '$containerName'  with blob name '$keyName' in subscription [$($azCtx.Subscription.Name)]."
-        Write-Warning "Trying to retrun configuration from deployment output."
+        Write-Warning "Trying to return configuration from deployment output."
       }
     }
     return $CdfConfigOutput;
