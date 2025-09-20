@@ -186,7 +186,7 @@ Function Import-APIMDeveloperPortal {
     $publishResponse = Invoke-AzRestMethod -Path "$baseUri/portalRevisions/$($revision)?api-version=$APIVersion" -Method PUT -Payload $body
     $publishResponse
 
-    if ($publishResponse.StatusCode -gt 299) {
+    if ($publishResponse.StatusCode -le 299) {
         'Import completed'
         return
     }
