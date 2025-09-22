@@ -89,24 +89,32 @@
     Write-Verbose "Fetching config of '$($Scope.ToLower())' from custom config store '$configStoreName' in resource group '$configStoreResourceGroupName'  under subscription [$($azCtx.Subscription.Name)] with key '$EnvKey'."
     $CdfConfigOutput = @{}
     if ($configStoreType.ToUpper() -eq 'APPCONFIG') {
+
       $lableName = "$templateName-$templateVersion"
       $result = Get-AzAppConfigurationKeyValue -EndPoint $configStoreEndpoint -Label $lableName | Select-Object Key, Value
       if ($result) {
-        $CdfConfigOutput = [ordered] @{
-          IsDeployed    = $true
-          Env           = ($result | Where-Object { $_.Key -eq "$($keyName)-Env" }).Value | ConvertFrom-Json -AsHashtable
-          Tags          = ($result | Where-Object { $_.Key -eq "$($keyName)-Tags" }).Value | ConvertFrom-Json -AsHashtable
-          Config        = ($result | Where-Object { $_.Key -eq "$($keyName)-Config" }).Value | ConvertFrom-Json -AsHashtable
-          Features      = ($result | Where-Object { $_.Key -eq "$($keyName)-Features" }).Value | ConvertFrom-Json -AsHashtable
-          ResourceNames = ($result | Where-Object { $_.Key -eq "$($keyName)-ResourceNames" }).Value | ConvertFrom-Json -AsHashtable
-          AccessControl = ($result | Where-Object { $_.Key -eq "$($keyName)-AccessControl" }).Value | ConvertFrom-Json -AsHashtable
-          NetworkConfig = ($result | Where-Object { $_.Key -eq "$($keyName)-NetworkConfig" }).Value | ConvertFrom-Json -AsHashtable
+        $isEnvKeyExists = $result | Where-Object { $_.Key -eq "$($keyName)-Env" }
+        if ($isEnvKeyExists) {
+          $CdfConfigOutput = [ordered] @{
+            IsDeployed    = $true
+            Env           = ($result | Where-Object { $_.Key -eq "$($keyName)-Env" }).Value | ConvertFrom-Json -AsHashtable
+            Tags          = ($result | Where-Object { $_.Key -eq "$($keyName)-Tags" }).Value | ConvertFrom-Json -AsHashtable
+            Config        = ($result | Where-Object { $_.Key -eq "$($keyName)-Config" }).Value | ConvertFrom-Json -AsHashtable
+            Features      = ($result | Where-Object { $_.Key -eq "$($keyName)-Features" }).Value | ConvertFrom-Json -AsHashtable
+            ResourceNames = ($result | Where-Object { $_.Key -eq "$($keyName)-ResourceNames" }).Value | ConvertFrom-Json -AsHashtable
+            AccessControl = ($result | Where-Object { $_.Key -eq "$($keyName)-AccessControl" }).Value | ConvertFrom-Json -AsHashtable
+            NetworkConfig = ($result | Where-Object { $_.Key -eq "$($keyName)-NetworkConfig" }).Value | ConvertFrom-Json -AsHashtable
 
+          }
+          $CdfConfigOutput = $CdfConfigOutput | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
         }
-        $CdfConfigOutput = $CdfConfigOutput | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+        else {
+          Write-Warning "No configuration found in custom config store '$configStoreName' with label '$lableName' in resource group '$configStoreResourceGroupName' under subscription [$($azCtx.Subscription.Name)] with key '$EnvKey'."
+          Write-Warning "Trying to return configuration from deployment output."
+        }
       }
       else {
-        Write-Warning "No configuration found in custom config store '$configStoreName' with label '$lableName' in resource group '$configStoreResourceGroupName' under subscription [$($azCtx.Subscription.Name)] with key '$EnvKey'."
+        Write-Warning "No configuration found in custom config store '$configStoreName' with label '$lableName' in resource group '$configStoreResourceGroupName' under subscription [$($azCtx.Subscription.Name)]."
         Write-Warning "Trying to return configuration from deployment output."
       }
 
