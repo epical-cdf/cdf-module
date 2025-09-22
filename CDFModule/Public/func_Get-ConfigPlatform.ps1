@@ -112,6 +112,11 @@
     if ($Deployed) {
 
       if ($CdfPlatform.Config.configStoreType) {
+        $configStoreType = $CdfPlatform.Config.configStoreType
+        $configStoreSubscriptionId = $CdfPlatform.Config.configStoreSubscriptionId
+        $configStoreResourceGroupName = $CdfPlatform.Config.configStoreResourceGroupName
+        $configStoreName = $CdfPlatform.Config.configStoreName
+        $configStoreEndpoint = $CdfPlatform.Config.configStoreEndpoint
         $regionDetails = [ordered] @{
           region = $region
           code   = $regionCode
@@ -148,7 +153,7 @@
             ResourceNames = $result.Outputs.platformResourceNames.Value
             NetworkConfig = $result.Outputs.platformNetworkConfig.Value
             AccessControl = $result.Outputs.platformAccessControl.Value
-            ConfigSource = 'DEPLOYMENTOUTPUT'
+            ConfigSource  = 'DEPLOYMENTOUTPUT'
           }
           # Convert to normalized hashtable
           $CdfPlatform = $CdfPlatform | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
@@ -163,7 +168,7 @@
         }
       }
       else {
-        $cdfConfigOutput.Add("ConfigSource",$CdfPlatform.Config.configStoreType.ToUpper())
+        $cdfConfigOutput.Add("ConfigSource", $CdfPlatform.Config.configStoreType.ToUpper())
         $CdfPlatform = $cdfConfigOutput
       }
     }
@@ -182,7 +187,13 @@
       $CdfPlatform.Config.templateScope = 'platform'
       $CdfPlatform.Config.platformId = $PlatformId
       $CdfPlatform.Config.instanceId = $InstanceId
-
+      if ($configStoreType) {
+        $CdfPlatform.Config.configStoreType = $configStoreType
+        $CdfPlatform.Config.configStoreSubscriptionId = $configStoreSubscriptionId
+        $CdfPlatform.Config.configStoreResourceGroupName = $configStoreResourceGroupName
+        $CdfPlatform.Config.configStoreName = $configStoreName
+        $CdfPlatform.Config.configStoreEndpoint = $configStoreEndpoint
+      }
       $CdfPlatform | ConvertTo-Json -Depth 10 | Write-Verbose
 
       $CdfConfig = [ordered] @{
