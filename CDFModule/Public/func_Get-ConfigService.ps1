@@ -91,7 +91,7 @@
           serviceTemplate = $serviceConfig.ServiceDefaults.ServiceTemplate
         }
         Features   = [ordered] @{}
-        $CdfService.ConfigSource = "FILE"
+        ConfigSource = "FILE"
       }
     }
     else {
