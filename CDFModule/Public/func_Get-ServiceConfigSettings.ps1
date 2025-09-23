@@ -129,8 +129,7 @@ Function Get-ServiceConfigSettings {
                 $UpdateSettings[$appSettingKey] = $value
             }
             "Secret" {
-                #$kvSecretName = "Internal-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
-                $kvSecretName = $setting.Identifier
+                $kvSecretName = "Internal-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
                 if ($SecretValue) {
                     $secret = Get-AzKeyVaultSecret `
                         -DefaultProfile $azCtx `
@@ -169,8 +168,7 @@ Function Get-ServiceConfigSettings {
                 $UpdateSettings[$appSettingKey] = $value
             }
             "Secret" {
-                #$kvSecretName = "External-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
-                $kvSecretName = $setting.Identifier
+                $kvSecretName = "External-$($CdfConfig.Service.Config.serviceName)-$($setting.Identifier)"
                 if ($SecretValue) {
                     $secret = Get-AzKeyVaultSecret `
                         -DefaultProfile $azCtx `
