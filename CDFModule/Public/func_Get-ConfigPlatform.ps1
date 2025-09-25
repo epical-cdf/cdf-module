@@ -98,6 +98,7 @@
       Write-Verbose "Loading configuration from output json"
       $CdfPlatform = Get-Content  $platformConfigFile | ConvertFrom-Json -AsHashtable
       $CdfPlatform.Env = $platformEnv
+      $CdfPlatform.ConfigSource = "FILE"
     }
     else {
       Write-Error "Platform configuration file not found. Path: $platformConfigFile"
@@ -109,40 +110,66 @@
     }
 
     if ($Deployed) {
-      # Get latest deployment result outputs
-      $deploymentName = "platform-$platformEnvKey-$regionCode"
 
-      $azCtx = Get-AzureContext -SubscriptionId $CdfPlatform.Env.subscriptionId
-      Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($platformEnv.name)'."
-
-      $result = Get-AzSubscriptionDeployment  `
-        -DefaultProfile $azCtx `
-        -Name "$deploymentName" `
-        -ErrorAction SilentlyContinue
-
-      if ($result -and $result.ProvisioningState -eq 'Succeeded') {
-        # Setup platform definitions
-        $CdfPlatform = [ordered] @{
-          IsDeployed    = $true
-          Env           = $result.Outputs.platformEnv.Value
-          Tags          = $result.Outputs.platformTags.Value
-          Config        = $result.Outputs.platformConfig.Value
-          Features      = $result.Outputs.platformFeatures.Value
-          ResourceNames = $result.Outputs.platformResourceNames.Value
-          NetworkConfig = $result.Outputs.platformNetworkConfig.Value
-          AccessControl = $result.Outputs.platformAccessControl.Value
+      if ($CdfPlatform.Config.configStoreType) {
+        $configStoreType = $CdfPlatform.Config.configStoreType
+        $configStoreSubscriptionId = $CdfPlatform.Config.configStoreSubscriptionId
+        $configStoreResourceGroupName = $CdfPlatform.Config.configStoreResourceGroupName
+        $configStoreName = $CdfPlatform.Config.configStoreName
+        $configStoreEndpoint = $CdfPlatform.Config.configStoreEndpoint
+        $regionDetails = [ordered] @{
+          region = $region
+          code   = $regionCode
+          name   = $regionName
         }
-
-        # Convert to normalized hashtable
-        $CdfPlatform = $CdfPlatform | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+        $cdfConfigOutput = Get-ConfigFromStore `
+          -CdfConfig $CdfPlatform `
+          -Scope 'Platform' `
+          -EnvKey $platformEnvKey `
+          -RegionDetails $regionDetails `
+          -ErrorAction Continue
       }
-      elseif ($result -and $result.ProvisioningState -ne 'Succeeded') {
-        Write-Warning "Deployment state is [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-        Write-Warning "Returning configuration from file."
+
+      if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+        # Get latest deployment result outputs
+        $deploymentName = "platform-$platformEnvKey-$regionCode"
+
+        $azCtx = Get-AzureContext -SubscriptionId $CdfPlatform.Env.subscriptionId
+        Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($platformEnv.name)'."
+
+        $result = Get-AzSubscriptionDeployment  `
+          -DefaultProfile $azCtx `
+          -Name "$deploymentName" `
+          -ErrorAction SilentlyContinue
+
+        if ($result -and $result.ProvisioningState -eq 'Succeeded') {
+          # Setup platform definitions
+          $CdfPlatform = [ordered] @{
+            IsDeployed    = $true
+            Env           = $result.Outputs.platformEnv.Value
+            Tags          = $result.Outputs.platformTags.Value
+            Config        = $result.Outputs.platformConfig.Value
+            Features      = $result.Outputs.platformFeatures.Value
+            ResourceNames = $result.Outputs.platformResourceNames.Value
+            NetworkConfig = $result.Outputs.platformNetworkConfig.Value
+            AccessControl = $result.Outputs.platformAccessControl.Value
+            ConfigSource  = 'DEPLOYMENTOUTPUT'
+          }
+          # Convert to normalized hashtable
+          $CdfPlatform = $CdfPlatform | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+        }
+        elseif ($result -and $result.ProvisioningState -ne 'Succeeded') {
+          Write-Warning "Deployment state is [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+          Write-Warning "Returning configuration from file."
+        }
+        else {
+          Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($platformEnv.name)'."
+          Write-Warning "Returning configuration from file."
+        }
       }
       else {
-        Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($platformEnv.name)'."
-        Write-Warning "Returning configuration from file."
+        $cdfConfigOutput.Add("ConfigSource", $CdfPlatform.Config.configStoreType.ToUpper())
+        $CdfPlatform = $cdfConfigOutput
       }
     }
 
@@ -153,7 +180,6 @@
         Write-Verbose "Loading enterprise spoke network configuration"
         $CdfPlatform.SpokeNetworkConfig = Get-Content "$sourcePath/platform/spokeconfig.$platformEnvKey-$regionCode.json" | ConvertFrom-Json -AsHashtable
       }
-
       # Update platform configuration with current settings
       $CdfPlatform.Env.region = $region
       $CdfPlatform.Env.regionCode = $regionCode
@@ -161,7 +187,13 @@
       $CdfPlatform.Config.templateScope = 'platform'
       $CdfPlatform.Config.platformId = $PlatformId
       $CdfPlatform.Config.instanceId = $InstanceId
-
+      if ($configStoreType) {
+        $CdfPlatform.Config.configStoreType = $configStoreType
+        $CdfPlatform.Config.configStoreSubscriptionId = $configStoreSubscriptionId
+        $CdfPlatform.Config.configStoreResourceGroupName = $configStoreResourceGroupName
+        $CdfPlatform.Config.configStoreName = $configStoreName
+        $CdfPlatform.Config.configStoreEndpoint = $configStoreEndpoint
+      }
       $CdfPlatform | ConvertTo-Json -Depth 10 | Write-Verbose
 
       $CdfConfig = [ordered] @{

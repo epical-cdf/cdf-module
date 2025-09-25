@@ -187,6 +187,22 @@ Function Deploy-TemplateDomain {
             $CdfDomain = Get-Content -Path $configOutput | ConvertFrom-Json -AsHashtable
             $CdfDomain | ConvertTo-Json -Depth 10 | Write-Verbose
 
+            if ($CdfConfig.Platform.Config.configStoreType) {
+                $regionDetails = [ordered] @{
+                    region = $region
+                    code   = $regionCode
+                    name   = $regionName
+                }
+                Save-ConfigToStore `
+                    -CdfConfig $CdfConfig `
+                    -ScopeConfig $CdfDomain `
+                    -Scope 'Domain' `
+                    -OutputConfigFilePath $configOutput `
+                    -EnvKey $platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName) `
+                    -RegionDetails $regionDetails `
+                    -ErrorAction Continue
+            }
+
             $CdfConfig.Domain = $CdfDomain
             return $CdfConfig
         }

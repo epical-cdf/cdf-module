@@ -91,6 +91,7 @@
           serviceTemplate = $serviceConfig.ServiceDefaults.ServiceTemplate
         }
         Features   = [ordered] @{}
+        ConfigSource = "FILE"
       }
     }
     else {
@@ -100,10 +101,26 @@
         Env        = [ordered] @{}
         Config     = [ordered] @{}
         Features   = [ordered] @{}
+        ConfigSource = "NO-SOURCE"
       }
     }
 
     if ($Deployed) {
+      if ($CdfConfig.Platform.Config.configStoreType) {
+        $regionDetails = [ordered] @{
+            region = $region
+            code   = $regionCode
+            name   = $regionName
+        }
+        $cdfConfigOutput = Get-ConfigFromStore `
+            -CdfConfig $CdfConfig `
+            -Scope 'Service' `
+            -EnvKey "$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName" `
+            -RegionDetails $regionDetails `
+            -ErrorAction Continue
+    }
+    if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+
       # Get latest deployment result outputs
       $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
 
@@ -133,6 +150,7 @@
           ResourceNames = $result.Outputs.serviceResourceNames.Value
           NetworkConfig = $result.Outputs.serviceNetworkConfig.Value
           AccessControl = $result.Outputs.serviceAccessControl.Value
+          ConfigSource = 'DEPLOYMENTOUTPUT'
         }
 
         # Convert to normalized hashtable
@@ -151,6 +169,11 @@
           Write-Warning "Returning service configuration from file, if available."
         }
       }
+    }
+    else{
+      $cdfConfigOutput.Add("ConfigSource",$CdfConfig.Platform.Config.configStoreType.ToUpper())
+      $CdfService = $cdfConfigOutput
+    }
     }
     else {
       if ($CdfService.IsDeployed) {
