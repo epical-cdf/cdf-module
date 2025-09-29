@@ -11,7 +11,11 @@
 
     # Fetch all deployed API Connections and build a hashtable of connection definitions
     $connectionDefinitions = @{}
-    Get-AzResourceGroupDeployment  -ResourceGroupName $CdfConfig.Platform.ResourceNames.apiConnResourceGroupName `
+
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    Get-AzResourceGroupDeployment `
+        -DefaultProfile $azCtx `
+        -ResourceGroupName $CdfConfig.Platform.ResourceNames.apiConnResourceGroupName `
     | Where-Object {
         $_.DeploymentName -like "$platformKey-connection-*" -or `
             $_.DeploymentName -like "$applicationKey-connection-*" -or `

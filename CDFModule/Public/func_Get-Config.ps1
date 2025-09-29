@@ -1,4 +1,142 @@
-﻿Function Get-Config {
+﻿
+Function Get-Config {
+ <#
+    .SYNOPSIS
+    Get configuration for a deployed application instance for given platform instance.
+
+    .DESCRIPTION
+    Retrieves the configuration for a deployed application instance from output files stored at SourceDir for the platform instance.
+    The command will retrieve configuration for the platform, application, domain and service (if specified).
+    The command will look for configuration files in the following order:
+    1) Service cdf-config.json file (if present) for service defaults (ServiceName, ServiceGroup, ServiceType, ServiceTemplate)
+    2) Platform configuration (Get-ConfigPlatform)
+    3) Application configuration (Get-ConfigApplication)
+    4) Domain configuration (Get-ConfigDomain) (if DomainName is specified)
+    5) Service configuration (Get-ConfigService) (if ServiceName is specified)
+  
+    .PARAMETER Region
+    Azure region where the platform is deployed.
+    Defaults to value of env var CDF_REGION.
+
+    .PARAMETER PlatformId
+    Platform identifier.  
+    Defaults to value of env var CDF_PLATFORM_ID.
+    Required if env var CDF_PLATFORM_ID is not set.
+    Example: "axlint"
+
+    .PARAMETER PlatformInstance
+    Platform instance identifier.
+    Defaults to value of env var CDF_PLATFORM_INSTANCE.
+    Required if env var CDF_PLATFORM_INSTANCE is not set.
+    Example: "01"
+  
+    .PARAMETER PlatformEnvId
+    Platform environment definition identifier.
+    Defaults to value of env var CDF_PLATFORM_ENV_ID.
+    Optional. If not specified, the default environment definition for the platform instance will be used.
+    Example: "axl-tst"
+
+    .PARAMETER ApplicationId
+    Application identifier.  
+    Defaults to value of env var CDF_APPLICATION_ID.
+    Required if env var CDF_APPLICATION_ID is not set.
+    Example: "intg"
+
+    .PARAMETER ApplicationInstance
+    Application instance identifier.
+    Defaults to value of env var CDF_APPLICATION_INSTANCE.
+    Required if env var CDF_APPLICATION_INSTANCE is not set.
+    Example: "01"
+
+    .PARAMETER ApplicationEnvId
+    Application environment definition identifier.
+    Defaults to value of env var CDF_APPLICATION_ENV_ID.
+    Optional. If not specified, the default environment definition for the application instance will be used.
+    Example: "axl-uat"
+
+    .PARAMETER DomainName
+    Name of the domain to retrieve configuration for.
+    Defaults to value of env var CDF_DOMAIN_NAME.
+    Optional. If not specified, domain configuration will not be retrieved.
+    Example: "b2b"
+
+    .PARAMETER ServiceName
+    Name of the service to retrieve configuration for.
+    Defaults to cdf-config.json ServiceDefaults.ServiceName if present.
+    Or defaults to value of env var CDF_SERVICE_NAME.
+    Optional. If not specified, service configuration will not be retrieved.
+    Example: "svc01"
+
+    .PARAMETER ServiceType
+    Service type to use if service configuration is not found in a configuration file.
+    Defaults to cdf-config.json ServiceDefaults.ServiceType if present.
+    Or defaults to value of env var CDF_SERVICE_TYPE.
+    Example: "javascript" "donnet", "la-sample"
+
+    .PARAMETER ServiceGroup
+    Service group to use if service configuration is not found in a configuration file.
+    Defaults to cdf-config.json ServiceDefaults.ServiceGroup if present.
+    Or defaults to value of env var CDF_SERVICE_GROUP.
+    Example: "api", "worker", "core"
+
+    .PARAMETER ServiceTemplate
+    Service template to use if service configuration is not found in a configuration file.
+    Defaults to cdf-config.json ServiceDefaults.ServiceTemplate if present.
+    Or defaults to value of env var CDF_SERVICE_TEMPLATE.
+    Example: "logicapp-standard-v1", "containerapp-api-v1", "functionapp-api-v1"
+
+    .PARAMETER Deployed
+    Switch to indicate that only deployed configuration should be retrieved.
+    If specified, the command will return a warning if the platform, application, domain or service
+    is not marked as deployed in the configuration files.
+    Defaults to $false.
+
+    .PARAMETER ServiceSrcPath
+    Path to the service source directory. Defaults to current directory.
+
+    .PARAMETER CdfInfraTemplatePath
+    Path to the cdf-infra templates directory.
+    Defaults to "../../cdf-infra".
+
+    .PARAMETER CdfInfraSourcePath
+    Path to the cdf-infra source directory.
+    Defaults to "../../cdf-infra/src".
+
+    .PARAMETER CdfSharedPath
+    Path to the shared-infra source directory.
+    Defaults to "../../shared-infra".
+
+    .PARAMETER SharedTemplatePath
+    Path to the shared-infra templates directory.
+    Defaults to "$CdfSharedPath/templates". 
+
+    .INPUTS
+    None.
+
+    .OUTPUTS
+    CdfConfiguration
+
+    .EXAMPLE
+    Get-CdfConfig -Deployed
+
+    .EXAMPLE
+    $config = Get-Config `
+        -Region "northeurope" `
+        -PlatformId "axlint" `
+        -PlatformInstance "01" `
+        -PlatformEnvId "axl-tst" `
+        -ApplicationId "intg" `
+        -ApplicationInstance "01" `
+        -ApplicationEnvId "axl-uat" `
+        -DomainName "b2b" `
+        -ServiceName "svc01" `
+        -Deployed
+
+    .LINK
+    Show-CdfConfig
+
+    #>
+
   [CmdletBinding()]
   Param(
 
@@ -151,6 +289,7 @@
       $config = Get-ConfigService `
         -CdfConfig $config `
         -ServiceName $ServiceName `
+        -ServiceSrcPath $ServiceSrcPath `
         -SourceDir $CdfInfraSourcePath `
         -WarningAction:Continue `
         -Deployed -ErrorAction Stop
