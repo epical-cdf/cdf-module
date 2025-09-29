@@ -87,11 +87,11 @@ Function Import-GitHubSecretsToKeyVault {
       if ($null -ne $CdfConfig -and $null -ne $CdfConfig.Service) {
         $pattern = "^(External|Internal)-$([Regex]::Escape($CdfConfig.Service.Config.serviceName))-.+$"
         if ($ghKvItem.kvSecretName -notmatch $pattern) {
-          Write-Warning "$($ghKvItem.kvSecretName) - Key Vault identitifier does not follow the naming convention. The format should be: 'Internal|External-{{SERVICE_NAME}}-somevalue'."
-          Write-Warning "Skipping faulty identifier."
-          continue;
+          Write-Warning "Detected possible misconfiguration in GitHub to Key Vault mapping file for service [$($CdfConfig.Service.Config.serviceName)]."
+          Write-Warning "$($ghKvItem.kvSecretName) - Key Vault identitifier does not follow the expected naming convention service secrets."
+          Write-Warning "The format should be: 'Internal|External-{{SERVICE_NAME}}-somevalue'."
+          Write-Warning "If these are not service secrets, you can ignore this warning."
         }
-
       }
       foreach ($ghSecret in $GithubSecrets.Keys) {
         if ($ghKvItem.ghSecretName -eq $ghSecret) {
