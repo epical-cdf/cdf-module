@@ -47,6 +47,8 @@ Function Deploy-TemplateDomain {
         [Parameter(Mandatory = $false)]
         [switch] $Deployed,
         [Parameter(Mandatory = $false)]
+        [string] $ExportParametersPath,
+        [Parameter(Mandatory = $false)]
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
         [Parameter(Mandatory = $false)]
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src',
@@ -116,7 +118,25 @@ Function Deploy-TemplateDomain {
         $templateParams.domainTags.BuildBranch = $env:GITHUB_REF_NAME ?? $env:BUILD_SOURCEBRANCH ?? $(git -C $TemplateDir branch --show-current)
         $templateParams.domainTags.BuildRepo = $env:GITHUB_REPOSITORY ?? $env:BUILD_REPOSITORY_NAME ?? $(Split-Path -Leaf (git -C $TemplateDir remote get-url origin))
 
-        Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+        if ($ExportParametersPath) {
+            $deploymentParams = [ordered] @{
+                'schema'        = "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"
+                'contenVersion' = "1.0.0.0"
+                'parameters'    = [ordered] @{
+                }
+            }
+            $templateParams.Keys | ForEach-Object {
+                $deploymentParams.parameters[$_] = @{
+                    value = $templateParams[$_]
+                }
+            }
+            $deploymentParams | ConvertTo-Json -Depth 10 | Out-File -FilePath $ExportParametersPath -Force
+            Write-Host "Exported domain parameters to $ExportParametersPath"
+            return;
+        }
+        else {
+            Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+        }
 
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
