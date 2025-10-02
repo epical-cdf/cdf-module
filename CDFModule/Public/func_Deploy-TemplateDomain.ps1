@@ -13,6 +13,9 @@ Function Deploy-TemplateDomain {
         .PARAMETER Deployed
         Override check on configuration 'IsDeployed' to force deployment of deployed configuration
 
+        .PARAMETER ExportParametersPath
+        Export the ARM parameters to given path instead of deploying the template.
+
         .PARAMETER TemplateDir
         Path to the platform template root dir. Defaults to ".".
 

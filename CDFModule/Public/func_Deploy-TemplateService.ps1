@@ -9,6 +9,9 @@
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
+        .PARAMETER ExportParametersPath
+        Export the ARM parameters to given path instead of deploying the template.
+
         .PARAMETER TemplateDir
         Path to the platform template root dir. Defaults to ".".
 
