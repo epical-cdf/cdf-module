@@ -150,26 +150,20 @@
                 "`$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
                 "contentVersion": "1.0.0.0",
                 "parameters": {
-                  "appInsightsName": {
-                    "value": "$($CdfConfig.Application.ResourceNames.appInsightsName)"
-                  },
-                  "appInsightsRG": {
-                    "value": "$($CdfConfig.Application.ResourceNames.appResourceGroupName)"
-                  },
-                  "keyVaultName": {
-                    "value": "$($CdfConfig.Application.ResourceNames.keyVaultName)"
-                  },
-                  "apimServiceName": {
-                    "value": "$($CdfConfig.Application.ResourceNames.apimName)"
-                  },
-                  "apimClientId": {
-                    "value": "$($CdfConfig.Application.Config.appIdentityClientId)"
-                  },
                   "domainName": {
                     "value": "$DomainName"
                   },
+                  "serviceName": {
+                    "value": "$ServiceName"
+                  },
                   "serviceGroup": {
                     "value": "$ServiceGroup"
+                  },
+                  "serviceType": {
+                    "value": "$ServiceType"
+                  },
+                  "serviceTemplate": {
+                    "value": "$ServiceTemplate"
                   },
                   "apiName": {
                     "value": "$DomainName-$ServiceName"
@@ -183,7 +177,9 @@
                 }
               }
 "@
+
   $apiParams = ConvertFrom-Json $apiBaseParams -AsHashtable
+  $apiParams.parameters.Add('parCdfApplication', @{ 'value' = $CdfConfig.Application })
   $apiParams.parameters.Add('apiProtocols', @{ 'value' = @( $($svcConfig.ServiceSettings.protocols ?? @()) ) })
   $apiParams.parameters.Add('apiProductNames', @{ 'value' = @( $($svcConfig.ServiceSettings.products ?? @()) ) })
   $apiParams.parameters.Add('apiNamedValues', @{ 'value' = @( $($svcConfig.ServiceSettings.namedValues ?? @()) ) })
@@ -198,99 +194,27 @@
   $PolicyXML = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.policy)"
   $apiParams.parameters.Add('apiPolicy', @{ 'value' = $PolicyXML | Join-String })
 
-  # From here are api type specific parameters for the bicep template in use
-  switch ($ServiceTemplate) {
-    'api-internal-passthrough-wsdl' {
-      $OpenAPISpecDoc = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-      $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
+  $OpenAPISpecDoc = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
+  $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
 
-      foreach ($operations in $svcConfig.ServiceSettings.operations) {
-        $PolicyXML = Get-Content -Path "$outputPath/$($operations.policy)"
-        $operations.policy = $PolicyXML | Join-String
-      }
-      if ($svcConfig.ServiceSettings.operations.GetType().BaseType -eq 'System.Array') {
-        # Add array
-        Write-Verbose "Adding ApiOperations value as array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = $($svcConfig.ServiceSettings.operations) })
-      }
-      else {
-        # Add object to array
-        Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
-      }
-    }
-    'api-internal-passthrough-v1' {
-      $OpenAPISpecDoc = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-      $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
-
-      foreach ($operations in $svcConfig.ServiceSettings.operations) {
-        $PolicyXML = Get-Content -Path "$outputPath/$($operations.policy)"
-        $operations.policy = $PolicyXML | Join-String
-      }
-      if ($svcConfig.ServiceSettings.operations.GetType().BaseType -eq 'System.Array') {
-        # Add array
-        Write-Verbose "Adding ApiOperations value as array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = $($svcConfig.ServiceSettings.operations) })
-      }
-      else {
-        # Add object to array
-        Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
-      }
-    }
-    'api-internal-openapi-yaml' {
-      Write-Host "OpenAPI YAML spec   : $($svcConfig.ServiceSettings.openApiSpec)"
-      $OpenAPISpecDoc = Get-Content -Path "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-
-
-      $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
-
-      foreach ($operations in $svcConfig.ServiceSettings.operations) {
-        $PolicyXML = Get-Content -Path "$outputPath/$($operations.policy)"
-        $operations.policy = $PolicyXML | Join-String
-      }
-      if ($svcConfig.ServiceSettings.operations.GetType().BaseType -eq 'System.Array') {
-        # Add array
-        Write-Verbose "Adding ApiOperations value as array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = $($svcConfig.ServiceSettings.operations) })
-      }
-      else {
-        # Add object to array
-        Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
-      }
-
-    }
-    'api-internal-openapi-json' {
-      Write-Host "OpenAPI JSON spec   : $($svcConfig.ServiceSettings.openApiSpec)"
-      $OpenAPISpecDoc = Get-Content -Path  "$outputPath/$($svcConfig.ServiceSettings.openApiSpec)"
-
-      $apiParams.parameters.Add('apiSpecDoc', @{ 'value' = $OpenAPISpecDoc | Join-String -Separator "`r`n" })
-
-      foreach ($operations in $svcConfig.ServiceSettings.operations) {
-        $PolicyXML = Get-Content -Path "$outputPath/$($operations.policy)"
-        $operations.policy = $PolicyXML | Join-String
-      }
-      if ($svcConfig.ServiceSettings.operations.GetType().BaseType -eq 'System.Array') {
-        # Add array
-        Write-Verbose "Adding ApiOperations value as array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = $($svcConfig.ServiceSettings.operations) })
-      }
-      else {
-        # Add object to array
-        Write-Verbose "Adding ApiOperations value as object to array"
-        $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
-      }
-    }
-    Default {
-      Write-Error "Unknown API service template [$($svcConfig.ServiceSettings.ServiceDefaults.ServiceTemplate)]."
-      throw "Unknown API service template [$($svcConfig.ServiceSettings.ServiceDefaults.ServiceTemplate)]."
-    }
+  foreach ($operations in $svcConfig.ServiceSettings.operations) {
+    $PolicyXML = Get-Content -Path "$outputPath/$($operations.policy)"
+    $operations.policy = $PolicyXML | Join-String
+  }
+  if ($svcConfig.ServiceSettings.operations.GetType().BaseType -eq 'System.Array') {
+    # Add array
+    Write-Verbose "Adding ApiOperations value as array"
+    $apiParams.parameters.Add('apiOperations', @{ 'value' = $($svcConfig.ServiceSettings.operations) })
+  }
+  else {
+    # Add object to array
+    Write-Verbose "Adding ApiOperations value as object to array"
+    $apiParams.parameters.Add('apiOperations', @{ 'value' = @( $svcConfig.ServiceSettings.operations ) })
   }
 
   # Create template parameters json file
   $apiParams | ConvertTo-Json -Depth 50 | Set-Content -Path "$outputPath/$ServiceName.params.json"
 
   # Copy bicep template with type name
-  Copy-Item -Force -Path "$SharedPath/resources/$($svcConfig.ServiceDefaults.ServiceTemplate).bicep" -Destination "$outputPath/$ServiceName.bicep" | Out-Null
+  Copy-Item -Force -Path "$SharedPath/resources/$($ServiceTemplate).bicep" -Destination "$outputPath/$ServiceName.bicep" | Out-Null
 }
