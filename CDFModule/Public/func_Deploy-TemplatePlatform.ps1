@@ -12,6 +12,9 @@
     .PARAMETER Deployed
     Override check on configuration 'IsDeployed' to force deployment of deployed configuration
 
+    .PARAMETER ExportParametersPath
+    Export the ARM parameters to given path instead of deploying the template.
+
     .PARAMETER TemplateDir
     Path to the platform template root dir. Defaults to ".".
 
@@ -49,6 +52,8 @@
         [Object]$CdfConfig,
         [Parameter(Mandatory = $false)]
         [switch] $Deployed,
+        [Parameter(Mandatory = $false)]
+        [string] $ExportParametersPath,
         [Parameter(Mandatory = $false)]
         [bool] $DryRun = $false,
         [Parameter(Mandatory = $false)]
@@ -109,7 +114,25 @@
             $templateParams.platformEnv.platformDeploymentAccessToken = $env:PLATFORM_BUILDAGENT_PAT
         }
 
-        Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+        if ($ExportParametersPath) {
+            $deploymentParams = [ordered] @{
+                'schema'        = "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"
+                'contenVersion' = "1.0.0.0"
+                'parameters'    = [ordered] @{
+                }
+            }
+            $templateParams.Keys | ForEach-Object {
+                $deploymentParams.parameters[$_] = @{
+                    value = $templateParams[$_]
+                }
+            }
+            $deploymentParams | ConvertTo-Json -Depth 10 | Out-File -FilePath $ExportParametersPath -Force
+            Write-Host "Exported platform parameters to $ExportParametersPath"
+            return;
+        }
+        else {
+            Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+        }
 
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
@@ -149,8 +172,8 @@
                 -DefaultProfile $azCtx `
                 -DeploymentName $deploymentName `
             | Where-Object -FilterScript { $_.ProvisioningState -eq 'Failed' }
-            foreach ($error in $errors) {
-                Write-Error "Error [$( $error.StatusCode)] Message [$( $error.StatusMessage)]"
+            foreach ($err in $errors) {
+                Write-Error "Error [$( $err.StatusCode)] Message [$( $err.StatusMessage)]"
             }
             throw "Deployment failed, see error output or deployment status on Azure Portal"
         }

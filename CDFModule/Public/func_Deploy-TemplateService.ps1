@@ -9,6 +9,9 @@
         .PARAMETER CdfConfig
         The CDFConfig object that holds the current scope configurations (Platform, Application and Domain)
 
+        .PARAMETER ExportParametersPath
+        Export the ARM parameters to given path instead of deploying the template.
+
         .PARAMETER TemplateDir
         Path to the platform template root dir. Defaults to ".".
 
@@ -65,6 +68,8 @@
         [Parameter(Mandatory = $false)]
         [string] $ServiceTemplate = $env:CDF_SERVICE_TEMPLATE,
         [Parameter(Mandatory = $false)]
+        [string] $ExportParametersPath,
+        [Parameter(Mandatory = $false)]
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
         [Parameter(Mandatory = $false)]
         [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src'
@@ -93,7 +98,6 @@
     $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
 
     $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
-
 
     # Setup platform parameters from envrionment and params file
     $templateParams = [ordered] @{}
@@ -138,7 +142,25 @@
     $templateParams.serviceGroup = $ServiceGroup
     $templateParams.serviceTemplate = $ServiceTemplate
 
-    Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+    if ($ExportParametersPath) {
+        $deploymentParams = [ordered] @{
+            'schema'        = "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#"
+            'contenVersion' = "1.0.0.0"
+            'parameters'    = [ordered] @{
+            }
+        }
+        $templateParams.Keys | ForEach-Object {
+            $deploymentParams.parameters[$_] = @{
+                value = $templateParams[$_]
+            }
+        }
+        $deploymentParams | ConvertTo-Json -Depth 10 | Out-File -FilePath $ExportParametersPath -Force
+        Write-Host "Exported service parameters to $ExportParametersPath"
+        return;
+    }
+    else {
+        Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
+    }
 
     $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
