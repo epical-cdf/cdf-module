@@ -120,7 +120,7 @@
                     $env.cdfSolutionDeployerName = $platformEnv.cdfSolutionDeployerName
                     $env.cdfSolutionDeployerAppId = $platformEnv.cdfSolutionDeployerAppId
                     $env.solutionDeployerName = $platformEnv.cdfSolutionDeployerName
-                    $env.solutionDeployerAppId = $platformEnv.cdfSolutionDeployerName
+                    $env.solutionDeployerAppId = $platformEnv.cdfSolutionDeployerAppId
                 }
 
                 # Adding new properties without prefix to align naming conventions
