@@ -91,7 +91,7 @@
     if ($configStoreType.ToUpper() -eq 'APPCONFIG') {
 
       $lableName = "$templateName-$templateVersion"
-      $result = Get-AzAppConfigurationKeyValue -EndPoint $configStoreEndpoint -Label $lableName | Select-Object Key, Value
+      $result = Get-AzAppConfigurationKeyValue -EndPoint $configStoreEndpoint -Label $lableName -Key "$($keyName)*" | Select-Object Key, Value
       if ($result) {
         $isEnvKeyExists = $result | Where-Object { $_.Key -eq "$($keyName)-Env" }
         if ($isEnvKeyExists) {

@@ -94,7 +94,23 @@
         if ($configStoreType.ToUpper() -eq 'APPCONFIG') {
             $configNames = @("Config", "Env", "Tags", "Features", "NetworkConfig", "AccessControl", "ResourceNames")
             foreach ($configName in $configNames) {
-                $jsonValue = $ScopeConfig[$configName] | ConvertTo-Json -Depth 10
+                $jsonValue = $ScopeConfig[$configName] | ConvertTo-Json -Depth 10 -Compress
+                $size = ([System.Text.Encoding]::UTF8.GetByteCount("$templateName-$templateVersion" + "$keyName-$configName" + $jsonValue))
+                #App Conifg kas size limit of 10KB for key-Value
+                if ($size -gt 10000) {
+                    Write-Warning "Supplied configuration '$keyName-$configName' size is higher than allowed limit of 10KB. Trying to reduce size by removing 'description'."
+                    foreach ( $item in $ScopeConfig[$configName]) {
+                        Remove-DescriptionFields $item
+                    }
+                    $jsonValue = $ScopeConfig[$configName] | ConvertTo-Json -Depth 10 -Compress
+                    $size = ([System.Text.Encoding]::UTF8.GetByteCount("$templateName-$templateVersion" + "$keyName-$configName" + $jsonValue))
+                }
+
+                if ($size -gt 10000) {
+                    Write-Warning "Supplied configuration size is still is higher than allowed limit of 10KB. So saving empty '{}' config instead."
+                    $jsonValue = '{}' | ConvertTo-Json
+                }
+
                 $null = Set-AzAppConfigurationKeyValue `
                     -Endpoint $configStoreEndpoint `
                     -Key "$keyName-$configName" `
@@ -125,4 +141,42 @@
     }
     End {
     }
+}
+
+function Remove-DescriptionFields {
+    param (
+        [Parameter(Mandatory = $true)]
+        [object] $Data
+    )
+
+    # Stop if null
+    if ($null -eq $Data) { return }
+
+    # If array / list
+    if ($Data -is [System.Management.Automation.OrderedHashtable]) {
+        foreach ($item in $Data.Keys.Clone()) {
+            if ($item -eq 'description') {
+                $Data.Remove('description')
+            }
+            if ($item -is [System.Object[]] -or $item -is [System.String]) {
+                foreach ($arrayItem in $Data[$item]) {
+                    if ($arrayItem -eq 'description') {
+                        $Data[$item].Remove('description')
+                    }
+                    if ($arrayItem -is [System.Management.Automation.OrderedHashtable]) {
+                        foreach ($hashItem in $arrayItem.Keys.Clone()) {
+                            if ($hashItem -eq 'description') {
+                                $arrayItem.Remove('description')
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+
+    }
+    return
+
+
 }
