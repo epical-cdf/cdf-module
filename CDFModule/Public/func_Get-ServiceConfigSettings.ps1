@@ -68,7 +68,9 @@ Function Get-ServiceConfigSettings {
         [Parameter(Mandatory = $false)]
         [string] $InputPath = ".",
         [Parameter(Mandatory = $false)]
-        [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? "."
+        [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? ".",
+        [Parameter(Mandatory = $false)]
+        [switch] $UseCS
 
     )
 
@@ -207,7 +209,7 @@ Function Get-ServiceConfigSettings {
         }
     }
 
-    if($serviceConfig.Connections -and $serviceConfig.Connections.Count -gt 0) {
+    if ($serviceConfig.Connections -and $serviceConfig.Connections.Count -gt 0) {
         Write-Host "Service connections found in config file."
         $connectionDefinitions = $CdfConfig | Get-ConnectionDefinitions
         $svcConns = $serviceConfig.Connections ?? @()
@@ -215,12 +217,22 @@ Function Get-ServiceConfigSettings {
             $definition = $connectionDefinitions[$connectionName]
             if ($definition.IsEnabled -and $svcConns.Contains($connectionName)) {
                 Write-Host "`tConnection setting for $connectionName"
-                $UpdateSettings = Add-ServiceConnectionSettings `
-                    -Settings $UpdateSettings `
-                    -CdfConfig $CdfConfig `
-                    -ConnectionDefinition $definition `
-                    -ConnectionName $connectionName `
-                    -ParameterName $definition.ConnectionKey
+                if ($UseCS) {
+                    $UpdateSettings = Add-ServiceConnectionSettings -UseCS `
+                        -Settings $UpdateSettings `
+                        -CdfConfig $CdfConfig `
+                        -ConnectionDefinition $definition `
+                        -ConnectionName $connectionName `
+                        -ParameterName $definition.ConnectionKey
+                }
+                else {
+                    $UpdateSettings = Add-ServiceConnectionSettings `
+                        -Settings $UpdateSettings `
+                        -CdfConfig $CdfConfig `
+                        -ConnectionDefinition $definition `
+                        -ConnectionName $connectionName `
+                        -ParameterName $definition.ConnectionKey
+                }
             }
         }
     }
