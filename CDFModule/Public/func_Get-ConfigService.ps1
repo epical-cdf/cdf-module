@@ -47,9 +47,14 @@
   Param(
     [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
     [Object]$CdfConfig,
-    [ValidateNotNullOrEmpty()]
     [Parameter(Mandatory = $false)]
     [string] $ServiceName = $env:CDF_SERVICE_NAME,
+    [Parameter(Mandatory = $false)]
+    [string] $ServiceType = $env:CDF_SERVICE_TYPE,
+    [Parameter(Mandatory = $false)]
+    [string] $ServiceGroup = $env:CDF_SERVICE_GROUP,
+    [Parameter(Mandatory = $false)]
+    [string] $ServiceTemplate = $env:CDF_SERVICE_TEMPLATE,
     [Parameter(Mandatory = $false)]
     [string] $ServiceSrcPath = ".",
     [Parameter(Mandatory = $false)]
@@ -79,11 +84,11 @@
     $DomainName = $CdfConfig.Domain.Config.domainName
 
     # Get service configuration
-    if (Test-Path "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" ) {
+    $HasInfraConfig = Test-Path "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json"
+    if ($HasInfraConfig) {
       Write-Verbose "Loading configuration file"
-      $CdfService = Get-Content "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" | ConvertFrom-Json -AsHashtable
+      $CdfInfraService = Get-Content "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" | ConvertFrom-Json -AsHashtable
     }
-
 
     $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
     if (Test-Path $cdfConfigFile) {
@@ -94,18 +99,36 @@
         Write-Error "File path:  $cdfConfigFile"
         return
       }
+
       $serviceConfig = Get-Content $cdfConfigFile | ConvertFrom-Json -AsHashtable
-      $CdfService = [ordered] @{
-        IsDeployed   = $false
-        Env          = [ordered] @{}
-        Config       = [ordered] @{
-          serviceName     = $serviceConfig.ServiceDefaults.ServiceName
-          serviceType     = $serviceConfig.ServiceDefaults.ServiceType
-          serviceGroup    = $serviceConfig.ServiceDefaults.ServiceGroup
-          serviceTemplate = $serviceConfig.ServiceDefaults.ServiceTemplate
+
+      $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $serviceConfig.ServiceDefaults.ServiceName
+      $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceConfig.ServiceDefaults.ServiceGroup
+      $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $serviceConfig.ServiceDefaults.ServiceType
+      $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $serviceConfig.ServiceDefaults.ServiceTemplate
+
+      if ($HasInfraConfig) {
+        Write-Verbose "Merging service configuration from cdf-config.json with infra config file"
+        $CdfService = $CdfInfraService
+        $CdfService.Config.serviceName = $ServiceName
+        $CdfService.Config.serviceType = $ServiceType
+        $CdfService.Config.serviceGroup = $ServiceGroup
+        $CdfService.Config.serviceTemplate = $ServiceTemplate
+        $CdfService.ConfigSource = "FILE"
+      }
+      else {
+        $CdfService = [ordered] @{
+          IsDeployed   = $false
+          Env          = [ordered] @{}
+          Config       = [ordered] @{
+            serviceName     = $ServiceName
+            serviceType     = $ServiceType
+            serviceGroup    = $ServiceGroup
+            serviceTemplate = $ServiceTemplate
+          }
+          Features     = [ordered] @{}
+          ConfigSource = "FILE"
         }
-        Features     = [ordered] @{}
-        ConfigSource = "FILE"
       }
     }
     else {
@@ -113,7 +136,12 @@
       $CdfService = [ordered] @{
         IsDeployed   = $false
         Env          = [ordered] @{}
-        Config       = [ordered] @{}
+        Config       = [ordered] @{
+          serviceName     = $ServiceName
+          serviceType     = $ServiceType
+          serviceGroup    = $ServiceGroup
+          serviceTemplate = $ServiceTemplate
+        }
         Features     = [ordered] @{}
         ConfigSource = "NO-SOURCE"
       }
