@@ -103,7 +103,7 @@
       $serviceConfig = Get-Content $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
       $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $serviceConfig.ServiceDefaults.ServiceName
-      $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceConfig.ServiceDefaults.ServiceGroup
+      $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceConfig.ServiceDefaults.ServiceGroup
       $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $serviceConfig.ServiceDefaults.ServiceType
       $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $serviceConfig.ServiceDefaults.ServiceTemplate
 
@@ -205,7 +205,7 @@
         else {
           Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
           if (Test-Path "cdf-config.json") {
-            Write-Warning "Using service defaults in cdf-config.json ."
+            Write-Warning "Using service defaults in cdf-config.json."
           }
           else {
             Write-Warning "Returning service configuration from file, if available."
