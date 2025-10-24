@@ -1,6 +1,6 @@
 ﻿
 Function Get-Config {
- <#
+  <#
     .SYNOPSIS
     Get configuration for a deployed application instance for given platform instance.
 
@@ -13,13 +13,13 @@ Function Get-Config {
     3) Application configuration (Get-ConfigApplication)
     4) Domain configuration (Get-ConfigDomain) (if DomainName is specified)
     5) Service configuration (Get-ConfigService) (if ServiceName is specified)
-  
+
     .PARAMETER Region
     Azure region where the platform is deployed.
     Defaults to value of env var CDF_REGION.
 
     .PARAMETER PlatformId
-    Platform identifier.  
+    Platform identifier.
     Defaults to value of env var CDF_PLATFORM_ID.
     Required if env var CDF_PLATFORM_ID is not set.
     Example: "axlint"
@@ -29,7 +29,7 @@ Function Get-Config {
     Defaults to value of env var CDF_PLATFORM_INSTANCE.
     Required if env var CDF_PLATFORM_INSTANCE is not set.
     Example: "01"
-  
+
     .PARAMETER PlatformEnvId
     Platform environment definition identifier.
     Defaults to value of env var CDF_PLATFORM_ENV_ID.
@@ -37,7 +37,7 @@ Function Get-Config {
     Example: "axl-tst"
 
     .PARAMETER ApplicationId
-    Application identifier.  
+    Application identifier.
     Defaults to value of env var CDF_APPLICATION_ID.
     Required if env var CDF_APPLICATION_ID is not set.
     Example: "intg"
@@ -108,7 +108,7 @@ Function Get-Config {
 
     .PARAMETER SharedTemplatePath
     Path to the shared-infra templates directory.
-    Defaults to "$CdfSharedPath/templates". 
+    Defaults to "$CdfSharedPath/templates".
 
     .INPUTS
     None.
@@ -289,6 +289,9 @@ Function Get-Config {
       $config = Get-ConfigService `
         -CdfConfig $config `
         -ServiceName $ServiceName `
+        -ServiceType $ServiceType `
+        -ServiceTemplate $ServiceTemplate `
+        -ServiceGroup $ServiceGroup `
         -ServiceSrcPath $ServiceSrcPath `
         -SourceDir $CdfInfraSourcePath `
         -WarningAction:Continue `
