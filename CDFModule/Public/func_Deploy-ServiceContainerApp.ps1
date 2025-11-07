@@ -154,6 +154,7 @@
                         -SecretRef $secret.Name.ToLower()
                 }
                 else {
+                    $envVar.Value = $null
                     $envVar.SecretRef = $secret.Name.ToLower()
                 }
             }
@@ -244,10 +245,19 @@ Function Set-EnvVarValue {
     Write-Host "Adding container app env setting: $VarName"
     $envVar = $Settings | Where-Object { $_.Name -eq $VarName }
     if ($null -eq $envVar) {
+        Write-Host "Creating new container app env setting: $VarName"
         $Settings += New-AzContainerAppEnvironmentVarObject -Name $VarName -Value $VarValue
     }
     else {
-        $envVar.Value = $VarValue
+        if ($null -ne $envVar.SecretRef ) {
+            Write-Verbose " - Skipping update of secret ref for env var: $VarName"
+        }
+        elseif ($null -ne $envVar.Value ) {
+            $envVar.Value = $VarValue
+        }
+        else {
+            Write-Warning " - Inconsistency, missing both Value and SecretRef for env var: $VarName"
+        }
     }
     return $Settings
 }
