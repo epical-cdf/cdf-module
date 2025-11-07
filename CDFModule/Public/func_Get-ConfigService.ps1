@@ -74,7 +74,7 @@
     $regionCode = $CdfConfig.Platform.Env.regionCode
     $region = $CdfConfig.Platform.Env.region
     $applicationEnv = $CdfConfig.Application.Env
-    $DomainName = $CdfConfig.Domain.Config.domainName
+    $domainName = $CdfConfig.Domain.Config.domainName
 
     $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
     if (Test-Path $cdfConfigFile) {
@@ -86,12 +86,12 @@
         return
       }
 
-      $serviceConfig = Get-Content $cdfConfigFile | ConvertFrom-Json -AsHashtable
+      $serviceCdfConfig = Get-Content $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
-      $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $serviceConfig.ServiceDefaults.ServiceName
-      $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceConfig.ServiceDefaults.ServiceGroup
-      $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $serviceConfig.ServiceDefaults.ServiceType
-      $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $serviceConfig.ServiceDefaults.ServiceTemplate
+      $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $serviceCdfConfig.ServiceDefaults.ServiceName
+      $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceCdfConfig.ServiceDefaults.ServiceGroup
+      $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $serviceCdfConfig.ServiceDefaults.ServiceType
+      $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $serviceCdfConfig.ServiceDefaults.ServiceTemplate
 
       # Get service configuration from infra config file
       $CdfService = Get-InfraServiceConfig `
@@ -99,8 +99,8 @@
         -ServiceType $ServiceType `
         -ServiceGroup $ServiceGroup `
         -ServiceTemplate $ServiceTemplate `
-        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json"
-      $CdfConfig.ConfigSource = "FILE" # Using infra config and/or cdf-config.json file as base
+        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName-$regionCode.json"
+      $CdfService.ConfigSource = "FILE" # Using infra config and/or cdf-config.json file as base
       # TODO: Merge any additional overrides from cdf-config.json here
     }
     else {
@@ -110,7 +110,7 @@
         -ServiceType $ServiceType `
         -ServiceGroup $ServiceGroup `
         -ServiceTemplate $ServiceTemplate `
-        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName-$regionCode.json" 
+        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName-$regionCode.json"
     }
 
     if ($Deployed) {
@@ -123,7 +123,7 @@
         $cdfConfigOutput = Get-ConfigFromStore `
           -CdfConfig $CdfConfig `
           -Scope 'Service' `
-          -EnvKey "$platformEnvKey-$applicationEnvKey-$DomainName-$ServiceName" `
+          -EnvKey "$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName" `
           -RegionDetails $regionDetails `
           -ErrorAction Continue
       }
@@ -214,8 +214,7 @@ Function Get-InfraServiceConfig {
 
 
   # Get service configuration from infra config file
-  $HasInfraConfig = Test-Path -Path $ServiceConfigPath
-  if ($HasInfraConfig) {
+  if (Test-Path -Path $ServiceConfigPath) {
     Write-Verbose "Loading configuration file"
     $cdfService = Get-Content -Path $ServiceConfigPath | ConvertFrom-Json -AsHashtable
     $cdfService.Env = $cdfService.Env ?? [ordered] @{}
