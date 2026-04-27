@@ -285,17 +285,20 @@ Function Get-Config {
       # Continue Domain configuration
     }
 
-    if ($ServiceName -and $Deployed -and $config.Domain.IsDeployed) {
+    if ($ServiceName -and $config.Domain.IsDeployed) {
+      $serviceParams = @{}
+      if ($ServiceName) { $serviceParams['ServiceName'] = $ServiceName }
+      if ($ServiceType) { $serviceParams['ServiceType'] = $ServiceType }
+      if ($ServiceTemplate) { $serviceParams['ServiceTemplate'] = $ServiceTemplate }
+      if ($ServiceGroup) { $serviceParams['ServiceGroup'] = $ServiceGroup }
+
       $config = Get-ConfigService `
         -CdfConfig $config `
-        -ServiceName $ServiceName `
-        -ServiceType $ServiceType `
-        -ServiceTemplate $ServiceTemplate `
-        -ServiceGroup $ServiceGroup `
+        @serviceParams `
         -ServiceSrcPath $ServiceSrcPath `
         -SourceDir $CdfInfraSourcePath `
         -WarningAction:Continue `
-        -Deployed -ErrorAction Stop
+        -Deployed:$Deployed -ErrorAction Stop
     }
   }
   return $config
