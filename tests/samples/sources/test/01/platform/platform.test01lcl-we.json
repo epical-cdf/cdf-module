@@ -1,0 +1,8 @@
+{
+  "IsDeployed": false,
+  "Config": {
+    "templateName": "blank",
+    "templateVersion": "v1"
+  },
+  "Features": {}
+}

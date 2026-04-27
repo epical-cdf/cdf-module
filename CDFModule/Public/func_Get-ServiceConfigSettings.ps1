@@ -28,10 +28,10 @@ Function Get-ServiceConfigSettings {
         Optional, defaults to "./build"
 
         .INPUTS
-        None. You cannot pipe objects.
+        CDF Config can be piped to into the command
 
         .OUTPUTS
-        None.
+        Dictionary with updated service settings
 
         .EXAMPLE
         PS> Get-ServiceConfigSettings `

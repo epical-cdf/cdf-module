@@ -12,14 +12,14 @@
     <?xml version="1.0" encoding="UTF-8"?>
     <testsuites time="15.682687">
         <testsuite name="<PlatformID><PlatformInstance>.<ApplicationTemplateName><ApplicationInstance>.<DomainName>.<TestCase/ServiceName>" time="6.605871">
-            <testcase name="Build API" classname="Tests.elxcapim01.apim01.api-sample" time="2.113871" />
-            <testcase name="Build Backends" classname="Tests.elxcapim01.apim01.api-sample" time="1.051" />
-            <testcase name="Build Products" classname="Tests.elxcapim01.apim01.api-sample" time="3.441" />
+            <testcase name="Build API" classname="Tests.api01.apim01.api-sample" time="2.113871" />
+            <testcase name="Build Backends" classname="Tests.api01.apim01.api-sample" time="1.051" />
+            <testcase name="Build Products" classname="Tests.api01.apim01.api-sample" time="3.441" />
         </testsuite>
         <testsuite name="<PlatformID><PlatformInstance>.<ApplicationTemplateName><ApplicationInstance>.<DomainName>.<TestCase/ServiceName>" time="6.605871">
-            <testcase name="Build API" classname="Tests.elxcapim01.apim01.api-todo" time="2.113871" />
-            <testcase name="Build Backends" classname="Tests.elxcapim01.apim01.api-todo" time="1.051" />
-            <testcase name="Build Products" classname="Tests.elxcapim01.apim01.api-todo" time="3.441">
+            <testcase name="Build API" classname="Tests.api01.apim01.api-todo" time="2.113871" />
+            <testcase name="Build Backends" classname="Tests.api01.apim01.api-todo" time="1.051" />
+            <testcase name="Build Products" classname="Tests.api01.apim01.api-todo" time="3.441">
                 <failure message="Assertion error message" type="AssertionError">
                     <!-- Validation error message here -->
                 </failure>
