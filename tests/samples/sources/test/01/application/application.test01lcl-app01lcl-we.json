@@ -1,0 +1,10 @@
+{
+  "IsDeployed": false,
+  "Config": {
+    "templateName": "blank",
+    "templateVersion": "v1",
+    "applicationId": "blank",
+    "instanceId": "01"
+  },
+  "Features": {}
+}

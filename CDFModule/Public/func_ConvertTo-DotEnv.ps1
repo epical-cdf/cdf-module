@@ -17,19 +17,19 @@
         None.
 
         .EXAMPLE
-        ConvertTo-CdfDotEnv -DotEnvSource @{ Name1 = 'Value1', Name2 = 'Value2' }
+        ConvertTo-CdfDotEnv -DotEnvSource @{ Name1 = 'Value1'; Name2 = 'Value2' }
         Name2=Value2
         Name1=Value1
 
         .EXAMPLE
         ,@( @('Name1', 'Value1'), @('Name2', 'Value2') ) | ConvertTo-CdfDotEnv
-        # The arrat is treated as a 2x2 name-value pair array, mind the beginning comma to treat arrays as one parameter input
+        # The array is treated as a 2x2 name-value pair array, mind the beginning comma to treat arrays as one parameter input
         Name2=Value2
         Name1=Value1
 
         .EXAMPLE
         ConvertTo-CdfDotEnv @( @('Name1', 'Name2', 'Name3', 'Name4'), @('Value1', 'Value2', 'Value3', 'Value4') )
-        # This array is treated as separate name and value columnd arrays
+        # This array is treated as separate name and value column arrays
         Name1=Value1
         Name2=Value2
         Name3=Value3

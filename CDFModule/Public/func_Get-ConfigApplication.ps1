@@ -84,8 +84,8 @@
       Write-Warning "Platform config is not deployed, this may cause errors in using the application configuration."
     }
 
-    $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)"
-    $applicationKey = "$ApplicationId$InstanceId"
+    $platformKey = ($CdfConfig.Platform.Config.platformId + $CdfConfig.Platform.Config.instanceId)
+    $applicationKey = $ApplicationId + $InstanceId
 
     # Fetch definitions
     $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
@@ -181,7 +181,7 @@
     $CdfApplication.Env.regionCode = $regionCode
     $CdfApplication.Env.regionName = $regionName
     $CdfApplication.Config.templateScope = 'application'
-    $CdfApplication.Config.applicationId = $ApplicationId # TODO: Add named application identities
+    $CdfApplication.Config.applicationId = $ApplicationId
     $CdfApplication.Config.instanceId = $InstanceId
 
     $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose

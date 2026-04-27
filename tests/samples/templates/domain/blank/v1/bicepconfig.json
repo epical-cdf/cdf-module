@@ -1,0 +1,7 @@
+{
+  "experimentalFeaturesEnabled": {
+    // "userDefinedTypes": true,
+    // "symbolicNameCodegen": true
+    "ResourceTypedParamsAndOutputs": true
+  }
+}

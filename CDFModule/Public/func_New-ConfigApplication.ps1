@@ -63,13 +63,15 @@
     [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
     [Object]$CdfConfig,
     [Parameter(Mandatory = $true)]
-    [string] $Region,
-    [Parameter(Mandatory = $true)]
     [string] $TemplateName,
     [Parameter(Mandatory = $true)]
     [string] $TemplateVersion,
-    [Parameter(Mandatory = $true)]
-    [string] $InstanceId,
+    [Parameter(Mandatory = $false)]
+    [string] $Region = $env:CDF_REGION,
+    [Parameter(Mandatory = $false)]
+    [string] $ApplicationId = $env:CDF_APPLICATION_ID,
+    [Parameter(Mandatory = $false)]
+    [string] $InstanceId = $env:CDF_APPLICATION_INSTANCE,
     [Parameter(Mandatory = $false)]
     [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
     [Parameter(Mandatory = $false)]
@@ -93,7 +95,7 @@
     }
 
     $platformKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)"
-    $applicationKey = "$TemplateName$InstanceId"
+    $applicationKey = "$ApplicationId$InstanceId"
 
     Write-Information "Preparing application configuration for platform instance at [$sourcePath]"
 
@@ -107,7 +109,7 @@
 
     }
     else {
-      Copy-Item -Path "$templatePath/templates/environments.json" "$sourcePath/application/environments.$applicationKey.json"
+      Copy-Item -Path "$templatePath/samples/environments.json" "$sourcePath/application/environments.$applicationKey.json"
     }
 
     # Load the definition files
@@ -135,11 +137,11 @@
         }
         else {
           Write-Output "Preparing configuration for environment $envDefinionId"
-          $CdfApplication = Get-Content "$templatePath/templates/template.application.json" | ConvertFrom-Json -AsHashtable
+          $CdfApplication = Get-Content "$templatePath/samples/template.application.json" | ConvertFrom-Json -AsHashtable
           $CdfApplication.IsDeployed = $false
           $CdfApplication.Config.templateName = $TemplateName
           $CdfApplication.Config.templateVersion = $TemplateVersion
-          $CdfApplication.Config.applicationId = $TemplateName
+          $CdfApplication.Config.applicationId = $ApplicationId
           $CdfApplication.Config.instanceId = $InstanceId
           # $CdfApplication.Env = $platformEnv
           # $CdfApplication.Env.region = $Region
@@ -147,7 +149,7 @@
           # $CdfApplication.Env.regionName = $regionName
 
           # Save new config
-          $CdfApplication | ConvertTo-Json -depth 10 | Out-File "$sourcePath/application/application.$platformEnvKey-$applicationEnvKey-$regionCode.json"
+          $CdfApplication | ConvertTo-Json -depth 10 | Out-File -Force "$sourcePath/application/application.$platformEnvKey-$applicationEnvKey-$regionCode.json"
           # $CdfApplication | ConvertTo-Json -Depth 10 | Write-Verbose
           Write-Output "Instance configuration for instance [$platformEnvKey-$applicationEnvKey] complete."
         }
