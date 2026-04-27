@@ -1,0 +1,51 @@
+{
+  "local": {
+    "definitionId": "local",
+    "platformDefinitionId": "local",
+    "nameId": "lcl",
+    "shortName": "Local",
+    "name": "Local development and testing",
+    "description": "This environment is used to run regression testing ",
+    "purpose": "development",
+    "quality": "development",
+    "tenantId": "00000000-1111-2222-3333-444444444444",
+    "subscriptionId": "11111111-2222-3333-4444-555555555555",
+    "isEnabled": true
+  },
+  "uat": {
+    "definitionId": "uat",
+    "platformDefinitionId": "uat",
+    "nameId": "uat",
+    "shortName": "UAT",
+    "name": "This is a sample user acceptance test environment configuration",
+    "description": "This is a sample user acceptance test environment configuration",
+    "purpose": "validation",
+    "quality": "production",
+    "releaseApproval": false,
+    "isEnabled": true
+  },
+  "b-null": {
+    "definitionId": "b-null",
+    "platformDefinitionId": "b-null",
+    "nameId": "null",
+    "shortName": "Null",
+    "name": "Primary Null",
+    "description": "Primary is Null",
+    "purpose": "development",
+    "quality": "development",
+    "releaseApproval": false,
+    "isEnabled": true
+  },
+  "b-null2": {
+    "definitionId": "b-null2",
+    "platformDefinitionId": "b-null",
+    "nameId": "null2",
+    "shortName": "Null2",
+    "name": "Primary Null",
+    "description": "Primary is Null",
+    "purpose": "validation",
+    "quality": "development",
+    "releaseApproval": false,
+    "isEnabled": false
+  }
+}

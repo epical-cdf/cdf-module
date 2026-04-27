@@ -1,0 +1,42 @@
+{
+  "local1": {
+    "definitionId": "local1",
+    "platformDefinitionId": "local",
+    "nameId": "lcl1",
+    "shortName": "Local One",
+    "name": "First local development and testing",
+    "description": "This environment is used to run unit testing ",
+    "purpose": "development",
+    "quality": "development",
+    "tenantId": "00000000-1111-2222-3333-444444444444",
+    "subscriptionId": "11111111-2222-3333-4444-555555555555",
+    "cdfInfraDeployerName": "sp-xyz",
+    "cdfInfraDeployerAppId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfInfraDeployerSPObjectId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfSolutionDeployerName": "sp-xyz",
+    "cdfSolutionDeployerAppId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfSolutionDeployerSPObjectId": "11111111-SSSS-PPPP-4444-555555555555",
+    "releaseApproval": false,
+    "isEnabled": true
+  },
+  "local2": {
+    "definitionId": "local2",
+    "platformDefinitionId": "local",
+    "nameId": "lcl2",
+    "shortName": "Local Two",
+    "name": "Second local development and testing",
+    "description": "This environment is used to run unit testing ",
+    "purpose": "development",
+    "quality": "development",
+    "tenantId": "00000000-1111-2222-3333-444444444444",
+    "subscriptionId": "11111111-2222-3333-4444-555555555555",
+    "cdfInfraDeployerName": "sp-xyz",
+    "cdfInfraDeployerAppId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfInfraDeployerSPObjectId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfSolutionDeployerName": "sp-xyz",
+    "cdfSolutionDeployerAppId": "11111111-SSSS-PPPP-4444-555555555555",
+    "cdfSolutionDeployerSPObjectId": "11111111-SSSS-PPPP-4444-555555555555",
+    "releaseApproval": false,
+    "isEnabled": true
+  }
+}

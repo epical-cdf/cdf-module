@@ -64,19 +64,21 @@
   [CmdletBinding()]
   Param(
     [Parameter(Mandatory = $true)]
-    [string] $Region,
-    [Parameter(Mandatory = $true)]
     [string] $TemplateName,
     [Parameter(Mandatory = $true)]
     [string] $TemplateVersion,
-    [Parameter(Mandatory = $true)]
-    [string] $PlatformId,
-    [Parameter(Mandatory = $true)]
-    [string] $InstanceId,
+    [Parameter(Mandatory = $false)]
+    [string] $Region = $env:CDF_REGION,
+    [Parameter(Mandatory = $false)]
+    [string] $PlatformId = $env:CDF_PLATFORM_ID,
+    [Parameter(Mandatory = $false)]
+    [string] $InstanceId = $env:CDF_PLATFORM_INSTANCE,
     [Parameter(Mandatory = $false)]
     [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
     [Parameter(Mandatory = $false)]
-    [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src'
+    [string] $SourceDir = $env:CDF_INFRA_SOURCE_PATH ?? './src',
+    [Parameter(Mandatory = $false)]
+    [switch] $Force
   )
 
   Begin {
@@ -88,23 +90,23 @@
     $templatePath = "$TemplateDir/platform/$TemplateName/$TemplateVersion"
     $sourcePath = "$SourceDir/$PlatformId/$InstanceId"
 
-    if (Test-Path $sourcePath) {
+    if ($true -eq (Test-Path $sourcePath) -and -not $Force) {
       throw "Please make sure this is a new instance. A platform instance folder already exists at [$sourcePath]"
     }
 
     Write-Information "Preparing platform instance at [$sourcePath]"
 
     # Setup platform instance folder and definitions
-    New-Item -ItemType Directory -Path $sourcePath | Out-Null
-    New-Item -ItemType Directory -Path "$sourcePath/platform" | Out-Null
-    Copy-Item -Path "$templatePath/templates/environments.json" "$sourcePath/platform/environments.json"
-    Copy-Item -Path "$templatePath/templates/regionnames.json" "$sourcePath/platform/regionnames.json"
-    Copy-Item -Path "$templatePath/templates/regioncodes.json" "$sourcePath/platform/regioncodes.json"
+    New-Item -ItemType Directory -Path $sourcePath -Force | Out-Null
+    New-Item -ItemType Directory -Path "$sourcePath/platform" -Force | Out-Null
+    Copy-Item -Path "$templatePath/samples/environments.json" "$sourcePath/platform/environments.json" -ErrorAction Stop
+    Copy-Item -Path "$templatePath/samples/regionnames.json" "$sourcePath/platform/regionnames.json" -ErrorAction Stop
+    Copy-Item -Path "$templatePath/samples/regioncodes.json" "$sourcePath/platform/regioncodes.json" -ErrorAction Stop
 
     # Load the newly setup definition files
-    $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json" | ConvertFrom-Json -AsHashtable
-    $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json" | ConvertFrom-Json -AsHashtable
-    $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json" | ConvertFrom-Json -AsHashtable
+    $platformEnvs = Get-Content -Raw "$sourcePath/platform/environments.json"  -ErrorAction Stop | ConvertFrom-Json -AsHashtable
+    $regionNames = Get-Content -Raw "$sourcePath/platform/regionnames.json"  -ErrorAction Stop | ConvertFrom-Json -AsHashtable
+    $regionCodes = Get-Content -Raw "$sourcePath/platform/regioncodes.json"  -ErrorAction Stop | ConvertFrom-Json -AsHashtable
 
     # Setup region mappings
     $regionCode = $regionCodes[$Region.ToLower()]
@@ -117,17 +119,16 @@
         Write-Information "Preparing configuration for environment $($platformEnv.nameId)"
         $platformEnvKey = "$PlatformId$InstanceId$($platformEnv.nameId)"
 
-        $CdfPlatform = Get-Content "$templatePath/templates/template.platform.json" | ConvertFrom-Json -AsHashtable
+        $CdfPlatform = Get-Content "$templatePath/samples/template.platform.json" -ErrorAction Stop | ConvertFrom-Json -AsHashtable
         $CdfPlatform.IsDeployed = $false
         $CdfPlatform.Config.templateName = $TemplateName
         $CdfPlatform.Config.templateVersion = $TemplateVersion
         $CdfPlatform.Config.platformId = $PlatformId
         $CdfPlatform.Config.instanceId = $InstanceId
-        # $CdfPlatform.Config.platformEnvDefinitionId = $envDefinionId
-        # $CdfPlatform.Env = $platformEnv
-        $CdfPlatform.Env.region = $Region
-        $CdfPlatform.Env.regionName = $regionName
-        $CdfPlatform.Env.regionCode = $regionCode
+        $CdfPlatform.Env = $platformEnv
+        $CdfPlatform.Env['region'] = $Region
+        $CdfPlatform.Env['regionName'] = $regionName
+        $CdfPlatform.Env['regionCode'] = $regionCode
 
         # Save new config
         $CdfPlatform | ConvertTo-Json -depth 10 | Out-File "$sourcePath/platform/platform.$platformEnvKey-$regionCode.json"
