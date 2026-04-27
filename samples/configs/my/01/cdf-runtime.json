@@ -1,0 +1,13 @@
+{
+  "$schema": "https://cdf.epical.net/schemas/cdf-runtime.schema.json",
+  "platformId": "my",
+  "instanceId": "01",
+  "release": "0.1.0",
+  "description": "Sample runtime config instance using blank starter templates",
+  "templates": {
+    "platform/blank/v1": ">=0.1.0",
+    "application/blank/v1": ">=0.1.0",
+    "domain/blank/v1": ">=0.1.0",
+    "service/blank/v1": ">=0.1.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "scope": "domain",
+  "containers": [
+    {
+      "name": "sample-container",
+      "publicAccess": "None",
+      "immutableVersioning": false,
+      "metadata": {
+        "DomainName": "sample",
+        "ServiceName": "sample-service"
+      }
+    }
+  ],
+  "fileShares": [],
+  "queues": [],
+  "tables": []
+}

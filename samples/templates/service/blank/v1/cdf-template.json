@@ -1,0 +1,22 @@
+{
+  "$schema": "https://cdf.epical.net/schemas/cdf-template.schema.json",
+  "scope": "service",
+  "name": "blank",
+  "version": "v1",
+  "release": "0.1.0",
+  "description": "Blank service starter template. Deploys a placeholder NSG and references domain storage account.",
+  "providedFeatures": [],
+  "dependencies": {
+    "platform/blank/v1": {
+      "release": ">=0.1.0"
+    },
+    "application/blank/v1": {
+      "release": ">=0.1.0",
+      "requiredFeatures": ["enableStorageAccount"]
+    },
+    "domain/blank/v1": {
+      "release": ">=0.1.0",
+      "requiredFeatures": ["enableStorageAccount"]
+    }
+  }
+}

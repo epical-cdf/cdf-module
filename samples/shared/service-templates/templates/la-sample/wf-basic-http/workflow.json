@@ -1,0 +1,69 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Try": {
+        "type": "Scope",
+        "actions": {
+          "Compose_Response": {
+            "type": "Compose",
+            "inputs": {
+              "PlatformKey": "@parameters('Platform').Key",
+              "ApplicationKey": "@parameters('Application').Key",
+              "DomainName": "@parameters('Domain').Name",
+              "ServiceName": "@parameters('Service').Name",
+              "ServiceGroup": "@parameters('Service').Group",
+              "ServiceType": "@parameters('Service').Type",
+              "ServiceTemplate": "@parameters('Service').Template",
+              "EnvNameId": "@parameters('Environment').nameId",
+              "EnvPurpose": "@parameters('Environment').purpose"
+            }
+          },
+          "Response": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": "@outputs('Compose_Response')"
+            },
+            "runAfter": {
+              "Compose_Response": ["SUCCEEDED"]
+            }
+          }
+        },
+        "runAfter": {}
+      },
+      "Catch": {
+        "type": "Scope",
+        "actions": {
+          "Error_Response": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "error": "An error occurred processing the request"
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Try": ["TIMEDOUT", "FAILED", "SKIPPED"]
+        }
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "HTTP_Request": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "parameters": {}
+  },
+  "kind": "Stateful"
+}

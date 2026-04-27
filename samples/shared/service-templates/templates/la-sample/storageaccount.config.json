@@ -1,0 +1,18 @@
+{
+  "scope": "domain",
+  "containers": [
+    {
+      "name": "{{EnvNameId}}-{{ServiceGroup}}-{{ServiceName}}-myblobcontainer",
+      "publicAccess": "None",
+      "immutableVersioning": false,
+      "metadata": {
+        "DomainName": "{{DomainName}}",
+        "ServiceGroup": "{{ServiceGroup}}",
+        "ServiceName": "{{ServiceName}}"
+      }
+    }
+  ],
+  "fileShares": [],
+  "queues": [],
+  "tables": []
+}

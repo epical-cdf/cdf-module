@@ -1,0 +1,11 @@
+{
+  "scope": "platform",
+  "queues": [
+    {
+      "name": "{{EnvNameId}}.{{ServiceGroup}}.{{ServiceName}}.myqueuename"
+    }
+  ],
+  "topics": [],
+  "topicSubscriptions": [],
+  "topicForwards": []
+}

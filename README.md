@@ -78,3 +78,9 @@ git tag -l | xargs git tag -d
 git fetch --tags
 
 ```
+
+## Documentation
+
+- [CDF Overview](docs/README.md) — What is CDF, key concepts, prerequisites
+- [Infrastructure Development](docs/infrastructure-development.md) — Template authoring, runtime config, package registry, CI/CD
+- [Solution Development](docs/solution-development.md) — Service deployment, APIM, secrets, CI/CD workflows

@@ -1,0 +1,37 @@
+{
+  "IsDeployed": false,
+  "Config": {
+    "templateName": "blank",
+    "templateVersion": "v1"
+  },
+  "Features": {
+    "enableStorageAccount": true
+  },
+  "AccessControl": {
+    "keyVaultRBAC": [
+      {
+        "description": "Assign 'admin@sample.onmicrosoft.com' role 'Key Vault Administrator'",
+        "roleDefinitionId": "00482a5a-887f-4fb3-b363-3b7fe8e74483",
+        "principalId": "00000000-0000-0000-0000-000000000002",
+        "principalType": "User",
+        "tenantId": "00000000-0000-0000-0000-000000000000"
+      }
+    ],
+    "storageAccountRBAC": [
+      {
+        "roleDefinitionId": "17d1049b-9a84-46fb-8f53-869881c3d3ab",
+        "description": "Assign 'admin@sample.onmicrosoft.com' role 'Storage Account Contributor'",
+        "principalId": "00000000-0000-0000-0000-000000000002",
+        "principalType": "User",
+        "tenantId": "00000000-0000-0000-0000-000000000000"
+      },
+      {
+        "roleDefinitionId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+        "description": "Assign 'admin@sample.onmicrosoft.com' role 'Storage Blob Data Owner'",
+        "principalId": "00000000-0000-0000-0000-000000000002",
+        "principalType": "User",
+        "tenantId": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
+  }
+}

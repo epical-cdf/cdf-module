@@ -1,0 +1,19 @@
+{
+  "$schema": "https://cdf.epical.net/schemas/cdf-template.schema.json",
+  "scope": "domain",
+  "name": "blank",
+  "version": "v1",
+  "release": "0.1.0",
+  "description": "Blank domain starter template. Deploys a resource group with feature-gated storage account and standard CDF tagging.",
+  "providedFeatures": ["enableStorageAccount"],
+  "dependencies": {
+    "platform/blank/v1": {
+      "release": ">=0.1.0",
+      "requiredFeatures": ["enableStorageAccount"]
+    },
+    "application/blank/v1": {
+      "release": ">=0.1.0",
+      "requiredFeatures": ["enableStorageAccount"]
+    }
+  }
+}

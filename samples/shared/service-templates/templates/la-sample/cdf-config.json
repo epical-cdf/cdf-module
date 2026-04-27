@@ -1,0 +1,51 @@
+{
+  "ServiceDefaults": {
+    "ServiceName": "la-sample",
+    "ServiceGroup": "starters",
+    "ServiceType": "la-sample",
+    "ServiceTemplate": "logicapp-standard"
+  },
+  "ServiceSettings": {
+    "SampleQueueName": {
+      "Type": "Constant",
+      "Value": "{{EnvNameId}}.{{ServiceGroup}}.{{ServiceName}}.myqueuename",
+      "Description": "The queue name used by the http-to-queue workflow"
+    },
+    "SampleBlobContainer": {
+      "Type": "Constant",
+      "Value": "{{EnvNameId}}-{{ServiceGroup}}-{{ServiceName}}-myblobcontainer",
+      "Description": "The blob container name used by the queue-to-blob workflow"
+    },
+    "SampleEnvSetting": {
+      "Type": "Setting",
+      "Values": [
+        {
+          "Purpose": "development",
+          "Value": "dev-value"
+        },
+        {
+          "Purpose": "validation",
+          "Value": "test-value"
+        },
+        {
+          "Purpose": "production",
+          "Value": "production-value"
+        }
+      ],
+      "Description": "Example of an environment-specific setting"
+    }
+  },
+  "ExternalSettings": {
+    "SampleApiKey": {
+      "Type": "Secret",
+      "Identifier": "sample-api-key",
+      "Description": "API access key for the sample external service"
+    },
+    "SampleApiBaseUrl": {
+      "Type": "Constant",
+      "Value": "https://api.sample.com/v1",
+      "Description": "Base URL for the sample external API"
+    }
+  },
+  "Connections": ["PlatformServiceBus", "DomainStorageAccountBlob"]
+}

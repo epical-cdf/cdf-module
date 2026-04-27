@@ -1,0 +1,38 @@
+{
+  "my-dev": {
+    "definitionId": "my-dev",
+    "platformDefinitionId": "my-dev",
+    "nameId": "dev",
+    "shortName": "Dev",
+    "name": "Primary Dev",
+    "description": "Primary Development",
+    "purpose": "development",
+    "quality": "development",
+    "releaseApproval": false,
+    "isEnabled": true
+  },
+  "my-tst": {
+    "definitionId": "my-tst",
+    "platformDefinitionId": "my-tst",
+    "nameId": "tst",
+    "shortName": "Test",
+    "name": "Primary Test",
+    "description": "Primary System Integration Test",
+    "purpose": "validation",
+    "quality": "development",
+    "releaseApproval": false,
+    "isEnabled": false
+  },
+  "my-prd": {
+    "definitionId": "my-prd",
+    "platformDefinitionId": "my-prd",
+    "nameId": "prd",
+    "shortName": "Prod",
+    "name": "Primary Production",
+    "description": "Production",
+    "purpose": "production",
+    "quality": "production",
+    "releaseApproval": true,
+    "isEnabled": false
+  }
+}

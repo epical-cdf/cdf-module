@@ -1,0 +1,18 @@
+{
+  "$schema": "https://cdf.epical.net/schemas/cdf-packages.schema.json",
+  "registries": {
+    "default": {
+      "type": "acr",
+      "endpoint": "myregistry.azurecr.io"
+    }
+  },
+  "templates": {
+    "platform/blank/v1": ">=0.1.0",
+    "application/blank/v1": ">=0.1.0",
+    "domain/blank/v1": ">=0.1.0",
+    "service/blank/v1": ">=0.1.0"
+  },
+  "configs": {
+    "my01": ">=0.1.0"
+  }
+}
