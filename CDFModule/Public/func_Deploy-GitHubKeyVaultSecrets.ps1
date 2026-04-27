@@ -92,8 +92,10 @@
                 $ghVariableValue = (Get-Item "env:$($NamedValue.ghVariableName)").Value
             }
             else {
-                Write-Warning "Environment variable [$($NamedValue.ghVariableName)] for GitHub Secret not set, assigning dummy value 'not-defined' for development test."
-                $ghVariableValue = 'not-defined'
+                if ($CdfConfig.Application.Env.purpose -eq 'development') {
+                    Write-Warning "Environment variable [$($NamedValue.ghVariableName)] for GitHub Secret not set, assigning dummy value 'not-defined' for development test."
+                    $ghVariableValue = 'not-defined'
+                }
             }
 
             $CurrentSecret = Get-AzKeyVaultSecret -VaultName $CdfConfig.Application.ResourceNames.keyVaultName -Name $NamedValue.kvSecretName -AsPlainText
@@ -132,8 +134,10 @@
                 $ghSecretName = (Get-Item "env:$($NamedValue.ghSecretName)").Value
             }
             else {
-                Write-Warning "Environment variable [$($NamedValue.ghSecretName)] for GitHub Secret not set, assigning dummy value 'not-defined' for development test."
-                $ghSecretName = 'not-defined'
+                if ($CdfConfig.Application.Env.purpose -eq 'development') {
+                    Write-Warning "Environment variable [$($NamedValue.ghSecretName)] for GitHub Secret not set, assigning dummy value 'not-defined' for development test."
+                    $ghSecretName = 'not-defined'
+                }
             }
 
             $CurrentSecret = Get-AzKeyVaultSecret -VaultName $CdfConfig.Application.ResourceNames.keyVaultName -Name $NamedValue.kvSecretName -AsPlainText
