@@ -112,11 +112,11 @@
 
     if ($null -ne $CdfConfig.Application) {
         $tokenValues += [ordered] @{
-            'Application.Config.TemplateScope'               = $CdfConfig.Platform.Config.templateScope
-            'Application.Config.TemplateName'                = $CdfConfig.Platform.Config.templateName
-            'Application.Config.TemplateVersion'             = $CdfConfig.Platform.Config.templateVersion
-            'Application.Config.PlatformId'                  = $CdfConfig.Platform.Config.platformId
-            'Application.Config.InstanceId'                  = $CdfConfig.Platform.Config.instanceId
+            'Application.Config.TemplateScope'               = $CdfConfig.Application.Config.templateScope
+            'Application.Config.TemplateName'                = $CdfConfig.Application.Config.templateName
+            'Application.Config.TemplateVersion'             = $CdfConfig.Application.Config.templateVersion
+            'Application.Config.PlatformId'                  = $CdfConfig.Application.Config.platformId
+            'Application.Config.InstanceId'                  = $CdfConfig.Application.Config.instanceId
             'Application.Env.TenantId'                       = $CdfConfig.Application.Env.tenantId
             'Application.Env.SubscriptionId'                 = $CdfConfig.Application.Env.subscriptionId
             'Application.Env.DefinitionId'                   = $CdfConfig.Application.Env.definitionId
