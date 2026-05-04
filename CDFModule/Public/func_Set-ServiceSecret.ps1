@@ -55,7 +55,7 @@
     }
     $svcConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
-    $azCtx = Get-AzureContext -Subscription $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
     if ($Internal) {
         # Service internal settings
         $setting = $svcConfig.ServiceSettings[$ParameterName]

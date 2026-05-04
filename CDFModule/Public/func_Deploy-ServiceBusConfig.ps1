@@ -134,7 +134,7 @@
 
         $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.applicationInstanceId)$($CdfConfig.Application.Env.nameId)"
         $deploymentName = "sb-cfg-$($CdfConfig.Service.Config.serviceName)-$($CdfConfig.Domain.Config.domainName)-$serviceBusName-$applicationEnvKey-$($CdfConfig.Application.Env.regionCode)"
-        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         Write-Host "Starting deployment of '$deploymentName' using subscription [$($azCtx.Subscription.Name)]."
 

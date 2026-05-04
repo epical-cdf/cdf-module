@@ -85,7 +85,7 @@
     }
     $keyName = "CdfConfig-$($Scope)-$EnvKey-$($RegionDetails.code)"
 
-    $azCtx = Get-AzureContext -SubscriptionId $configStoreSubscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $configStoreSubscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
     Write-Host "Removing config of '$($Scope.ToLower())' from custom config store '$configStoreName' in resource group '$configStoreResourceGroupName'  under subscription [$($azCtx.Subscription.Name)] with key '$EnvKey'."
     $CdfConfigOutput = @{}
     if ($configStoreType.ToUpper() -eq 'APPCONFIG') {

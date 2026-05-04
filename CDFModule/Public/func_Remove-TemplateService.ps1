@@ -67,7 +67,7 @@ Function Remove-TemplateService {
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$($CdfConfig.Service.Config.serviceName)-$regionCode"
         $deploymentName = "service-$templateEnvInstance"
 
-        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         Write-Host "Starting removal of service resources for '$templateEnvInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
 

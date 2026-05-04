@@ -44,7 +44,7 @@ Function Add-ManagedApiConnectionAccess {
     )
 
     $apiConfig = $CdfConfig | Get-CdfManagedApiConnection -ConnectionKey $ConnectionName
-    $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     if ($apiConfig) {
         Write-Information "Got connection details, validating Api Connection and Managed Identity..."

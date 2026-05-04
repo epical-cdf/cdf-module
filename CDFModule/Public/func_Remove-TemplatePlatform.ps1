@@ -62,7 +62,7 @@
         $templateEnvInstance = "$platformEnvKey-$regionCode"
         $deploymentName = "platform-$templateEnvInstance"
 
-        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         Write-Host "Starting removal of platform resources for '$templateInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
 

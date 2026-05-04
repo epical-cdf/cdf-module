@@ -291,7 +291,7 @@
                 -DomainName $DomainName `
                 -ConfigPath "$OutputPath/domain-namedvalues/"
 
-            $azCtx = Get-AzureContext $SvcCdfConfig.Platform.Env.subscriptionId
+            $azCtx = Get-AzureContext -SubscriptionId $SvcCdfConfig.Platform.Env.subscriptionId -TenantId $SvcCdfConfig.Platform.Env.tenantId
 
             # Deploy Products
             if (Test-Path "$OutputPath/domain-products") {

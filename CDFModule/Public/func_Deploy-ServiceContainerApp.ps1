@@ -68,7 +68,7 @@
 
     Write-Host "Preparing Container App Service implementation deployment."
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     # Copy service config
     $containerFiles = @(

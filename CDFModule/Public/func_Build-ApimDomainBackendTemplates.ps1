@@ -125,7 +125,7 @@
             $BicepParams.parameters.proxyPassword.reference.Add('keyVault', @{ 'id' = '#{{apim-keyvault-id}}' })
         }
         elseif ('certificate' -eq $Backend.type) {
-            $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+            $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
             $keyVault = Get-AzKeyVault `
                 -DefaultProfile $azCtx `
                 -Name $CdfConfig.Application.ResourceNames.keyVaultName `

@@ -12,7 +12,7 @@
     # Fetch all deployed API Connections and build a hashtable of connection definitions
     $connectionDefinitions = @{}
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
     Get-AzResourceGroupDeployment `
         -DefaultProfile $azCtx `
         -ResourceGroupName $CdfConfig.Platform.ResourceNames.apiConnResourceGroupName `

@@ -67,7 +67,7 @@ Function Remove-TemplateDomain {
         $templateEnvInstance = "$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$regionCode"
         $deploymentName = "domain-$templateEnvInstance"
 
-        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         Write-Host "Starting removal of domain resources for '$templateEnvInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
 

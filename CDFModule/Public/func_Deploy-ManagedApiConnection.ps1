@@ -142,7 +142,7 @@
     Write-Verbose "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
     Write-Verbose "Deploying to resource group: $($cdfPlatform.ResourceNames.apiConnResourceGroupName)"
 
-    $azCtx = Get-CdfAzureContext -SubscriptionId $cdfPlatform.Env.subscriptionId
+    $azCtx = Get-CdfAzureContext -SubscriptionId $cdfPlatform.Env.subscriptionId -TenantId $cdfPlatform.Env.tenantId
 
     Write-Host "Starting deployment of '$deploymentName' at '$Region' using subscription [$($AzCtx.Subscription.Name)]."
     $result = New-AzResourceGroupDeployment `

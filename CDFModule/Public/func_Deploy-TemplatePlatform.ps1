@@ -134,7 +134,7 @@
             Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
         }
 
-        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         # Deploy bicep template using parameters object
         Write-Host "Starting deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($CdfConfig.Platform.Env.name)'."

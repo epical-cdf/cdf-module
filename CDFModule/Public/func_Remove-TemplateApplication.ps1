@@ -69,7 +69,7 @@
         $cdfTagsWhereClause += "     and tags.TemplateEnv=~'$($CdfConfig.Application.Env.definitionId)' "
         $cdfTagsWhereClause += "     and tags.TemplateInstance=~'$templateInstance' "
 
-        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+        $azCtx = Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
         Write-Host "Starting removal of application resources for '$templateInstance' at '$region' within subscription [$($azCtx.Subscription.Name)]."
 
@@ -286,7 +286,7 @@
             Write-Host "-- Begin Phase #3 (Purging soft-deleted resources) -----------------------"
             # Remove any pending key vault and api mangement deletion
 
-            $azCtx = Get-AzureContext $CdfConfig.Platform.Env.subscriptionId
+            $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
             Get-AzKeyVault -DefaultProfile $azCtx -InRemovedState | ForEach-Object -Process {
                 if ($allResources -and ($allResources | ForEach-Object -Process { $_.Name }).Contains($_.VaultName)) {
                     Write-Host "`tPurging deleted Key Vault [$($_.VaultName)] (can be really slow, be patient)"
@@ -306,17 +306,17 @@
 
         if ($CdfConfig.Platform.Config.configStoreType -and $false -eq $DryRun) {
             $regionDetails = [ordered] @{
-              region = $region
-              code   = $regionCode
-              name   = $region
+                region = $region
+                code   = $regionCode
+                name   = $region
             }
             Remove-ConfigFromStore `
-              -CdfConfig $CdfConfig `
-              -Scope 'Application' `
-              -EnvKey $platformEnvKey-$applicationEnvKey `
-              -RegionDetails $regionDetails `
-              -ErrorAction Continue
-          }
+                -CdfConfig $CdfConfig `
+                -Scope 'Application' `
+                -EnvKey $platformEnvKey-$applicationEnvKey `
+                -RegionDetails $regionDetails `
+                -ErrorAction Continue
+        }
 
         Write-Host "Completed."
     }

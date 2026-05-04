@@ -99,7 +99,7 @@
     )
     Copy-Item -Force -Recurse -Include $laFiles -Path (Resolve-Path -Path $InputPath/*) -Destination (Resolve-Path -Path $OutputPath)
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     #--------------------------------------
     # Configure parameters for target env

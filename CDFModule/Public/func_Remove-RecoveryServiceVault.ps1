@@ -57,7 +57,7 @@
         Install-Module -Name Az.Network -Repository PSGallery -Force -AllowClobber
     }
 
-    Get-CdfAzureContext $CdfConfig.Platform.Env.subscriptionId | Set-AzContext -Scope Process | Out-Null
+    Get-CdfAzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId | Set-AzContext -Scope Process | Out-Null
 
     $VaultToDelete = Get-AzRecoveryServicesVault -Name $VaultName -ResourceGroupName $ResourceGroup -ErrorAction:SilentlyContinue
     if (!$VaultToDelete) {

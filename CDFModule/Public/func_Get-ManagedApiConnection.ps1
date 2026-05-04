@@ -66,7 +66,7 @@
     }
 
     Write-Verbose "Fetch deployment from resource group: $($CdfConfig.Platform.ResourceNames.apiConnResourceGroupName)"
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     Write-Verbose "Get deployment for '$deploymentName' at '$($CdfConfig.Platform.Env.region)' using subscription [$($AzCtx.Subscription.Name)]."
     $result = Get-AzResourceGroupDeployment `

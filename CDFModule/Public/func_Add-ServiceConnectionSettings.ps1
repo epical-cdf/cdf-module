@@ -72,7 +72,7 @@
     # $connectionParams = $Config.Config[$ParameterName]
     $connectionParams = $ConnectionDefinition.connectionConfig
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
     $SettingName = 'CON_' + $ConnectionDefinition.Scope.ToUpper() + '_' + $ConnectionDefinition.ServiceProvider.ToUpper() + '_'
 
     if ($UseCS) {
@@ -162,17 +162,25 @@
                 $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
             }
             'postgresql' {
-                $Settings["$($SettingName)_ServerName"] = $connectionParams.databaseServerFQDN
-                $Settings["$($SettingName)_Database"] = $connectionParams.database
-                $Settings["$($SettingName)_Port"] = $connectionParams.port
+                $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
+                $Settings["$($SettingName)DATABASE"] = $connectionParams.database
+                $Settings["$($SettingName)PORT"] = if ($null -eq $connectionParams.port -or $connectionParams.port -eq '') { "5432" } else { $connectionParams.port }
                 if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }
                 else {
                     $keyVaultName = $CdfConfig.Domain.ResourceNames.keyVaultName
                 }
-                $Settings["$($SettingName)_UserName"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.userSecretName))"
-                $Settings["$($SettingName)_Password"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.passwordSecretName))"
+                $Settings["$($SettingName)USERNAME"] = Get-AzKeyVaultSecret `
+                    -DefaultProfile $azCtx `
+                    -VaultName $keyVaultName `
+                    -Name $connectionParams.userSecretName `
+                    -AsPlainText
+                $Settings["$($SettingName)PASSWORD"] = Get-AzKeyVaultSecret `
+                    -DefaultProfile $azCtx `
+                    -VaultName $keyVaultName `
+                    -Name $connectionParams.passwordSecretName `
+                    -AsPlainText
             }
             default {
                 if ($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
@@ -232,7 +240,7 @@
             }
             'azurefile' {
                 # NOTE: Azure Storage Account File Share does not support managed identities for access yet.
-                $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+                $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
                 $storageContext = (
                     Get-AzStorageAccount `
                         -DefaultProfile $AzCtx `
@@ -270,7 +278,7 @@
                 #No support for managed identity
                 $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)DATABASE"] = $connectionParams.database
-                $Settings["$($SettingName)PORT"] = $connectionParams.port
+                $Settings["$($SettingName)PORT"] = if ($connectionParams.port -eq '') { "5432" } else { $connectionParams.port }
                 if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
                     $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
                 }

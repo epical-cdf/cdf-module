@@ -69,7 +69,7 @@
 
     Write-Host "Preparing Function App Service implementation deployment."
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     ## Adjust these if template changes regarding placement of appService runtime for the service
     $appServiceRG = $CdfConfig.Service.ResourceNames.appServiceResourceGroup ?? $CdfConfig.Service.ResourceNames.functionAppResourceGroup ?? $CdfConfig.Service.ResourceNames.serviceResourceGroup
@@ -113,13 +113,13 @@
     #-------------------------------------------------------------
     # Update the app settings
     #-------------------------------------------------------------
-    
+
     Set-AzWebApp `
         -Name $appServiceName `
         -ResourceGroupName $appServiceRG `
         -AppSettings $updateSettings `
         -WarningAction:SilentlyContinue | Out-Null
-    
+
     #--------------------------------------
     # Deploy function app implementation
     #--------------------------------------

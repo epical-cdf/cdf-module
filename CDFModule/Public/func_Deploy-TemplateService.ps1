@@ -162,7 +162,7 @@
         Write-Debug "Template parameters: $($templateParams | ConvertTo-Json -Depth 10 | Out-String)"
     }
 
-    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
+    $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
 
     Write-Host "Starting deployment of '$deploymentName' at '$Region' using subscription [$($AzCtx.Subscription.Name)]."
     $result = New-AzResourceGroupDeployment `
