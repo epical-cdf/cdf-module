@@ -1,14 +1,14 @@
 Function Install-Package {
     <#
     .SYNOPSIS
-    Installs CDF template and config packages from a registry to the local cache.
+    Installs CDF template and setting packages from a registry to the local cache.
 
     .DESCRIPTION
     Reads cdf-packages.json from the current directory (or explicit path), resolves semver ranges
     against the registry, downloads packages to the local cache, and sets CDF_INFRA_TEMPLATES_PATH
     and CDF_INFRA_SOURCE_PATH environment variables.
 
-    Can also install individual packages when -TemplateRef or -ConfigRef is specified.
+    Can also install individual packages when -TemplateRef or -SettingRef is specified.
 
     .PARAMETER ManifestPath
     Path to cdf-packages.json. Defaults to ./cdf-packages.json.
@@ -16,11 +16,11 @@ Function Install-Package {
     .PARAMETER TemplateRef
     Install a single template by reference (e.g. 'platform/cas/v2pub:2.1.0' or 'platform/cas/v2pub:^2.0.0').
 
-    .PARAMETER ConfigRef
-    Install a single config by reference (e.g. 'tsdc01:1.3.0' or 'tsdc01:^1.0.0').
+    .PARAMETER SettingRef
+    Install a single setting by reference (e.g. 'tsdc01:1.3.0' or 'tsdc01:^1.0.0').
 
     .PARAMETER Registry
-    Registry endpoint override. Required when using -TemplateRef or -ConfigRef without a manifest.
+    Registry endpoint override. Required when using -TemplateRef or -SettingRef without a manifest.
 
     .PARAMETER Force
     Re-download packages even if already cached.
@@ -35,6 +35,8 @@ Function Install-Package {
     .LINK
     Publish-CdfTemplate
     .LINK
+    Publish-CdfSetting
+    .LINK
     Get-CdfPackage
     .LINK
     Test-CdfDependency
@@ -47,7 +49,7 @@ Function Install-Package {
         [Parameter(Mandatory = $false)]
         [string]$TemplateRef,
         [Parameter(Mandatory = $false)]
-        [string]$ConfigRef,
+        [string]$SettingRef,
         [Parameter(Mandatory = $false)]
         [string]$Registry,
         [Parameter(Mandatory = $false)]
@@ -55,7 +57,7 @@ Function Install-Package {
     )
 
     # Single package install mode
-    if ($TemplateRef -or $ConfigRef) {
+    if ($TemplateRef -or $SettingRef) {
         $inlineRegistries = $null
         if (Test-Path $ManifestPath) {
             $manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json -AsHashtable
@@ -76,8 +78,8 @@ Function Install-Package {
         if ($TemplateRef) {
             Install-CdfSinglePackage -Ref $TemplateRef -PackageType 'templates' -Provider $provider -Endpoint $endpoint -Force:$Force
         }
-        if ($ConfigRef) {
-            Install-CdfSinglePackage -Ref $ConfigRef -PackageType 'configs' -Provider $provider -Endpoint $endpoint -Force:$Force
+        if ($SettingRef) {
+            Install-CdfSinglePackage -Ref $SettingRef -PackageType 'settings' -Provider $provider -Endpoint $endpoint -Force:$Force
         }
         return
     }
@@ -100,8 +102,8 @@ Function Install-Package {
             if ($parsed.Registry) { $referencedRegistries += $parsed.Registry }
         }
     }
-    if ($manifest.configs) {
-        foreach ($key in $manifest.configs.Keys) {
+    if ($manifest.settings) {
+        foreach ($key in $manifest.settings.Keys) {
             $parsed = Split-CdfPackageRef $key
             if ($parsed.Registry) { $referencedRegistries += $parsed.Registry }
         }
@@ -123,7 +125,7 @@ Function Install-Package {
     }
 
     $installedTemplates = @()
-    $installedConfigs = @()
+    $installedSettings = @()
 
     # Install templates
     if ($manifest.templates) {
@@ -165,42 +167,42 @@ Function Install-Package {
         }
     }
 
-    # Install configs
-    if ($manifest.configs) {
-        foreach ($configKey in $manifest.configs.Keys) {
-            $range = $manifest.configs[$configKey]
+    # Install settings
+    if ($manifest.settings) {
+        foreach ($settingKey in $manifest.settings.Keys) {
+            $range = $manifest.settings[$settingKey]
 
-            $parsed = Split-CdfPackageRef $configKey
+            $parsed = Split-CdfPackageRef $settingKey
             $packagePath = $parsed.Path
             $regName = $parsed.Registry ?? 'default'
             $provider = $providers[$regName]
             $endpoint = $provider.Endpoint
 
-            $registryPath = "cdf/configs/$packagePath"
+            $registryPath = "cdf/settings/$packagePath"
             $availableReleases = $provider.ListReleases($registryPath)
 
             if (-not $availableReleases) {
-                Write-Warning "No releases found for config '$packagePath' in registry '$endpoint'"
+                Write-Warning "No releases found for setting '$packagePath' in registry '$endpoint'"
                 continue
             }
 
             $bestRelease = Resolve-CdfBestRelease -AvailableReleases $availableReleases -Range $range
             if (-not $bestRelease) {
-                Write-Warning "No release matching '$range' found for config '$packagePath'. Available: $($availableReleases -join ', ')"
+                Write-Warning "No release matching '$range' found for setting '$packagePath'. Available: $($availableReleases -join ', ')"
                 continue
             }
 
-            $cached = Get-CdfCachedPackage -PackageType 'configs' -Endpoint $endpoint -PackagePath $packagePath -Release $bestRelease
+            $cached = Get-CdfCachedPackage -PackageType 'settings' -Endpoint $endpoint -PackagePath $packagePath -Release $bestRelease
             if ($cached.Cached -and -not $Force) {
-                Write-Host "Config ${packagePath}:$bestRelease already cached."
+                Write-Host "Setting ${packagePath}:$bestRelease already cached."
             }
             else {
                 if ($Force -and $cached.Cached) {
                     Remove-Item -Recurse -Force $cached.Path
                 }
-                Save-CdfPackageToCache -PackageType 'configs' -Endpoint $endpoint -PackagePath $packagePath -Release $bestRelease -Provider $provider
+                Save-CdfPackageToCache -PackageType 'settings' -Endpoint $endpoint -PackagePath $packagePath -Release $bestRelease -Provider $provider
             }
-            $installedConfigs += @{ Path = $packagePath; Release = $bestRelease; Endpoint = $endpoint }
+            $installedSettings += @{ Path = $packagePath; Release = $bestRelease; Endpoint = $endpoint }
         }
     }
 
@@ -212,16 +214,16 @@ Function Install-Package {
         Write-Host "Set CDF_INFRA_TEMPLATES_PATH=$templatesPath"
     }
 
-    if ($installedConfigs.Count -gt 0) {
-        $firstConfig = $installedConfigs[0]
+    if ($installedSettings.Count -gt 0) {
+        $firstSetting = $installedSettings[0]
         $cacheRoot = Get-CdfPackageCacheRoot
-        $configPath = Join-Path $cacheRoot "configs/$($firstConfig.Endpoint)/$($firstConfig.Path)/$($firstConfig.Release)"
-        $env:CDF_INFRA_SOURCE_PATH = $configPath
-        Write-Host "Set CDF_INFRA_SOURCE_PATH=$configPath"
+        $settingPath = Join-Path $cacheRoot "settings/$($firstSetting.Endpoint)/$($firstSetting.Path)/$($firstSetting.Release)"
+        $env:CDF_INFRA_SOURCE_PATH = $settingPath
+        Write-Host "Set CDF_INFRA_SOURCE_PATH=$settingPath"
     }
 
     # Summary
-    Write-Host "`nInstalled $($installedTemplates.Count) template(s) and $($installedConfigs.Count) config(s)."
+    Write-Host "`nInstalled $($installedTemplates.Count) template(s) and $($installedSettings.Count) setting(s)."
 
     # Run dependency check
     if ($installedTemplates.Count -gt 0) {
@@ -256,7 +258,7 @@ Function Install-CdfSinglePackage {
         [Parameter(Mandatory = $true)]
         [string]$Ref,
         [Parameter(Mandatory = $true)]
-        [ValidateSet('templates', 'configs')]
+        [ValidateSet('templates', 'settings')]
         [string]$PackageType,
         [Parameter(Mandatory = $true)]
         [CdfRegistryProvider]$Provider,

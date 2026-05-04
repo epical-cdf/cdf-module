@@ -12,7 +12,7 @@
     "domain/blank/v1": ">=0.1.0",
     "service/blank/v1": ">=0.1.0"
   },
-  "configs": {
+  "settings": {
     "my01": ">=0.1.0"
   }
 }

@@ -1,14 +1,14 @@
-Function Publish-Config {
+Function Publish-Setting {
     <#
     .SYNOPSIS
-    Publishes a CDF config package to an OCI registry.
+    Publishes a CDF runtime setting package to an OCI registry.
 
     .DESCRIPTION
-    Packs a config instance directory into an OCI artifact and pushes it to the configured registry.
-    Requires a cdf-runtime.json manifest in the config instance directory.
+    Packs a setting instance directory into an OCI artifact and pushes it to the configured registry.
+    Requires a cdf-runtime.json manifest in the setting instance directory.
 
-    .PARAMETER ConfigPath
-    Path to the config instance directory (e.g. ./src/tsdc/01). Must contain cdf-runtime.json.
+    .PARAMETER SettingPath
+    Path to the setting instance directory (e.g. ./src/tsdc/01). Must contain cdf-runtime.json.
 
     .PARAMETER Registry
     Registry endpoint (e.g. cdfcodex.azurecr.io). Overrides manifest/default.
@@ -17,10 +17,10 @@ Function Publish-Config {
     Override the release version from the manifest. Useful for CI builds.
 
     .EXAMPLE
-    Publish-CdfConfig -ConfigPath ./src/tsdc/01
+    Publish-CdfSetting -SettingPath ./src/tsdc/01
 
     .EXAMPLE
-    Publish-CdfConfig -ConfigPath ./src/tsdc/01 -Release 1.3.0-pre.1
+    Publish-CdfSetting -SettingPath ./src/tsdc/01 -Release 1.3.0-pre.1
 
     .LINK
     Install-CdfPackage
@@ -29,14 +29,14 @@ Function Publish-Config {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
+        [string]$SettingPath,
         [Parameter(Mandatory = $false)]
         [string]$Registry,
         [Parameter(Mandatory = $false)]
         [string]$Release
     )
 
-    $resolvedPath = Resolve-Path $ConfigPath -ErrorAction Stop
+    $resolvedPath = Resolve-Path $SettingPath -ErrorAction Stop
     $manifestPath = Join-Path $resolvedPath 'cdf-runtime.json'
 
     if (-not (Test-Path $manifestPath)) {
@@ -52,7 +52,7 @@ Function Publish-Config {
         throw "No release version specified. Set 'release' in cdf-runtime.json or use -Release parameter."
     }
 
-    $configKey = "$platformId$instanceId"
+    $settingKey = "$platformId$instanceId"
 
     # Resolve registry config (layered: project → user → inline manifest)
     $inlineRegistries = $null
@@ -69,22 +69,22 @@ Function Publish-Config {
         $regConfig = Resolve-CdfRegistryConfig -Name $regName -InlineRegistries $inlineRegistries
     }
 
-    $packagePath = "cdf/configs/$configKey"
+    $packagePath = "cdf/settings/$settingKey"
     $provider = New-CdfRegistryProvider $regConfig
 
     # Build OCI annotations from manifest metadata
     $annotations = @{
-        'org.opencontainers.image.title'   = $configKey
+        'org.opencontainers.image.title'   = $settingKey
         'org.opencontainers.image.version' = $releaseTag
-        'cdf.config.platformId'            = $platformId
-        'cdf.config.instanceId'            = $instanceId
+        'cdf.setting.platformId'           = $platformId
+        'cdf.setting.instanceId'           = $instanceId
     }
     if ($manifest.description) {
         $annotations['org.opencontainers.image.description'] = $manifest.description
     }
 
-    Write-Host "Publishing config ${configKey}:$releaseTag to $($regConfig.endpoint)..."
+    Write-Host "Publishing setting ${settingKey}:$releaseTag to $($regConfig.endpoint)..."
     $provider.Login()
     $provider.Push($packagePath, $releaseTag, $resolvedPath.Path, $annotations)
-    Write-Host "Successfully published ${configKey}:$releaseTag"
+    Write-Host "Successfully published ${settingKey}:$releaseTag"
 }

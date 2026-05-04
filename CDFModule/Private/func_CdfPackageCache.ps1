@@ -1,5 +1,5 @@
 # Local cache management for CDF packages
-# Cache layout: ~/.cdf/packages/{templates|configs}/<endpoint>/<path>/<release>/
+# Cache layout: ~/.cdf/packages/{templates|settings}/<endpoint>/<path>/<release>/
 
 Function Get-CdfPackageCacheRoot {
     [CmdletBinding()]
@@ -14,7 +14,7 @@ Function Get-CdfPackageCachePath {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('templates', 'configs')]
+        [ValidateSet('templates', 'settings')]
         [string]$PackageType,
         [Parameter(Mandatory = $true)]
         [string]$Endpoint,
@@ -32,7 +32,7 @@ Function Get-CdfCachedPackage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('templates', 'configs')]
+        [ValidateSet('templates', 'settings')]
         [string]$PackageType,
         [Parameter(Mandatory = $true)]
         [string]$Endpoint,
@@ -61,7 +61,7 @@ Function Save-CdfPackageToCache {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('templates', 'configs')]
+        [ValidateSet('templates', 'settings')]
         [string]$PackageType,
         [Parameter(Mandatory = $true)]
         [string]$Endpoint,

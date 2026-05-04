@@ -4,14 +4,14 @@ Function Get-Package {
     Lists available and installed CDF packages from a registry.
 
     .DESCRIPTION
-    Queries the configured registry for available releases of a template or config package.
+    Queries the configured registry for available releases of a template or setting package.
     Shows installed versions alongside available versions.
 
     .PARAMETER PackageRef
-    Package reference (e.g. 'platform/cas/v2pub' for templates, 'tsdc01' for configs).
+    Package reference (e.g. 'platform/cas/v2pub' for templates, 'tsdc01' for settings).
 
     .PARAMETER PackageType
-    Type of package: 'templates' or 'configs'.
+    Type of package: 'templates' or 'settings'.
 
     .PARAMETER Registry
     Registry endpoint override.
@@ -37,7 +37,7 @@ Function Get-Package {
         [Parameter(Mandatory = $false)]
         [string]$PackageRef,
         [Parameter(Mandatory = $false)]
-        [ValidateSet('templates', 'configs')]
+        [ValidateSet('templates', 'settings')]
         [string]$PackageType = 'templates',
         [Parameter(Mandatory = $false)]
         [string]$Registry,

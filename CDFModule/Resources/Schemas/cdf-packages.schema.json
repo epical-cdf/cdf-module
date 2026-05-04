@@ -20,12 +20,12 @@
       },
       "description": "Template package references keyed by '<scope>/<name>/<version>' or '<scope>/<name>/<version>@<registry>'. Values are semver ranges."
     },
-    "configs": {
+    "settings": {
       "type": "object",
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Config package references keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>'. Values are semver ranges."
+      "description": "Setting package references keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>'. Values are semver ranges."
     }
   },
   "$defs": {
