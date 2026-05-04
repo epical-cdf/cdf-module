@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdf.epical.net/schemas/cdf-template.schema.json",
+  "title": "CDF Template Manifest",
+  "description": "Manifest for a CDF infrastructure template package. Placed at the template root directory (e.g. platform/cas/v2pub/cdf-template.json).",
+  "type": "object",
+  "required": ["scope", "name", "version", "release"],
+  "additionalProperties": false,
+  "properties": {
+    "scope": {
+      "type": "string",
+      "enum": ["platform", "application", "domain", "service"],
+      "description": "The CDF template scope."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Template name matching the directory name (e.g. 'cas', 'intg', 'microservices')."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Template version identifier matching the directory name (e.g. 'v2pub', 'v2net'). This is the template variant/architecture, not a semver."
+    },
+    "release": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*)?(\\+[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*)?$",
+      "description": "Semantic version for the release lifecycle of this template (e.g. '2.1.0', '2.1.0-pre.1')."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the template."
+    },
+    "providedFeatures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "description": "Feature flags this template can enable. Declares the capability set — actual activation is determined by the config at deploy time."
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/dependency"
+      },
+      "description": "Template dependencies keyed by '<scope>/<name>/<version>' (e.g. 'platform/cas/v2pub'). Each value specifies the required release range and features."
+    }
+  },
+  "$defs": {
+    "dependency": {
+      "type": "object",
+      "required": ["release"],
+      "additionalProperties": false,
+      "properties": {
+        "release": {
+          "type": "string",
+          "description": "Semver range for the required release (e.g. '>=2.0.0', '^2.1.0')."
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Feature flags the dependency template must provide (must be in its providedFeatures)."
+        }
+      }
+    }
+  }
+}

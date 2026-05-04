@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cdf.epical.net/schemas/cdf-packages.schema.json",
+  "title": "CDF Packages Manifest",
+  "description": "Workspace manifest declaring required CDF template and config packages. The registry is the boundary.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "registries": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/registry"
+      },
+      "description": "Named registries. Optional — omit to resolve from user-level ($HOME/.cdf/registries/) or project-level (.cdf/registries/) config files. Package refs without '@<registry>' use the 'default' registry."
+    },
+    "templates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Template package references keyed by '<scope>/<name>/<version>' or '<scope>/<name>/<version>@<registry>'. Values are semver ranges."
+    },
+    "configs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Config package references keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>'. Values are semver ranges."
+    }
+  },
+  "$defs": {
+    "registry": {
+      "type": "object",
+      "required": ["type", "endpoint"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["acr", "oci"],
+          "description": "Registry provider type. 'acr' for Azure Container Registry (uses Az CLI token). 'oci' for any OCI-compatible registry such as GitHub Container Registry (uses username + token from env var)."
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Registry endpoint (e.g. 'cdfcodex.azurecr.io', 'ghcr.io/my-org')."
+        },
+        "username": {
+          "type": "string",
+          "description": "Username for OCI registry login. For GHCR use your GitHub username. Defaults to 'cdf'. Only used with type 'oci'."
+        },
+        "passwordEnvVar": {
+          "type": "string",
+          "description": "Name of the environment variable containing the registry token/password. Defaults to 'CDF_REGISTRY_TOKEN'. For GHCR use 'GITHUB_TOKEN' or 'GH_TOKEN'. Only used with type 'oci'."
+        }
+      }
+    }
+  }
+}
