@@ -1,0 +1,32 @@
+<policies>
+    <inbound>
+        <set-header name="x-cdf-service" exists-action="override">
+            <value>#{DomainName}#/#{ServiceGroup}#/#{ServiceType}#/#{ServiceName}#</value>
+        </set-header>
+        <set-header name="x-cdf-build" exists-action="override">
+            <value>#{BuildRepo}#/#{BuildBranch}#/#{BuildCommit}#/#{BuildRun}#</value>
+        </set-header>
+        <apim-policy-operation />
+    </inbound>
+    <backend>
+        <apim-policy-operation />
+    </backend>
+    <outbound>
+        <set-header name="x-cdf-service" exists-action="override">
+            <value>#{DomainName}#/#{ServiceGroup}#/#{ServiceType}#/#{ServiceName}#</value>
+        </set-header>
+        <set-header name="x-cdf-build" exists-action="override">
+            <value>#{BuildRepo}#/#{BuildBranch}#/#{BuildCommit}#/#{BuildRun}#</value>
+        </set-header>
+        <apim-policy-operation />
+    </outbound>
+    <on-error>
+        <set-header name="x-cdf-service" exists-action="override">
+            <value>#{DomainName}#/#{ServiceGroup}#/#{ServiceType}#/#{ServiceName}#</value>
+        </set-header>
+        <set-header name="x-cdf-build" exists-action="override">
+            <value>#{BuildRepo}#/#{BuildBranch}#/#{BuildCommit}#/#{BuildRun}#</value>
+        </set-header>
+        <apim-policy-operation />
+    </on-error>
+</policies>

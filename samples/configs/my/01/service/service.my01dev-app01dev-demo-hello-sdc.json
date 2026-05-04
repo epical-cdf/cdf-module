@@ -1,0 +1,12 @@
+{
+  "IsDeployed": false,
+  "Config": {
+    "templateScope": "service",
+    "templateName": "blank",
+    "templateVersion": "v1",
+    "serviceName": "hello",
+    "serviceType": "null",
+    "serviceGroup": "sample",
+    "serviceTemplate": "null-service"
+  }
+}

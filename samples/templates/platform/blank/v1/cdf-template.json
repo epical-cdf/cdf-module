@@ -1,0 +1,10 @@
+{
+  "$schema": "https://cdf.samples.net/schemas/cdf-template.schema.json",
+  "scope": "platform",
+  "name": "blank",
+  "version": "v1",
+  "release": "0.1.0",
+  "description": "Blank platform starter template. Deploys a resource group with feature-gated storage account and standard CDF tagging.",
+  "providedFeatures": ["enableStorageAccount"],
+  "dependencies": {}
+}

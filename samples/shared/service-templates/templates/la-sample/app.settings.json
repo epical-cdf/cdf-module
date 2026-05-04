@@ -1,0 +1,6 @@
+{
+  "TARGET_BASED_SCALING_ENABLED": "0",
+  "Workflows.RuntimeConfiguration.RetentionInDays": "7",
+  "Workflows.wf-basic-http.FlowState": "Enabled",
+  "Workflows.wf-basic-http.RuntimeConfiguration.RetentionInDays": "3"
+}

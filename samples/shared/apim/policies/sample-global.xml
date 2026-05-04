@@ -1,0 +1,24 @@
+<policies>
+    <inbound>
+        <rate-limit calls="1000" renewal-period="10" remaining-calls-header-name="request-limit-left" total-calls-header-name="request-limit-total" />
+        <set-header name="x-cdf-apim-instance" exists-action="override">
+            <value>#{PlatformEnvKey}#/#{ApplicationEnvKey}#</value>
+        </set-header>
+        <apim-policy-global />
+    </inbound>
+    <backend>
+        <apim-policy-global />
+    </backend>
+    <outbound>
+        <set-header name="x-cdf-apim-instance" exists-action="override">
+            <value>#{PlatformEnvKey}#/#{ApplicationEnvKey}#</value>
+        </set-header>
+        <apim-policy-global />
+    </outbound>
+    <on-error>
+        <set-header name="x-cdf-apim-instance" exists-action="override">
+            <value>#{PlatformEnvKey}#/#{ApplicationEnvKey}#</value>
+        </set-header>
+        <apim-policy-global />
+    </on-error>
+</policies>
