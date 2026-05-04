@@ -202,11 +202,11 @@ Function Get-InfraServiceConfig {
   Param(
     [Parameter(Mandatory = $true)]
     [string] $ServiceName,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string] $ServiceType,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string] $ServiceGroup,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $false)]
     [string] $ServiceTemplate,
     [Parameter(Mandatory = $true)]
     [string] $ServiceConfigPath
