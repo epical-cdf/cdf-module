@@ -141,5 +141,5 @@ CDFModule/
 ├── Private/                # Internal helpers (not exported)
 └── Resources/              # Schemas, profiles, format files
 docs/                       # Documentation
-samples/                    # Reference configs and templates
+samples/                    # Reference settings and templates
 ```

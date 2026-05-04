@@ -35,7 +35,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full workflow. Summary:
 - `CDFModule.psm1` — Auto-loads all `func_*.ps1` files recursively, exports Public functions
 - `CDFModule.psd1` — Manifest; version is set by the release workflow from the git tag
 - `Resources/` — Schemas, profiles, format files
-- `samples/` — Reference configs and blank templates for all CDF layers
+- `samples/` — Reference settings and blank templates for all CDF layers
 - `docs/` — [CDF Overview](../docs/README.md), [Infrastructure](../docs/infrastructure-development.md), [Solution](../docs/solution-development.md)
 
 ## Build and Test

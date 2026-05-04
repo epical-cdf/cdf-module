@@ -2,7 +2,7 @@
 
 This guide is for **solution developers** who deploy services (Function Apps, Logic Apps, Container Apps, APIM APIs) onto CDF-managed infrastructure.
 
-For authoring Bicep templates and managing runtime configs, see [Infrastructure Development](infrastructure-development.md).
+For authoring Bicep templates and managing runtime settings, see [Infrastructure Development](infrastructure-development.md).
 
 ---
 
@@ -27,7 +27,7 @@ Solution repositories declare infrastructure dependencies in `cdf-packages.json`
     "domain/cas/v2pub": "^2.1.0",
     "service/cas/v2pub": "^2.1.0"
   },
-  "configs": {
+  "settings": {
     "my01": ">=1.0.0"
   }
 }

@@ -12,7 +12,7 @@ samples/
 │   ├── domain/blank/v1/
 │   └── service/blank/v1/
 │
-├── configs/            Sample runtime config instance
+├── settings/           Sample runtime setting instance
 │   └── my/01/          Platform "my", instance "01"
 │       ├── cdf-runtime.json
 │       ├── platform/
@@ -44,10 +44,10 @@ foreach ($scope in 'platform','application','domain','service') {
 }
 ```
 
-### 2. Publish the sample config
+### 2. Publish the sample setting
 
 ```powershell
-Publish-CdfConfig -ConfigPath ./samples/configs/my/01
+Publish-CdfSetting -SettingPath ./samples/settings/my/01
 ```
 
 ### 3. Install packages in a consuming workspace

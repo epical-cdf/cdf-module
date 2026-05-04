@@ -48,15 +48,15 @@ Every template directory must contain a `cdf-template.json` manifest:
 }
 ```
 
-| Field | Required | Description |
-|---|---|---|
-| `scope` | Yes | Must match the directory scope (`platform`, `application`, `domain`, `service`) |
-| `name` | Yes | Must match the directory name |
-| `version` | Yes | Must match the directory version |
-| `release` | Yes | Semver for the package lifecycle (e.g. `2.1.0`, `2.1.0-pre.1`) |
-| `description` | No | Human-readable description |
-| `providedFeatures` | No | Features this template can enable (array of strings) |
-| `dependencies` | No | Required upstream templates with release ranges and feature requirements |
+| Field              | Required | Description                                                                     |
+|--------------------|----------|---------------------------------------------------------------------------------|
+| `scope`            | Yes      | Must match the directory scope (`platform`, `application`, `domain`, `service`) |
+| `name`             | Yes      | Must match the directory name                                                   |
+| `version`          | Yes      | Must match the directory version                                                |
+| `release`          | Yes      | Semver for the package lifecycle (e.g. `2.1.0`, `2.1.0-pre.1`)                  |
+| `description`      | No       | Human-readable description                                                      |
+| `providedFeatures` | No       | Features this template can enable (array of strings)                            |
+| `dependencies`     | No       | Required upstream templates with release ranges and feature requirements        |
 
 ### Feature contracts
 
@@ -272,7 +272,7 @@ New-CdfConfigPlatform `
 
 This copies seed files from the template directory into `$SourceDir/my/01/platform/` and generates initial config files for each enabled environment.
 
-See the [sample config instance](../samples/configs/my/01/) for the complete structure.
+See the [sample setting instance](../samples/settings/my/01/) for the complete structure.
 
 ---
 
@@ -280,7 +280,7 @@ See the [sample config instance](../samples/configs/my/01/) for the complete str
 
 ### Overview
 
-CDF templates and configs are published as OCI artifacts to an Azure Container Registry (ACR). This enables versioned, immutable releases that can be consumed by any team.
+CDF templates and settings are published as OCI artifacts to an Azure Container Registry (ACR). This enables versioned, immutable releases that can be consumed by any team.
 
 ```
 ┌──────────────┐    Publish-CdfTemplate    ┌──────────────┐    Install-CdfPackage    ┌──────────────┐
@@ -288,7 +288,7 @@ CDF templates and configs are published as OCI artifacts to an Azure Container R
 │ (git repo)   │                           │  (registry)  │                          │ ~/.cdf/      │
 └──────────────┘                           └──────────────┘                          │ packages/    │
                                                                                      └──────┬───────┘
-┌──────────────┐    Publish-CdfConfig      ┌──────────────┐                                 │
+┌──────────────┐    Publish-CdfSetting     ┌──────────────┐                                 │
 │  cdf-config  │ ─────────────────────────→│     ACR      │                                 │
 │ (git repo)   │                           └──────────────┘             $env:CDF_INFRA_TEMPLATES_PATH
 └──────────────┘                                                        $env:CDF_INFRA_SOURCE_PATH
@@ -300,10 +300,10 @@ CDF templates and configs are published as OCI artifacts to an Azure Container R
 
 These are distinct concepts:
 
-| Concept | Example | Meaning |
-|---|---|---|
+| Concept     | Example                | Meaning                                                                     |
+|-------------|------------------------|-----------------------------------------------------------------------------|
 | **Version** | `v2pub`, `v2net`, `v1` | Template variant/architecture. Part of the directory path. Does not change. |
-| **Release** | `2.1.0`, `2.1.0-pre.1` | Semver lifecycle version. Changes with each publish. |
+| **Release** | `2.1.0`, `2.1.0-pre.1` | Semver lifecycle version. Changes with each publish.                        |
 
 A template is identified as `<scope>/<name>/<version>` (e.g. `platform/cas/v2pub`). Each identity can have many releases (`2.0.0`, `2.1.0`, `2.2.0-pre.1`, etc.).
 
@@ -319,17 +319,17 @@ Publish-CdfTemplate -TemplatePath ./platform/blank/v1 -Release 1.0.0
 
 The command reads `cdf-template.json`, packs the directory, and pushes it to the registry at: `<acr>/cdf/templates/<scope>/<name>/<version>:<release>`
 
-### Publishing configs
+### Publishing settings
 
 ```powershell
-# Publish from the config instance directory
-Publish-CdfConfig -ConfigPath ./src/my/01
+# Publish from the setting instance directory
+Publish-CdfSetting -SettingPath ./src/my/01
 
 # Override the release version
-Publish-CdfConfig -ConfigPath ./src/my/01 -Release 1.0.0
+Publish-CdfSetting -SettingPath ./src/my/01 -Release 1.0.0
 ```
 
-The command reads `cdf-runtime.json` and pushes to: `<acr>/cdf/configs/<platformId><instanceId>:<release>`
+The command reads `cdf-runtime.json` and pushes to: `<acr>/cdf/settings/<platformId><instanceId>:<release>`
 
 ### The cdf-packages.json workspace manifest
 
@@ -350,7 +350,7 @@ Consumer repositories declare their dependencies in `cdf-packages.json`:
     "domain/blank/v1": ">=0.1.0",
     "service/blank/v1": ">=0.1.0"
   },
-  "configs": {
+  "settings": {
     "my01": ">=0.1.0"
   }
 }
@@ -374,7 +374,7 @@ Install-CdfPackage -ManifestPath ./cdf-packages.json -Force
 `Install-CdfPackage` resolves semver ranges, downloads packages to the local cache (`~/.cdf/packages/`), and sets the environment variables:
 
 - `$env:CDF_INFRA_TEMPLATES_PATH` → points to the cached template root
-- `$env:CDF_INFRA_SOURCE_PATH` → points to the cached config root
+- `$env:CDF_INFRA_SOURCE_PATH` → points to the cached setting root
 
 All downstream `Deploy-CdfTemplate*` commands read these variables automatically.
 
@@ -392,11 +392,11 @@ Get-CdfPackage -Installed
 
 Registries can be configured at three levels, resolved with fallback:
 
-| Priority | Location | Use case |
-|---|---|---|
-| 1 | `<project>/.cdf/registries/<name>.json` | Project-level (committed or gitignored) |
-| 2 | `$HOME/.cdf/registries/<name>.json` | User-level defaults |
-| 3 | Inline `registries` in `cdf-packages.json` | Fallback (committed) |
+| Priority | Location                                   | Use case                                |
+|----------|--------------------------------------------|-----------------------------------------|
+| 1        | `<project>/.cdf/registries/<name>.json`    | Project-level (committed or gitignored) |
+| 2        | `$HOME/.cdf/registries/<name>.json`        | User-level defaults                     |
+| 3        | Inline `registries` in `cdf-packages.json` | Fallback (committed)                    |
 
 Registry config file format:
 
