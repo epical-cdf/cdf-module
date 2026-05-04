@@ -68,15 +68,13 @@
       Write-Warning "Domain config is not deployed, this may cause errors in using the service configuration."
     }
 
-    $sourcePath = "$SourceDir/$($CdfConfig.Platform.Config.platformId)/$($CdfConfig.Platform.Config.instanceId)"
-    $platformEnvKey = "$($CdfConfig.Platform.Config.platformId)$($CdfConfig.Platform.Config.instanceId)$($CdfConfig.Platform.Env.nameId)"
-    $applicationEnvKey = "$($CdfConfig.Application.Config.applicationId ?? $CdfConfig.Application.Config.templateName)$($CdfConfig.Application.Config.instanceId)$($CdfConfig.Application.Env.nameId)"
     $regionCode = $CdfConfig.Platform.Env.regionCode
     $region = $CdfConfig.Platform.Env.region
     $applicationEnv = $CdfConfig.Application.Env
     $domainName = $CdfConfig.Domain.Config.domainName
 
-    $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
+    # Load service cdf-config.json for defaults resolution (must stay here for $MyInvocation access)
+    $cdfConfigFile = Join-Path -Path $ServiceSrcPath -ChildPath 'cdf-config.json'
     if (Test-Path $cdfConfigFile) {
       Write-Verbose "Loading cdf-config.json file"
       $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
@@ -92,95 +90,103 @@
       $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $serviceCdfConfig.ServiceDefaults.ServiceGroup
       $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $serviceCdfConfig.ServiceDefaults.ServiceType
       $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $serviceCdfConfig.ServiceDefaults.ServiceTemplate
+    }
 
-      # Get service configuration from infra config file
-      $CdfService = Get-InfraServiceConfig `
-        -ServiceName $ServiceName `
-        -ServiceType $ServiceType `
-        -ServiceGroup $ServiceGroup `
-        -ServiceTemplate $ServiceTemplate `
-        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName-$regionCode.json"
-      $CdfService.ConfigSource = "FILE" # Using infra config and/or cdf-config.json file as base
-      # TODO: Merge any additional overrides from cdf-config.json here
+    # Load runtime settings from file or package (no Azure needed)
+    # Temporarily set service params on CdfConfig for Get-RuntimeSetting to consume
+    $CdfConfig.Service = @{
+      Config = @{
+        serviceType     = $ServiceType
+        serviceGroup    = $ServiceGroup
+        serviceTemplate = $ServiceTemplate
+      }
     }
-    else {
-      # Get service configuration from infra config file
-      $CdfService = Get-InfraServiceConfig `
-        -ServiceName $ServiceName `
-        -ServiceType $ServiceType `
-        -ServiceGroup $ServiceGroup `
-        -ServiceTemplate $ServiceTemplate `
-        -ServiceConfigPath "$sourcePath/service/service.$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName-$regionCode.json"
-    }
+
+    $runtimeSetting = Get-RuntimeSetting `
+      -Scope 'Service' `
+      -SourceDir $SourceDir `
+      -CdfConfig $CdfConfig `
+      -ServiceName $ServiceName `
+      -ServiceSrcPath $ServiceSrcPath
+
+    $platformEnvKey = $runtimeSetting.Definitions.PlatformEnvKey
+    $applicationEnvKey = $runtimeSetting.Definitions.ApplicationEnvKey
+
+    $CdfService = $runtimeSetting.ScopeConfig
 
     if ($Deployed) {
-      if ($CdfConfig.Platform.Config.configStoreType) {
-        $regionDetails = [ordered] @{
-          region = $region
-          code   = $regionCode
-          name   = $regionName
+      try {
+        if ($CdfConfig.Platform.Config.configStoreType) {
+          $regionDetails = [ordered] @{
+            region = $region
+            code   = $regionCode
+            name   = $regionName
+          }
+          $cdfConfigOutput = Get-ConfigFromStore `
+            -CdfConfig $CdfConfig `
+            -Scope 'Service' `
+            -EnvKey "$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName" `
+            -RegionDetails $regionDetails `
+            -ErrorAction Continue
         }
-        $cdfConfigOutput = Get-ConfigFromStore `
-          -CdfConfig $CdfConfig `
-          -Scope 'Service' `
-          -EnvKey "$platformEnvKey-$applicationEnvKey-$domainName-$ServiceName" `
-          -RegionDetails $regionDetails `
-          -ErrorAction Continue
-      }
-      if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
+        if ($cdfConfigOutput -eq $null -or ($cdfConfigOutput -ne $null -and $cdfConfigOutput.Count -eq 0)) {
 
-        # Get latest deployment result outputs
-        $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
+          # Get latest deployment result outputs
+          $deploymentName = "service-$platformEnvKey-$applicationEnvKey-$($CdfConfig.Domain.Config.domainName)-$ServiceName-$regionCode"
 
-        $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
-        Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using resourceGroup [$($CdfConfig.Domain.ResourceNames.domainResourceGroupName)] for runtime environment '$($applicationEnv.name)'."
+          $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId -TenantId $CdfConfig.Platform.Env.tenantId
+          Write-Verbose "Fetching deployment of '$deploymentName' at '$region' using resourceGroup [$($CdfConfig.Domain.ResourceNames.domainResourceGroupName)] for runtime environment '$($applicationEnv.name)'."
 
-        $result = Get-AzResourceGroupDeployment  `
-          -DefaultProfile $azCtx `
-          -Name "$deploymentName" `
-          -ResourceGroupName $CdfConfig.Domain.ResourceNames.domainResourceGroupName `
-          -ErrorAction SilentlyContinue
+          $result = Get-AzResourceGroupDeployment  `
+            -DefaultProfile $azCtx `
+            -Name "$deploymentName" `
+            -ResourceGroupName $CdfConfig.Domain.ResourceNames.domainResourceGroupName `
+            -ErrorAction SilentlyContinue
 
-        While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed' -or $result.ProvisioningState -eq 'Cancelled')) {
-          Write-Host 'Deployment still running...'
-          Start-Sleep 30
-          $result = Get-AzSubscriptionDeployment -DefaultProfile $azCtx -Name "$deploymentName"
-          Write-Verbose $result
-        }
-
-        if ($result -and $result.ProvisioningState -eq "Succeeded") {
-          # Setup domain definitions
-          $CdfService = [ordered] @{
-            IsDeployed    = $true
-            Tags          = $result.Outputs.serviceTags.Value
-            Config        = $result.Outputs.serviceConfig.Value
-            Features      = $result.Outputs.serviceFeatures.Value
-            ResourceNames = $result.Outputs.serviceResourceNames.Value
-            NetworkConfig = $result.Outputs.serviceNetworkConfig.Value
-            AccessControl = $result.Outputs.serviceAccessControl.Value
-            ConfigSource  = 'DEPLOYMENTOUTPUT'
+          While ($result -and -not($result.ProvisioningState -eq 'Succeeded' -or $result.ProvisioningState -eq 'Failed' -or $result.ProvisioningState -eq 'Cancelled')) {
+            Write-Host 'Deployment still running...'
+            Start-Sleep 30
+            $result = Get-AzSubscriptionDeployment -DefaultProfile $azCtx -Name "$deploymentName"
+            Write-Verbose $result
           }
 
-          # Convert to normalized hashtable
-          $CdfService = $CdfService | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
-        }
-        elseif ($result -and ($result.ProvisioningState -eq "Failed" -or $result.ProvisioningState -eq "Cancelled")) {
-          Write-Warning "Deployment in invalid state [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-          Write-Warning "Returning configuration from file, if available."
-        }
-        else {
-          Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
-          if (Test-Path "cdf-config.json") {
-            Write-Warning "Using service defaults in cdf-config.json."
+          if ($result -and $result.ProvisioningState -eq "Succeeded") {
+            $CdfService = [ordered] @{
+              IsDeployed    = $true
+              Tags          = $result.Outputs.serviceTags.Value
+              Config        = $result.Outputs.serviceConfig.Value
+              Features      = $result.Outputs.serviceFeatures.Value
+              ResourceNames = $result.Outputs.serviceResourceNames.Value
+              NetworkConfig = $result.Outputs.serviceNetworkConfig.Value
+              AccessControl = $result.Outputs.serviceAccessControl.Value
+              ConfigSource  = 'DEPLOYMENTOUTPUT'
+            }
+
+            # Convert to normalized hashtable
+            $CdfService = $CdfService | ConvertTo-Json -depth 10 | ConvertFrom-Json -AsHashtable
+          }
+          elseif ($result -and ($result.ProvisioningState -eq "Failed" -or $result.ProvisioningState -eq "Cancelled")) {
+            Write-Warning "Deployment in invalid state [$($result.ProvisioningState)] for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+            Write-Warning "Returning configuration from $($runtimeSetting.ConfigSource), if available."
           }
           else {
-            Write-Warning "Returning service configuration from file, if available."
+            Write-Warning "No deployment found for '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($applicationEnv.name)'."
+            if (Test-Path "cdf-config.json") {
+              Write-Warning "Using service defaults in cdf-config.json."
+            }
+            else {
+              Write-Warning "Returning service configuration from $($runtimeSetting.ConfigSource), if available."
+            }
           }
         }
+        else {
+          $cdfConfigOutput.Add("ConfigSource", $CdfConfig.Platform.Config.configStoreType.ToUpper())
+          $CdfService = $cdfConfigOutput
+        }
       }
-      else {
-        $cdfConfigOutput.Add("ConfigSource", $CdfConfig.Platform.Config.configStoreType.ToUpper())
-        $CdfService = $cdfConfigOutput
+      catch {
+        Write-Warning "Cannot fetch deployed configuration: $($_.Exception.Message)"
+        Write-Warning "Returning settings from $($runtimeSetting.ConfigSource)$(if ($runtimeSetting.ConfigVersion) { " version $($runtimeSetting.ConfigVersion)" })."
       }
     }
     else {
