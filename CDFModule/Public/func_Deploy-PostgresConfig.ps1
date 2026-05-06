@@ -111,6 +111,7 @@
                     $createDb = "CREATE DATABASE `"$DomainDatabaseName`";"
                     $createUser = "CREATE USER `"$DomainDatabaseUser`" WITH PASSWORD '$plainDomainDbPassword';"
                     $grantPermissions = "GRANT ALL PRIVILEGES ON DATABASE `"$DomainDatabaseName`" TO `"$DomainDatabaseUser`";"
+                    $grantSchemaPermissions = "GRANT ALL ON SCHEMA public TO `"$DomainDatabaseUser`";"
 
                     $databaseExists = Invoke-PostgresQuery -Query $checkDbQuery
                     if ($databaseExists -match "f") {
@@ -119,6 +120,7 @@
                         if ($roleExists -match "f") {
                             Invoke-PostgresQuery -Query $createUser | Out-Null
                             Invoke-PostgresQuery -Query $grantPermissions | Out-Null
+                            Invoke-PostgresQuery -Query $grantSchemaPermissions -Database $DomainDatabaseName | Out-Null
                             $null = Set-AzKeyVaultSecret `
                                 -VaultName $CdfConfig.Platform.ResourceNames.keyVaultName `
                                 -Name $DatabasePasswordSecretName `
@@ -134,7 +136,8 @@
                         }
                     }
                     else {
-                        Write-Host 'Domain database already exists.'
+                        Write-Host 'Domain database already exists. Ensuring schema permissions.'
+                        Invoke-PostgresQuery -Query $grantSchemaPermissions -Database $DomainDatabaseName | Out-Null
                     }
                     $OutputDetails.Add("Postgres-UserSecretName", $DatabaseUserSecretName)
                     $OutputDetails.Add("Postgres-PasswordSecretName", $DatabasePasswordSecretName)
