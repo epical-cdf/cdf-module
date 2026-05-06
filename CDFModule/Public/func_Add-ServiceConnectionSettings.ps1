@@ -7,6 +7,12 @@
 
     .PARAMETER UseCS
     Switch indicating that connections should use connection strings instead of managed identities.
+    Produces settings with Key Vault references for secrets (suitable for Azure App Service/Logic Apps).
+
+    .PARAMETER UseEnv
+    Switch indicating that connections should produce environment variable style settings with
+    uppercase suffixes (e.g. SERVERNAME, CONNECTIONSTRING) and resolved secret values.
+    Suitable for container-based local development (.env files).
 
     .PARAMETER CdfConfig
     The Config object from the target scope (Platform, Application and Domain)
@@ -57,6 +63,8 @@
     Param(
         [Parameter(Mandatory = $false)]
         [switch] $UseCS,
+        [Parameter(Mandatory = $false)]
+        [switch] $UseEnv,
         [Parameter(Mandatory = $true)]
         [hashtable]$CdfConfig,
         [Parameter(Mandatory = $true)]
@@ -162,6 +170,64 @@
                 $Settings["$($SettingName)_connectionString"] = $storageContext.ConnectionString
             }
             'postgresql' {
+                $Settings["$($SettingName)_ServerName"] = $connectionParams.databaseServerFQDN
+                $Settings["$($SettingName)_Database"] = $connectionParams.database
+                $Settings["$($SettingName)_Port"] = if ($null -eq $connectionParams.port -or $connectionParams.port -eq '') { "5432" } else { $connectionParams.port }
+                if ($ConnectionDefinition.Scope.ToLower() -eq 'platform') {
+                    $keyVaultName = $CdfConfig.Platform.ResourceNames.keyVaultName
+                }
+                else {
+                    $keyVaultName = $CdfConfig.Domain.ResourceNames.keyVaultName
+                }
+                $Settings["$($SettingName)_UserName"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.userSecretName))"
+                $Settings["$($SettingName)_Password"] = "@Microsoft.KeyVault(VaultName=$keyVaultName;SecretName=$($connectionParams.passwordSecretName))"
+            }
+            default {
+                if ($ConnectionDefinition.Scope -in @('Platform', 'Application', 'Domain')) {
+                    Write-Warning "Unsupported service provider: $($ConnectionDefinition.ServiceProvider)"
+                }
+            }
+        }
+    }
+    elseif ($UseEnv) {
+        switch ($ConnectionDefinition.ServiceProvider.ToLower()) {
+            'keyvault' {
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).vault.azure.net"
+            }
+            'azureeventgridpublish' {
+                $eventGridTopic = Get-AzEventGridTopic -DefaultProfile $AzCtx `
+                    -ResourceGroupName $connectionParams.resourceGroup `
+                    -Name $connectionParams.name
+                $eventGridTopicKeys = Get-AzEventGridTopicKey $eventGridTopic
+
+                $Settings["$($SettingName)ACCESSKEY"] = $eventGridTopicKeys.Key1
+                $Settings["$($SettingName)TOPICENDPOINT"] = $eventGridTopic.Endpoint
+            }
+            'servicebus' {
+                $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
+            }
+            'eventhubs' {
+                $Settings["$($SettingName)FULLYQUALIFIEDNAMESPACE"] = "$($connectionParams.name).servicebus.windows.net"
+            }
+            'azureblob' {
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).blob.core.windows.net"
+            }
+            'azurefile' {
+                $storageContext = (
+                    Get-AzStorageAccount `
+                        -DefaultProfile $AzCtx `
+                        -ResourceGroupName $connectionParams.resourceGroup `
+                        -Name $connectionParams.name
+                ).Context
+                $Settings["$($SettingName)CONNECTIONSTRING"] = $storageContext.ConnectionString
+            }
+            'azuretables' {
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).table.core.windows.net"
+            }
+            'azurequeues' {
+                $Settings["$($SettingName)URI"] = "https://$($connectionParams.name).queue.core.windows.net"
+            }
+            'postgresql' {
                 $Settings["$($SettingName)SERVERNAME"] = $connectionParams.databaseServerFQDN
                 $Settings["$($SettingName)DATABASE"] = $connectionParams.database
                 $Settings["$($SettingName)PORT"] = if ($null -eq $connectionParams.port -or $connectionParams.port -eq '') { "5432" } else { $connectionParams.port }
@@ -188,7 +254,6 @@
                 }
             }
         }
-
     }
     else {
         # Using managed identity

@@ -14,8 +14,19 @@ Function Get-ServiceConfigSettings {
         Existing settings. New settings will be attched to it.
         Optional
 
+        .PARAMETER Deployed
+        When specified, retrieves CdfConfig from deployed state if CdfConfig is not provided.
+
         .PARAMETER SecretValue
-        When this paramter/switch is enabled the command will fetch the actual secret value from KeyVault instead of a reference.
+        When this parameter/switch is enabled the command will fetch the actual secret value from KeyVault instead of a reference.
+
+        .PARAMETER UseCS
+        Pass -UseCS to Add-ServiceConnectionSettings to produce connection string style settings
+        with Key Vault references. Used for Azure App Service / Logic Apps deployment.
+
+        .PARAMETER UseEnv
+        Pass -UseEnv to Add-ServiceConnectionSettings to produce environment variable style settings
+        with uppercase suffixes and resolved secrets. Used for container local development (.env files).
 
         .PARAMETER ConfigFileName
         This optional parameter allows to reference a different config file name than the default 'cdf-config.json'.
@@ -70,7 +81,9 @@ Function Get-ServiceConfigSettings {
         [Parameter(Mandatory = $false)]
         [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? ".",
         [Parameter(Mandatory = $false)]
-        [switch] $UseCS
+        [switch] $UseCS,
+        [Parameter(Mandatory = $false)]
+        [switch] $UseEnv
 
     )
 
@@ -219,6 +232,14 @@ Function Get-ServiceConfigSettings {
                 Write-Host "`tConnection setting for $connectionName"
                 if ($UseCS) {
                     $UpdateSettings = Add-ServiceConnectionSettings -UseCS `
+                        -Settings $UpdateSettings `
+                        -CdfConfig $CdfConfig `
+                        -ConnectionDefinition $definition `
+                        -ConnectionName $connectionName `
+                        -ParameterName $definition.ConnectionKey
+                }
+                elseif ($UseEnv) {
+                    $UpdateSettings = Add-ServiceConnectionSettings -UseEnv `
                         -Settings $UpdateSettings `
                         -CdfConfig $CdfConfig `
                         -ConnectionDefinition $definition `
