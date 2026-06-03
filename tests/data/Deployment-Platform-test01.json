@@ -1,0 +1,132 @@
+{
+  "Id": "/subscriptions/11111111-2222-3333-4444-555555555555/providers/Microsoft.Resources/deployments/platform-test01lcl-we",
+  "Location": "westeurope",
+  "ManagementGroupId": null,
+  "ResourceGroupName": null,
+  "OnErrorDeployment": null,
+  "DeploymentName": "platform-test01lcl-we",
+  "CorrelationId": "b73ef534-292c-4585-8388-555555555555",
+  "ProvisioningState": "Succeeded",
+  "Timestamp": "2025-01-27T11:06:56.5434631Z",
+  "Mode": "Incremental",
+  "TemplateLink": null,
+  "TemplateLinkString": null,
+  "DeploymentDebugLogLevel": null,
+  "Parameters": {
+    "location": {
+      "Type": "String",
+      "Value": "westeurope"
+    },
+    "platformTags": {
+      "Type": "Object",
+      "Value": {
+        "BuildCommit": "70c628ac",
+        "BuildRun": "local",
+        "BuildRepo": "cdf-module.git",
+        "BuildBranch": "main"
+      }
+    },
+    "platformEnv": {
+      "Type": "Object",
+      "Value": {
+        "definitionId": "local",
+        "nameId": "lcl",
+        "shortName": "Local",
+        "name": "Local development and testing",
+        "description": "This environment is used to run regression testing ",
+        "purpose": "development",
+        "quality": "development",
+        "tenantId": "00000000-1111-2222-3333-444444444444",
+        "subscriptionId": "11111111-2222-3333-4444-555555555555",
+        "isEnabled": true,
+        "region": "westeurope",
+        "regionCode": "we",
+        "regionName": "we"
+      }
+    },
+    "platformConfig": {
+      "Type": "Object",
+      "Value": {
+        "templateName": "blank",
+        "templateVersion": "v1",
+        "platformId": "test",
+        "instanceId": "01",
+        "templateScope": "platform"
+      }
+    },
+    "platformFeatures": {
+      "Type": "Object",
+      "Value": {}
+    },
+    "platformNetworkConfig": {
+      "Type": "Object",
+      "Value": {}
+    },
+    "platformAccessControl": {}
+  },
+  "Tags": {},
+  "ParametersString": "",
+  "Outputs": {
+    "platformEnv": {
+      "Type": "Object",
+      "Value": {
+        "definitionId": "local",
+        "nameId": "lcl",
+        "shortName": "Local",
+        "name": "Local development and testing",
+        "description": "This environment is used to run regression testing ",
+        "purpose": "development",
+        "quality": "development",
+        "tenantId": "00000000-1111-2222-3333-444444444444",
+        "subscriptionId": "11111111-2222-3333-4444-555555555555",
+        "isEnabled": true,
+        "region": "westeurope",
+        "regionCode": "we",
+        "regionName": "we"
+      }
+    },
+    "platformTags": {
+      "Type": "Object",
+      "Value": {
+        "BuildCommit": "70c628ac",
+        "BuildRun": "local",
+        "BuildRepo": "cdf-module.git",
+        "BuildBranch": "main",
+        "TemplateName": "blank",
+        "TemplateVersion": "v1",
+        "TemplateScope": "platform",
+        "TemplateInstance": "test01-we",
+        "TemplateEnv": "local"
+      }
+    },
+    "platformFeatures": {
+      "Type": "Object",
+      "Value": {}
+    },
+    "platformConfig": {
+      "Type": "Object",
+      "Value": {
+        "templateName": "intg",
+        "templateVersion": "v2pub",
+        "platformId": "test",
+        "instanceId": "01",
+        "templateScope": "platform"
+      }
+    },
+    "platformNetworkConfig": {
+      "Type": "Object",
+      "Value": {}
+    },
+    "platformResourceNames": {
+      "Type": "Object",
+      "Value": {
+        "platformResourceGroupName": "rg-test01-platform-local-we"
+      }
+    },
+    "platformAccessControl": {
+      "Type": "Object",
+      "Value": {}
+    }
+  },
+  "OutputsString": ""
+}

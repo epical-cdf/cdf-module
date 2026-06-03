@@ -1,0 +1,9 @@
+{
+  "IsDeployed": false,
+  "Config": {
+    "templateName": "blank",
+    "templateVersion": "v1",
+    "domainName": "dom2"
+  },
+  "Features": {}
+}

@@ -28,8 +28,8 @@ Function Export-DotEnv {
     )
 
     Write-Verbose "Reading: $InputEnv"
-    $defaultSettings = Get-CdfDotEnv $InputEnv
-    $updatedSettings = $CdfConfig | Get-CdfServiceConfigSettings -UseEnv -UpdateSettings $defaultSettings -SecretValue
+    $defaultSettings = Get-DotEnv $InputEnv
+    $updatedSettings = $CdfConfig | Get-ServiceConfigSettings -UseEnv -UpdateSettings $defaultSettings -SecretValue
     Write-Verbose "Writing: $InputEnv"
-    $updatedSettings | ConvertTo-CdfDotEnv | Set-Content -Path $OutputEnv
+    $updatedSettings | ConvertTo-DotEnv | Set-Content -Path $OutputEnv
 }

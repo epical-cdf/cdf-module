@@ -32,11 +32,12 @@ function Import-DotEnv {
         [ValidateSet('Environment', 'Regular')]
         [String] $Type = 'Environment'
     )
-    $Env = Get-Content -raw $Path | ConvertFrom-StringData
-    $Env.GetEnumerator() | Foreach-Object {
-        $Name, $Value = $_.Name, $_.Value
 
-        # Account for quote rules in Bash
+    $Env = Get-DotEnv -Path $Path
+    foreach ($entry in $Env.GetEnumerator()) {
+        $Name = $entry.Key
+        $Value = $entry.Value
+
         $StartQuote = [Regex]::Match($Value, "^('|`")")
         $EndQuote = [Regex]::Match($Value, "('|`")$")
         if ($StartQuote.Success -and -not $EndQuote.Success) {

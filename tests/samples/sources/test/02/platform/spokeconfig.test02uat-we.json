@@ -1,0 +1,22 @@
+{
+  "nameId": "uat",
+  "shortName": "UAT",
+  "name": "User acceptance",
+  "description": "This is a sample user acceptance test environment configuration",
+  "purpose": "validation",
+  "quality": "production",
+  "spokeRegion": "westeurope",
+  "spokeRegionCode": "we",
+  "tenantId": "00000000-1111-2222-3333-444444444444",
+  "mgmtGrpId": "ent-live-landingzones-online",
+  "subscriptionId": "11111111-2222-3333-4444-555555555555",
+  "spokeVNetAddressPrefix": "10.10.10.0/23",
+  "spokeVNetName": "vnet-spoke-test01-uat-we",
+  "spokeRouteTableName": "rtb-spoke-test01-cdev-we",
+  "networkResourceGroupName": "rg-test01-networking-cdev-we",
+  "hubNetworkVirtualApplianceId": "10.1.1.4",
+  "configStoreResourceGroupName": "rg-ent-live-config-we",
+  "configStoreName": "ent-live-enterprise-config-we",
+  "configStoreSubscriptionId": "11111111-2222-8888-444444444444",
+  "configStoreEndpoint": "https://ent-live-enterprise-config-we.azconfig.io"
+}

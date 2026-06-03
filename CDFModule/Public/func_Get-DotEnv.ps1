@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Get .env variables as hashtable
 #>
@@ -20,21 +20,23 @@ function Get-DotEnv {
             Write-Verbose "Skipping empty line: [$line]"
             continue
         }
+
         if (-not $line.Contains('=')) {
             Write-Verbose "Skipping line without assigmment: [$line]"
             continue
         }
 
-        $ePos = $line.IndexOf('=')
-        $Name = $line.Substring(0, $ePos)
-        $Value = $line.Substring($ePos + 1)
-
-        if ([string]::IsNullOrWhiteSpace($name) || $name.Contains('#')) {
+        if ($true -eq $line.StartsWith('#')) {
+            Write-Verbose "Skipping line with comment: [$line]"
             continue
         }
 
-        Write-Verbose "Adding '$Name' = '$Value'"
-        $EnvHash[$Name] = $Value
+        $ePos = $line.IndexOf('=')
+        $name = $line.Substring(0, $ePos)
+        $value = $line.Substring($ePos + 1)
+
+        Write-Verbose "Adding: '$name' = '$value'"
+        $EnvHash[$name] = $value
     }
     Write-Output -InputObject $EnvHash
 }

@@ -63,13 +63,13 @@
     [Parameter(ValueFromPipeline = $true, Mandatory = $false)]
     [Object]$CdfConfig,
     [Parameter(Mandatory = $true)]
-    [string] $Region,
-    [Parameter(Mandatory = $true)]
     [string] $TemplateName,
     [Parameter(Mandatory = $true)]
     [string] $TemplateVersion,
-    [Parameter(Mandatory = $true)]
-    [string] $DomainName,
+    [Parameter(Mandatory = $false)]
+    [string] $Region = $env:CDF_REGION,
+    [Parameter(Mandatory = $false)]
+    [string] $DomainName = $env:CDF_DOMAIN_NAME,
     [Parameter(Mandatory = $false)]
     [string] $TemplateDir = $env:CDF_INFRA_TEMPLATES_PATH ?? '.',
     [Parameter(Mandatory = $false)]
@@ -136,7 +136,7 @@
         }
         else {
           Write-Output "Preparing domain configuration for environment $envDefinionId"
-          $CdfDomain = Get-Content "$templatePath/templates/template.domain.json" | ConvertFrom-Json -AsHashtable
+          $CdfDomain = Get-Content "$templatePath/samples/template.domain.json" | ConvertFrom-Json -AsHashtable
           $CdfDomain.IsDeployed = $false
           $CdfDomain.Config.templateName = $TemplateName
           $CdfDomain.Config.templateVersion = $TemplateVersion
