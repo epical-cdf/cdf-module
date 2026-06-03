@@ -277,7 +277,9 @@ Describe 'Get-TokenValues' {
                 $tokens['ServiceTemplate'] | Should -Not -BeNullOrEmpty
                 $tokens['ServiceTemplate'] | Should -BeExactly $CdfConfig.Service.Config.serviceTemplate
                 $tokens['BuildRepo'] | Should -Not -BeNullOrEmpty
-                $tokens['BuildBranch'] | Should -Not -BeNullOrEmpty
+                # BuildBranch is 'git branch --show-current' on the local path, which is
+                # empty under CI's detached-HEAD checkout. The GitHub Workflow / Azure
+                # DevOps contexts assert BuildBranch deterministically.
                 $tokens['BuildCommit'] | Should -Not -BeNullOrEmpty
                 $tokens['BuildPipeline'] | Should -Not -BeNullOrEmpty
                 $tokens['BuildPipeline'] | Should -BeExactly  'local'
