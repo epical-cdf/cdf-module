@@ -53,15 +53,15 @@ Describe 'Get-TokenValues' {
 
                 # Application Config
                 $tokens['Application.Config.TemplateScope'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateScope'] | Should -BeExactly  $cdfConfig.Platform.Config.templateScope
+                $tokens['Application.Config.TemplateScope'] | Should -BeExactly  $cdfConfig.Application.Config.templateScope
                 $tokens['Application.Config.TemplateName'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateName'] | Should -BeExactly  $cdfConfig.Platform.Config.templateName
+                $tokens['Application.Config.TemplateName'] | Should -BeExactly  $cdfConfig.Application.Config.templateName
                 $tokens['Application.Config.TemplateVersion'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateVersion'] | Should -BeExactly  $cdfConfig.Platform.Config.templateVersion
-                $tokens['Application.Config.PlatformId'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.PlatformId'] | Should -BeExactly  $cdfConfig.Platform.Config.platformId
+                $tokens['Application.Config.TemplateVersion'] | Should -BeExactly  $cdfConfig.Application.Config.templateVersion
+                $tokens['Application.Config.ApplicationId'] | Should -Not -BeNullOrEmpty
+                $tokens['Application.Config.ApplicationId'] | Should -BeExactly  $cdfConfig.Application.Config.applicationId
                 $tokens['Application.Config.InstanceId'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.InstanceId'] | Should -BeExactly  $cdfConfig.Platform.Config.instanceId
+                $tokens['Application.Config.InstanceId'] | Should -BeExactly  $cdfConfig.Application.Config.instanceId
                 $tokens['Application.Env.TenantId'] | Should -Not -BeNullOrEmpty
                 $tokens['Application.Env.TenantId'] | Should -BeExactly  $cdfConfig.Application.Env.tenantId
                 $tokens['Application.Env.SubscriptionId'] | Should -Not -BeNullOrEmpty
@@ -116,15 +116,15 @@ Describe 'Get-TokenValues' {
 
                 # Application Config
                 $tokens['Application.Config.TemplateScope'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateScope'] | Should -BeExactly  $cdfConfig.Platform.Config.templateScope
+                $tokens['Application.Config.TemplateScope'] | Should -BeExactly  $cdfConfig.Application.Config.templateScope
                 $tokens['Application.Config.TemplateName'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateName'] | Should -BeExactly  $cdfConfig.Platform.Config.templateName
+                $tokens['Application.Config.TemplateName'] | Should -BeExactly  $cdfConfig.Application.Config.templateName
                 $tokens['Application.Config.TemplateVersion'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.TemplateVersion'] | Should -BeExactly  $cdfConfig.Platform.Config.templateVersion
-                $tokens['Application.Config.PlatformId'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.PlatformId'] | Should -BeExactly  $cdfConfig.Platform.Config.platformId
+                $tokens['Application.Config.TemplateVersion'] | Should -BeExactly  $cdfConfig.Application.Config.templateVersion
+                $tokens['Application.Config.ApplicationId'] | Should -Not -BeNullOrEmpty
+                $tokens['Application.Config.ApplicationId'] | Should -BeExactly  $cdfConfig.Application.Config.applicationId
                 $tokens['Application.Config.InstanceId'] | Should -Not -BeNullOrEmpty
-                $tokens['Application.Config.InstanceId'] | Should -BeExactly  $cdfConfig.Platform.Config.instanceId
+                $tokens['Application.Config.InstanceId'] | Should -BeExactly  $cdfConfig.Application.Config.instanceId
                 $tokens['Application.Env.TenantId'] | Should -Not -BeNullOrEmpty
                 $tokens['Application.Env.TenantId'] | Should -BeExactly  $cdfConfig.Application.Env.tenantId
                 $tokens['Application.Env.SubscriptionId'] | Should -Not -BeNullOrEmpty
