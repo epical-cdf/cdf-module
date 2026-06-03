@@ -33,29 +33,29 @@ function Import-DotEnv {
         [String] $Type = 'Environment'
     )
 
-    $Env = Get-DotEnv -Path $PathQuote = [Regex]::Match($Value, "^('|`")")
-    $EndQuote = [Regex]::Match($Value, "('|`")$")
-    if ($StartQuote.Success -and -not $EndQuote.Success) {
-        throw [System.IO.InvalidDataException] "Missing terminating quote $($StartQuote.Value) in '$Name': $Value"
-    }
-    elseif (-not $StartQuote.Success -and $EndQuote.Success) {
-        throw [System.IO.InvalidDataException] "Missing starting quote $($EndQuote.Value) in '$Name': $Value"
-    }
-    elseif ($StartQuote.Value -ne $EndQuote.Value) {
-        throw [System.IO.InvalidDataException] "Mismatched quotes in '$Name': $Value"
-    }
-    elseif ($StartQuote.Success -and $EndQuote.Success) {
-        $Value = $Value -replace "^('|`")" -replace "('|`")$"  # Trim quotes
-    }
+    $Env = Get-DotEnv -Path $Path
+    foreach ($entry in $Env.GetEnumerator()) {
+        $Name = $entry.Key
+        $Value = $entry.Value
 
-    if ($PSCmdlet.ShouldProcess($Name, "Importing $Type Variable")) {
-        switch ($Type) {
-            'Environment' { Set-Content -Path "env:\$Name" -Value $Value }
-            'Regular' { Set-Variable -Name $Name -Value $Value -Scope Script }
+        $StartQuote = [Regex]::Match($Value, "^('|`")")
+        $EndQuote = [Regex]::Match($Value, "('|`")$")
+        if ($StartQuote.Success -and -not $EndQuote.Success) {
+            throw [System.IO.InvalidDataException] "Missing terminating quote $($StartQuote.Value) in '$Name': $Value"
         }
-    }
-}
-}               'Environment' { Set-Content -Path "env:\$Name" -Value $Value }
+        elseif (-not $StartQuote.Success -and $EndQuote.Success) {
+            throw [System.IO.InvalidDataException] "Missing starting quote $($EndQuote.Value) in '$Name': $Value"
+        }
+        elseif ($StartQuote.Value -ne $EndQuote.Value) {
+            throw [System.IO.InvalidDataException] "Mismatched quotes in '$Name': $Value"
+        }
+        elseif ($StartQuote.Success -and $EndQuote.Success) {
+            $Value = $Value -replace "^('|`")" -replace "('|`")$"  # Trim quotes
+        }
+
+        if ($PSCmdlet.ShouldProcess($Name, "Importing $Type Variable")) {
+            switch ($Type) {
+                'Environment' { Set-Content -Path "env:\$Name" -Value $Value }
                 'Regular' { Set-Variable -Name $Name -Value $Value -Scope Script }
             }
         }
