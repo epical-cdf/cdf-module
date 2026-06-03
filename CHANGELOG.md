@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Module installs without `-AcceptLicense`: `RequireLicenseAcceptance` disabled (the Apache-2.0 license added in #22 is informational, not an acceptance gate)
 - Application config tokens now read from the Application layer instead of Platform (PR #48); `Application.Config.ApplicationId` is emitted correctly instead of an empty `PlatformId` (PR #71, completes #47)
 - Resolve Postgres connection secrets from Key Vault at deploy time (PR #62)
 - Grant schema permissions on Postgres domain database creation (PR #61)
