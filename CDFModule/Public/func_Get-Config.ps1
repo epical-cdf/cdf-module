@@ -181,10 +181,6 @@ Function Get-Config {
     [string] $SharedTemplatePath = $env:CDF_SHARED_TEMPLATES_PATH ?? "$CdfSharedPath/templates"
   )
 
-  # Parameters
-  $platformKey = "$PlatformId$PlatformInstance"
-  $applicationKey = "$ApplicationId$ApplicationInstance"
-
   $sourcePath = "$CdfInfraSourcePath/$PlatformId/$PlatformInstance"
   if (!(Test-Path -Path $sourcePath )) {
     Write-Error -Message "Cannot find the instance configuration and give location [$sourcePath]"
@@ -193,12 +189,7 @@ Function Get-Config {
   }
 
   $cdfModule = Get-Module -Name CDFModule
-  if (!$cdfModule) {
-    Write-Error "Unable get information for the CDFModule loaded. That's weird, how did you get to run this command?"
-    Write-Error "Please check your setup and make sure CDFModule is loaded."
-    throw "Unable get information for the CDFModule loaded. That's weird, how did you get to run this command?"
-  }
-  if ($cdfModule.Length -and ($cdfModule.Length -gt 1)) {
+  if ($cdfModule.Count -gt 1) {
     Write-Error "You have multiple CDFModule versions loaded."
     Write-Error "Please remove all modules and reload the version you want to use. [Remove-Module CDFModule -Force]"
     throw "You have multiple CDFModule versions loaded."
@@ -207,7 +198,7 @@ Function Get-Config {
   # Use "cdf-config.json" if available, but if parameter is bound it overrides / takes precendens
   $cdfConfigFile = Join-Path -Path $ServiceSrcPath  -ChildPath 'cdf-config.json'
   if (Test-Path $cdfConfigFile) {
-    $cdfSchemaPath = Join-Path -Path $MyInvocation.MyCommand.Module.ModuleBase -ChildPath 'Resources/Schemas/cdf-service-config.schema.json'
+    $cdfSchemaPath = Join-Path -Path $PSScriptRoot -ChildPath '../Resources/Schemas/cdf-service-config.schema.json'
     if (!(Test-Json -SchemaFile $cdfSchemaPath -Path $cdfConfigFile)) {
       Write-Error "Service configuration file did not validate. Please check errors above and correct."
       Write-Error "File path:  $cdfConfigFile"
