@@ -9,6 +9,16 @@ Thank you for contributing to the Epical Cloud Deployment Framework module.
 - [Pester](https://www.powershellgallery.com/packages/Pester) v5+ for tests
 - [GitHub CLI](https://cli.github.com/) (`gh`) for issue/PR management
 
+## Local Setup
+
+After cloning, install the git hooks once:
+
+```powershell
+./tools/Install-GitHooks.ps1
+```
+
+The `pre-commit` hook auto-formats staged PowerShell files with PSScriptAnalyzer using the repo settings. Continuous integration (the `test-cdfmodule` workflow) runs the linter on changed files and the full Pester suite on every pull request.
+
 ## Workflow
 
 ### 1. Create an Issue

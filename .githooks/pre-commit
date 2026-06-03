@@ -1,0 +1,5 @@
+#!/bin/sh
+# CDFModule pre-commit hook.
+# Auto-formats staged PowerShell files with PSScriptAnalyzer. Delegates to a
+# PowerShell script so the logic is cross-platform.
+exec pwsh -NoProfile -File "$(dirname "$0")/pre-commit.ps1"

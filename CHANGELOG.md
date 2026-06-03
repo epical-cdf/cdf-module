@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Pester test harness with co-located unit tests; `test-cdfmodule` CI workflow runs lint and tests on pull requests (PR #67)
+- Unit tests for the `CdfRegistry` provider factory/resolver and `GeneratePassword` (PR #67)
+- Pre-commit hook that auto-formats staged PowerShell with PSScriptAnalyzer, plus `tools/Install-GitHooks.ps1` to install it (PR #67)
+
+### Changed
+
+- Module loader and release packaging now exclude `*.Tests.ps1`, so co-located tests are neither imported at runtime nor published to the gallery (PR #67)
+
 ### Fixed
 
 - Container apps env vars with both SecretRef and Value properties (PR #46, 2025-11-07)

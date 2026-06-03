@@ -1,14 +1,16 @@
 ﻿#Requires -Modules @{ ModuleName="Az.ResourceGraph"; ModuleVersion="1.0.0" }
 
-Get-ChildItem (Split-Path $script:MyInvocation.MyCommand.Path) -Filter 'func_*.ps1' -Recurse | ForEach-Object {
-  # Write-Verbose ($_.FullName)
-  . $_.FullName
-}
-Get-ChildItem "$(Split-Path $script:MyInvocation.MyCommand.Path)\Public\*" -Filter 'func_*.ps1' -Recurse | ForEach-Object {
-  # Write-Verbose """$(($_.BaseName -Split "_")[1])"""
-  Export-ModuleMember -Function ($_.BaseName -Split "_")[1]
-  Export-ModuleMember ($_.BaseName -Split "_")[1]
-}
+Get-ChildItem (Split-Path $script:MyInvocation.MyCommand.Path) -Filter 'func_*.ps1' -Recurse |
+  Where-Object { $_.Name -notlike '*.Tests.ps1' } | ForEach-Object {
+    # Write-Verbose ($_.FullName)
+    . $_.FullName
+  }
+Get-ChildItem "$(Split-Path $script:MyInvocation.MyCommand.Path)\Public\*" -Filter 'func_*.ps1' -Recurse |
+  Where-Object { $_.Name -notlike '*.Tests.ps1' } | ForEach-Object {
+    # Write-Verbose """$(($_.BaseName -Split "_")[1])"""
+    Export-ModuleMember -Function ($_.BaseName -Split "_")[1]
+    Export-ModuleMember ($_.BaseName -Split "_")[1]
+  }
 
 Set-Alias -Scope Global -Name cdf-profile -Value "Import-CdfProfile" -Description "Load the standard CDFModule profile which includes customized prompt."
 
