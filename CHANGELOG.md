@@ -9,16 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Pester test harness with co-located unit tests; `test-cdfmodule` CI workflow runs lint and tests on pull requests (PR #67)
-- Unit tests for the `CdfRegistry` provider factory/resolver and `GeneratePassword` (PR #67)
+- CDF package registry and dependency management (PR #52)
+- Allow partial service configuration without requiring all parameters (PR #50)
+- `-UseEnv` switch for container local-development connection settings (PR #65)
+- `-UseCS` flag for `Export-CdfDotEnv` service config settings (PR #63)
+- `New-Config*` parameters are now optional with `CDF_*` env-var defaults, plus a `-Force` switch (PR #71)
+- Pester test harness with co-located unit tests; `test-cdfmodule` CI workflow runs PSScriptAnalyzer (diff-aware) and Pester on pull requests (PR #67, #71)
+- Unit tests for `CdfRegistry`, `GeneratePassword`, and the config/token/dotenv functions (PR #67, #71)
 - Pre-commit hook that auto-formats staged PowerShell with PSScriptAnalyzer, plus `tools/Install-GitHooks.ps1` to install it (PR #67)
+- CDF documentation and samples; contribution guide and Copilot instructions (PR #54, #56)
+- Public license (PR #22)
 
 ### Changed
 
 - Module loader and release packaging now exclude `*.Tests.ps1`, so co-located tests are neither imported at runtime nor published to the gallery (PR #67)
+- `Get-Config` resolves its config schema via `$PSScriptRoot` (works under module import and dot-source) and no longer hard-fails when the module is not formally loaded (PR #71)
 
 ### Fixed
 
+- Application config tokens now read from the Application layer instead of Platform (PR #48); `Application.Config.ApplicationId` is emitted correctly instead of an empty `PlatformId` (PR #71, completes #47)
+- Resolve Postgres connection secrets from Key Vault at deploy time (PR #62)
+- Grant schema permissions on Postgres domain database creation (PR #61)
+- Guard dummy secret fallback to the development environment only (PR #60)
 - Container apps env vars with both SecretRef and Value properties (PR #46, 2025-11-07)
 
 ## [1.2.0] - 2025-10-06
