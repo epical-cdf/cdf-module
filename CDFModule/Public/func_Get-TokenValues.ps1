@@ -115,7 +115,7 @@
             'Application.Config.TemplateScope'               = $CdfConfig.Application.Config.templateScope
             'Application.Config.TemplateName'                = $CdfConfig.Application.Config.templateName
             'Application.Config.TemplateVersion'             = $CdfConfig.Application.Config.templateVersion
-            'Application.Config.PlatformId'                  = $CdfConfig.Application.Config.platformId
+            'Application.Config.ApplicationId'               = $CdfConfig.Application.Config.applicationId
             'Application.Config.InstanceId'                  = $CdfConfig.Application.Config.instanceId
             'Application.Env.TenantId'                       = $CdfConfig.Application.Env.tenantId
             'Application.Env.SubscriptionId'                 = $CdfConfig.Application.Env.subscriptionId
