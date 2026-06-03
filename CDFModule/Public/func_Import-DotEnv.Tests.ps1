@@ -1,5 +1,5 @@
 BeforeAll {
-    $repoRoot = Split-Path -Parent (Resolve-Path $PSCommandPath/../..)
+    $script:repoRoot = Split-Path -Parent (Resolve-Path $PSCommandPath/../..)
     $testFolder = Split-Path -Parent $PSCommandPath
     $testFileName = (Split-Path -Leaf $PSCommandPath).Replace(".Tests.", ".")
     . $testFolder/$($testFileName.Replace("Import-DotEnv", "Get-DotEnv"))
