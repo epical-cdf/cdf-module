@@ -27,6 +27,8 @@ jobs:
           cd release
           # Do not ship co-located Pester tests in the published module
           Get-ChildItem -Path ./CDFModule -Recurse -Filter '*.Tests.ps1' | Remove-Item -Force
+          # PSGallery requires License.txt in the module when RequireLicenseAcceptance is set
+          Copy-Item -Path ../LICENSE -Destination ./CDFModule/License.txt
           $releaseTag="${{ github.ref_name }}"
           $releaseVersion=$releaseTag.TrimStart("v")
           #Install CDFModule required dependency
