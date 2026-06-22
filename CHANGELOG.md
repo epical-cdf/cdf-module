@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Template-bundled pre-/post-deploy hook scripts for `Deploy-CdfTemplateDomain` (`hooks/{pre,post}-deploy.ps1`), run via `Invoke-CdfTemplateHook` (#72)
 - CDF package registry and dependency management (PR #52)
 - Allow partial service configuration without requiring all parameters (PR #50)
 - `-UseEnv` switch for container local-development connection settings (PR #65)
