@@ -250,7 +250,7 @@
     if ($pvtendpointsFin.count -ne 0) { Write-Host $pvtendpointsFin.count "Private endpoints are still linked to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
 
     $accesstoken = Get-AzAccessToken
-    $token = $accesstoken.Token
+    $token = ConvertTo-PlainToken $accesstoken.Token
     $authHeader = @{
         'Content-Type'  = 'application/json'
         'Authorization' = 'Bearer ' + $token
