@@ -135,6 +135,69 @@ Key patterns:
 
 See the [blank/v1 sample templates](../samples/templates/) for a complete working example across all four scopes.
 
+### Deploy hooks
+
+Templates can bundle optional **pre-/post-deploy hook scripts** that CDFModule runs around the ARM/Bicep deployment. They are a lightweight extension point for scripted setup that Bicep can't express — e.g. applying Entra ID SQL grants or issuing certificates — without provisioning an Azure `deploymentScript`/ACI resource.
+
+Place hook scripts in a `hooks/` directory inside the template:
+
+```
+domain/
+  mssql/v1net/
+    domain.bicep
+    cdf-template.json
+    hooks/
+      pre-deploy.ps1     # runs before the deployment
+      post-deploy.ps1    # runs after a successful deployment
+```
+
+Both are optional — **a template with no `hooks/` directory deploys exactly as before.**
+
+**When they run**
+
+| Hook | Timing |
+|---|---|
+| `pre-deploy.ps1` | Before the scope's ARM deployment is submitted |
+| `post-deploy.ps1` | After the deployment **succeeds** (skipped on failure); `CdfConfig` carries the deployment outputs |
+
+**Hook contract** — each script must accept the config and scope:
+
+```powershell
+param(
+    [object] $CdfConfig,   # resolved CDF config for the scope (post-deploy includes deployment outputs)
+    [string] $Scope        # 'Platform' | 'Application' | 'Domain' | 'Service'
+)
+```
+
+**Execution context** — hooks run in the **current deployment context** (the pipeline runner or the developer's session), so they already have the deploy identity's Entra token and the runner's network access (VNet-integrated runner / VPN-connected developer). The same script runs identically locally and in CI.
+
+**Idempotency** — hooks must be **idempotent** and should **no-op gracefully** when their preconditions aren't met (e.g. no private network access, or not running as an admin) so local infrastructure-iteration runs don't fail. A hook that `throw`s (or runs a native command that exits non-zero) **fails the deployment**.
+
+**Scope support** — wired into all four scopes: `Deploy-CdfTemplatePlatform`, `Deploy-CdfTemplateApplication`, `Deploy-CdfTemplateDomain`, and `Deploy-CdfTemplateService`. The `$Scope` passed to the hook reflects which scope is deploying, so a shared hook can branch on it.
+
+Example `hooks/post-deploy.ps1` — grant an Entra group SQL access, idempotent and safe to run without private access:
+
+```powershell
+param([object] $CdfConfig, [string] $Scope)
+
+$sqlServer = $CdfConfig.Domain.ResourceNames.sqlServerName
+if (-not $sqlServer) {
+    Write-Verbose 'No SQL server in domain config; nothing to do.'
+    return
+}
+
+try {
+    # Connect with the current Az deploy identity and apply CREATE USER / role grants.
+    # Idempotent: 'IF NOT EXISTS' guards, re-runnable on every deploy.
+}
+catch {
+    # The private endpoint may be unreachable from a local inner-loop run — no-op.
+    Write-Warning "Skipping SQL grants: $($_.Exception.Message)"
+}
+```
+
+> **Trust note**: hooks are template-bundled PowerShell executed with the deploy identity. Treat templates as trusted code and review their hooks like any other deployment logic.
+
 ---
 
 ## Runtime configuration

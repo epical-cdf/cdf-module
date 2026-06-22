@@ -129,6 +129,9 @@
 
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
+        # Pre-deploy template hook (optional, template-bundled at <templatePath>/hooks/pre-deploy.ps1)
+        Invoke-TemplateHook -CdfConfig $CdfConfig -TemplatePath $templatePath -Hook 'pre-deploy' -Scope 'Application'
+
         Write-Host "Starting deployment of '$deploymentName' at '$region' using subscription [$($AzCtx.Subscription.Name)]."
         $result = New-AzSubscriptionDeployment `
             -DefaultProfile $azCtx `
@@ -216,6 +219,10 @@
             }
 
             $CdfConfig.Application = $CdfApplication
+
+            # Post-deploy template hook (optional, template-bundled at <templatePath>/hooks/post-deploy.ps1)
+            Invoke-TemplateHook -CdfConfig $CdfConfig -TemplatePath $templatePath -Hook 'post-deploy' -Scope 'Application'
+
             return $CdfConfig
         }
         else {
