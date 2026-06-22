@@ -136,6 +136,9 @@
 
         $azCtx = Get-AzureContext -SubscriptionId $CdfConfig.Platform.Env.subscriptionId
 
+        # Pre-deploy template hook (optional, template-bundled at <templatePath>/hooks/pre-deploy.ps1)
+        Invoke-TemplateHook -CdfConfig $CdfConfig -TemplatePath $templatePath -Hook 'pre-deploy' -Scope 'Platform'
+
         # Deploy bicep template using parameters object
         Write-Host "Starting deployment of '$deploymentName' at '$region' using subscription [$($azCtx.Subscription.Name)] for runtime environment '$($CdfConfig.Platform.Env.name)'."
         $result = New-AzSubscriptionDeployment `
@@ -228,6 +231,10 @@
             $CdfConfig = [ordered] @{
                 Platform = $CdfPlatform
             }
+
+            # Post-deploy template hook (optional, template-bundled at <templatePath>/hooks/post-deploy.ps1)
+            Invoke-TemplateHook -CdfConfig $CdfConfig -TemplatePath $templatePath -Hook 'post-deploy' -Scope 'Platform'
+
             return $CdfConfig
         }
         else {

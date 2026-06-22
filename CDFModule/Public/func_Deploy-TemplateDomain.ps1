@@ -231,9 +231,7 @@ Function Deploy-TemplateDomain {
 
             $CdfConfig.Domain = $CdfDomain
 
-            # Post-deploy template hook (optional, template-bundled at <templatePath>/hooks/post-deploy.ps1).
-            # Runs in the deploy context (VNet runner / VPN dev) with the deploy identity's token —
-            # e.g. apply Entra SQL grants. Replaces provisioning an ACI/deploymentScript. See Invoke-CdfTemplateHook.
+            # Post-deploy template hook (optional, template-bundled at <templatePath>/hooks/post-deploy.ps1)
             Invoke-TemplateHook -CdfConfig $CdfConfig -TemplatePath $templatePath -Hook 'post-deploy' -Scope 'Domain'
 
             return $CdfConfig
