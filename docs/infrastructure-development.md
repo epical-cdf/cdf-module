@@ -173,7 +173,7 @@ param(
 
 **Idempotency** — hooks must be **idempotent** and should **no-op gracefully** when their preconditions aren't met (e.g. no private network access, or not running as an admin) so local infrastructure-iteration runs don't fail. A hook that `throw`s (or runs a native command that exits non-zero) **fails the deployment**.
 
-**Scope support** — currently wired into **Domain** deployments (`Deploy-CdfTemplateDomain`). The mechanism — `Invoke-CdfTemplateHook` — is scope-generic; Platform/Application/Service wiring is planned.
+**Scope support** — wired into all four scopes: `Deploy-CdfTemplatePlatform`, `Deploy-CdfTemplateApplication`, `Deploy-CdfTemplateDomain`, and `Deploy-CdfTemplateService`. The `$Scope` passed to the hook reflects which scope is deploying, so a shared hook can branch on it.
 
 Example `hooks/post-deploy.ps1` — grant an Entra group SQL access, idempotent and safe to run without private access:
 
