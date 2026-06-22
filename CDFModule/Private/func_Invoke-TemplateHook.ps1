@@ -34,8 +34,11 @@ Function Invoke-TemplateHook {
     .OUTPUTS
     None. Throws if the hook script exits non-zero or throws.
 
+    .NOTES
+    Internal helper — invoked by Deploy-CdfTemplate{Platform,Application,Domain,Service}; not exported.
+
     .EXAMPLE
-    Invoke-CdfTemplateHook -CdfConfig $config -TemplatePath $templatePath -Hook 'post-deploy' -Scope 'Domain'
+    Invoke-TemplateHook -CdfConfig $config -TemplatePath $templatePath -Hook 'post-deploy' -Scope 'Domain'
     #>
     [CmdletBinding()]
     Param(
@@ -52,14 +55,23 @@ Function Invoke-TemplateHook {
     )
 
     $hookScript = Join-Path -Path $TemplatePath -ChildPath "hooks/$Hook.ps1"
-    if (Test-Path -Path $hookScript) {
-        Write-Host "CDF: running $Scope $Hook hook -> $hookScript"
-        & $hookScript -CdfConfig $CdfConfig -Scope $Scope
-        if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-            throw "CDF $Scope $Hook hook failed (exit code $LASTEXITCODE): $hookScript"
-        }
-    }
-    else {
+    if (-not (Test-Path -Path $hookScript)) {
         Write-Verbose "CDF: no $Hook hook found at $hookScript"
+        return
+    }
+
+    Write-Host "CDF: running $Scope $Hook hook -> $hookScript"
+    # Reset first so a stale exit code from an earlier native command can't false-fail the hook.
+    $global:LASTEXITCODE = 0
+    try {
+        & $hookScript -CdfConfig $CdfConfig -Scope $Scope
+    }
+    catch {
+        # Surface throws / -ErrorAction Stop cmdlet errors with which hook failed.
+        throw "CDF $Scope $Hook hook failed: $hookScript`n$($_.Exception.Message)"
+    }
+    # Also catch hooks that signal failure via a non-zero exit (exit N or a native tool failure).
+    if ($LASTEXITCODE -ne 0) {
+        throw "CDF $Scope $Hook hook failed (exit code $LASTEXITCODE): $hookScript"
     }
 }
