@@ -25,7 +25,14 @@
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Config package references keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>'. Values are semver ranges."
+      "description": "Config-instance package references keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>'. Values are semver ranges. Back-compat alias for 'settings'."
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Canonical key for config-instance (settings) package references; same shape as 'configs'. Keyed by '<platformId><instanceId>' or '<platformId><instanceId>@<registry>', values are semver ranges."
     }
   },
   "$defs": {
