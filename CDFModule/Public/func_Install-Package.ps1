@@ -88,9 +88,11 @@ Function Install-Package {
     }
 
     $manifest = Get-Content -Raw $ManifestPath | ConvertFrom-Json -AsHashtable
+    # 'settings' is the canonical key for config-instance packages (the org reference manifest uses it);
+    # accept 'configs' as a back-compat alias so neither is silently skipped.
+    if (-not $manifest.configs -and $manifest.settings) { $manifest.configs = $manifest.settings }
     $inlineRegistries = $manifest.registries
     $providers = @{}
-    $defaultEndpoint = $null
 
     # Collect all registry names referenced by packages
     $referencedRegistries = @('default')
@@ -112,9 +114,6 @@ Function Install-Package {
     foreach ($regName in $referencedRegistries) {
         $regConfig = Resolve-CdfRegistryConfig -Name $regName -InlineRegistries $inlineRegistries
         $providers[$regName] = New-CdfRegistryProvider $regConfig
-        if ($regName -eq 'default') {
-            $defaultEndpoint = $regConfig.endpoint
-        }
     }
 
     # Login to all registries
@@ -204,20 +203,20 @@ Function Install-Package {
         }
     }
 
-    # Set environment variables for backwards compatibility
-    if ($installedTemplates.Count -gt 0 -and $defaultEndpoint) {
-        $cacheRoot = Get-CdfPackageCacheRoot
-        $templatesPath = Join-Path $cacheRoot "templates/$defaultEndpoint"
-        $env:CDF_INFRA_TEMPLATES_PATH = $templatesPath
-        Write-Host "Set CDF_INFRA_TEMPLATES_PATH=$templatesPath"
-    }
-
-    if ($installedConfigs.Count -gt 0) {
-        $firstConfig = $installedConfigs[0]
-        $cacheRoot = Get-CdfPackageCacheRoot
-        $configPath = Join-Path $cacheRoot "configs/$($firstConfig.Endpoint)/$($firstConfig.Path)/$($firstConfig.Release)"
-        $env:CDF_INFRA_SOURCE_PATH = $configPath
-        Write-Host "Set CDF_INFRA_SOURCE_PATH=$configPath"
+    # Materialise a classic-layout deploy view so the existing Get-Cdf*/Deploy-Cdf* loaders work
+    # from the cache. The cache stores {templates|configs}/<endpoint>/<path>/<release>/, which the
+    # loaders don't understand (extra <release> level for templates; flattened instance for configs);
+    # the view maps each to <scope>/<name>/<version>/ and <platformId>/<instanceId>/.
+    if ($installedTemplates.Count -gt 0 -or $installedConfigs.Count -gt 0) {
+        $view = New-CdfPackageDeployView -Templates $installedTemplates -Configs $installedConfigs
+        if ($installedTemplates.Count -gt 0) {
+            $env:CDF_INFRA_TEMPLATES_PATH = $view.TemplatesPath
+            Write-Host "Set CDF_INFRA_TEMPLATES_PATH=$($view.TemplatesPath)"
+        }
+        if ($installedConfigs.Count -gt 0) {
+            $env:CDF_INFRA_SOURCE_PATH = $view.SourcePath
+            Write-Host "Set CDF_INFRA_SOURCE_PATH=$($view.SourcePath)"
+        }
     }
 
     # Summary

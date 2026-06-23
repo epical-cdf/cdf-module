@@ -244,20 +244,20 @@ Function Resolve-CdfRegistryConfig {
     # 1. Project-level
     $projectFile = Join-Path $ProjectDir ".cdf/registries/$Name.json"
     if (Test-Path $projectFile) {
-        Write-Verbose "Resolved registry '$Name' from project: $projectFile"
+        Write-Host "CDF: registry '$Name' resolved from project file: $projectFile"
         return Get-Content -Raw $projectFile | ConvertFrom-Json -AsHashtable
     }
 
     # 2. User-level
     $userFile = Join-Path $HOME ".cdf/registries/$Name.json"
     if (Test-Path $userFile) {
-        Write-Verbose "Resolved registry '$Name' from user: $userFile"
+        Write-Host "CDF: registry '$Name' resolved from USER file: $userFile (this overrides any repo inline '$Name' — remove/override it if that is unexpected)"
         return Get-Content -Raw $userFile | ConvertFrom-Json -AsHashtable
     }
 
     # 3. Inline from manifest
     if ($InlineRegistries -and $InlineRegistries.ContainsKey($Name)) {
-        Write-Verbose "Resolved registry '$Name' from inline manifest"
+        Write-Host "CDF: registry '$Name' resolved from inline cdf-packages.json"
         return $InlineRegistries[$Name]
     }
 
