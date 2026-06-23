@@ -206,10 +206,26 @@ Function Get-Config {
     }
     $svcConfig = Get-Content -Raw $cdfConfigFile | ConvertFrom-Json -AsHashtable
 
-    $ServiceName = $MyInvocation.BoundParameters.Keys.Contains("ServiceName") ? $ServiceName : $svcConfig.ServiceDefaults.ServiceName
-    $ServiceGroup = $MyInvocation.BoundParameters.Keys.Contains("ServiceGroup") ? $ServiceGroup : $svcConfig.ServiceDefaults.ServiceGroup
-    $ServiceType = $MyInvocation.BoundParameters.Keys.Contains("ServiceType") ? $ServiceType : $svcConfig.ServiceDefaults.ServiceType
-    $ServiceTemplate = $MyInvocation.BoundParameters.Keys.Contains("ServiceTemplate") ? $ServiceTemplate : $svcConfig.ServiceDefaults.ServiceTemplate
+    # Precedence: explicit -Service* param > $env:CDF_SERVICE_* (via the parameter default) > cdf-config ServiceDefaults.
+    # The parameter already holds explicit-or-env (PowerShell only applies the default when the param is unbound), so a
+    # truthiness check restores the env layer that a BoundParameters test discards. Must be ?: not ?? — the [string]
+    # default is '' (not $null) when the env var is unset, so ?? would not fall through to ServiceDefaults.
+    $ServiceName = $ServiceName ? $ServiceName : $svcConfig.ServiceDefaults.ServiceName
+    $ServiceGroup = $ServiceGroup ? $ServiceGroup : $svcConfig.ServiceDefaults.ServiceGroup
+    $ServiceType = $ServiceType ? $ServiceType : $svcConfig.ServiceDefaults.ServiceType
+    $ServiceTemplate = $ServiceTemplate ? $ServiceTemplate : $svcConfig.ServiceDefaults.ServiceTemplate
+
+    # Surface CDF_SERVICE_* env overrides so an unintended one in the environment is easy to spot.
+    foreach ($o in @(
+        @{ Param = 'ServiceName'; Env = 'CDF_SERVICE_NAME'; Value = $ServiceName },
+        @{ Param = 'ServiceGroup'; Env = 'CDF_SERVICE_GROUP'; Value = $ServiceGroup },
+        @{ Param = 'ServiceType'; Env = 'CDF_SERVICE_TYPE'; Value = $ServiceType },
+        @{ Param = 'ServiceTemplate'; Env = 'CDF_SERVICE_TEMPLATE'; Value = $ServiceTemplate }
+      )) {
+      if (-not $MyInvocation.BoundParameters.ContainsKey($o.Param) -and [Environment]::GetEnvironmentVariable($o.Env)) {
+        Write-Verbose "Get-CdfConfig: $($o.Param) from `$env:$($o.Env) override = '$($o.Value)' (cdf-config ServiceDefaults.$($o.Param) not applied)"
+      }
+    }
   }
 
   if ($Deployed) {
