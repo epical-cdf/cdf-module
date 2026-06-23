@@ -25,12 +25,12 @@
   }
 
   # The following code is a workaround for sync/propagation issue where client credentials for app registrations/service principals are not immediately available after creation.
-  # When the Select-AzSubscription is called for a new AzureContext it may warn for bad ClientCredentials until credentials propagation is completed.
+  # When the context subscription is set for a new AzureContext it may warn for bad ClientCredentials until credentials propagation is completed.
   Write-Verbose 'Selecting subscription...'
   $warnClientSecretCredentialAuthFailed = $true; $attempt = 0; $maxAttempts = 15
   while ($warnClientSecretCredentialAuthFailed) {
     try {
-      Select-AzSubscription -SubscriptionId $SubscriptionId -WarningAction Stop | Out-Null
+      Set-AzContext -SubscriptionId $SubscriptionId -WarningAction Stop | Out-Null
       Write-Verbose "...done."
       $warnClientSecretCredentialAuthFailed = $false
     }

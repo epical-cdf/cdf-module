@@ -48,7 +48,7 @@ class CdfAcrRegistryProvider : CdfRegistryProvider {
     # Login to ACR using Azure CLI token
     [void] Login() {
         $this.EnsureOras()
-        $token = (Get-AzAccessToken -ResourceUrl "https://$($this.Endpoint)" -ErrorAction Stop).Token
+        $token = ConvertTo-PlainToken (Get-AzAccessToken -ResourceUrl "https://$($this.Endpoint)" -ErrorAction Stop).Token
         oras login $this.Endpoint --username '00000000-0000-0000-0000-000000000000' --password $token 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to login to ACR '$($this.Endpoint)'"

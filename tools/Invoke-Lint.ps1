@@ -47,7 +47,9 @@ function Get-ChangedLine {
             for ($i = 0; $i -lt $count; $i++) { [void]$changed.Add($start + $i) }
         }
     }
-    return $changed
+    # Comma keeps PowerShell from enumerating the HashSet on return (which would
+    # collapse a single-element set to a scalar int and break .Contains()).
+    return , $changed
 }
 
 if ($Changed) {

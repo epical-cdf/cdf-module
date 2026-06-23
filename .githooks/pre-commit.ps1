@@ -20,7 +20,10 @@ $fixed = @()
 
 foreach ($file in $staged) {
     $before = Get-Content -Raw -- $file
-    Invoke-ScriptAnalyzer -Path $file -Settings $settings -Fix | Out-Null
+    # Exclude semantic security rules from auto-fix: their "fix" changes types
+    # (e.g. [string] -> [SecureString]), which a formatter must never do silently.
+    Invoke-ScriptAnalyzer -Path $file -Settings $settings -Fix `
+        -ExcludeRule 'PSAvoidUsingPlainTextForPassword', 'PSUsePSCredentialType' | Out-Null
     $after = Get-Content -Raw -- $file
     if ($before -ne $after) {
         git add -- $file

@@ -106,7 +106,7 @@ function Get-AzApiManagementDeletedServices {
     $token = Get-AzAccessToken -DefaultProfile $azContext
     $authHeader = @{
         'Content-Type'  = 'application/json'
-        'Authorization' = 'Bearer ' + $token.Token
+        'Authorization' = 'Bearer ' + (ConvertTo-PlainToken $token.Token)
     }
     $baseUri = "https://management.azure.com/subscriptions/$($azContext.Subscription)/providers/Microsoft.ApiManagement"
     $apiVersionQuery = "?api-version=$APIVersion"
@@ -145,7 +145,7 @@ function Remove-AzApiManagementDeletedService {
     $token = Get-AzAccessToken -DefaultProfile $azContext
     $authHeader = @{
         'Content-Type'  = 'application/json'
-        'Authorization' = 'Bearer ' + $token.Token
+        'Authorization' = 'Bearer ' + (ConvertTo-PlainToken $token.Token)
     }
     $baseUri = "https://management.azure.com/subscriptions/$($azContext.Subscription)/providers/Microsoft.ApiManagement"
     $apiVersionQuery = "?api-version=$APIVersion"
