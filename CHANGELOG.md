@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Package deploy-from-cache: `Install-CdfPackage` materialises a classic-layout deploy view so `Deploy-CdfTemplate*` deploys from the cache; `settings` is the canonical config-package manifest key (`configs` accepted as a back-compat alias); the resolved registry source is logged (PR #79)
+- `Write-Verbose` notice when a `CDF_SERVICE_*` env-var override is in effect (PR #77)
 - Template-bundled pre-/post-deploy hook scripts for all `Deploy-CdfTemplate*` scopes (Platform/Application/Domain/Service), as `hooks/{pre,post}-deploy.ps1` (#72)
 - CDF package registry and dependency management (PR #52)
 - Allow partial service configuration without requiring all parameters (PR #50)
@@ -23,11 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `Select-AzSubscription` replaced with the supported `Set-AzContext`, for Az PowerShell 16.0 (PR #75)
 - Module loader and release packaging now exclude `*.Tests.ps1`, so co-located tests are neither imported at runtime nor published to the gallery (PR #67)
 - `Get-Config` resolves its config schema via `$PSScriptRoot` (works under module import and dot-source) and no longer hard-fails when the module is not formally loaded (PR #71)
 
 ### Fixed
 
+- Service name precedence restored to explicit `-ServiceName` > `$env:CDF_SERVICE_NAME` > cdf-config `ServiceDefaults` — a `BoundParameters` check was discarding the env override (PR #77, completes #76)
+- `Get-AzAccessToken` SecureString token handled for Az 14.0+/16.0: bearer-header and registry-login sites convert via a version-tolerant helper (was emitting `System.Security.SecureString`) (PR #75, #74)
 - Module installs without `-AcceptLicense`: `RequireLicenseAcceptance` disabled (the Apache-2.0 license added in #22 is informational, not an acceptance gate)
 - Application config tokens now read from the Application layer instead of Platform (PR #48); `Application.Config.ApplicationId` is emitted correctly instead of an empty `PlatformId` (PR #71, completes #47)
 - Resolve Postgres connection secrets from Key Vault at deploy time (PR #62)
