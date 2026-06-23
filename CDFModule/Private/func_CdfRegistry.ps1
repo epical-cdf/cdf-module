@@ -1,4 +1,4 @@
-﻿# Registry provider abstraction for CDF package management
+# Registry provider abstraction for CDF package management
 # Supports pluggable backends (ACR, GitHub Packages, etc.)
 
 class CdfRegistryProvider {
@@ -116,7 +116,7 @@ class CdfOciRegistryProvider : CdfRegistryProvider {
     [string]$Username
     [string]$PasswordEnvVar
 
-    CdfOciRegistryProvider([string]$Endpoint, [string]$Username, [SecureString]$PasswordEnvVar) : base('oci', $Endpoint) {
+    CdfOciRegistryProvider([string]$Endpoint, [string]$Username, [string]$PasswordEnvVar) : base('oci', $Endpoint) {
         $this.Username = $Username
         $this.PasswordEnvVar = $PasswordEnvVar
     }
