@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Remove-CdfRoleAssignments`: CdfConfig-driven, scope-targeted removal of CDF-managed role assignments (Platform/Application/Domain/Service; KeyVault or ResourceGroup resources), the durable remedy when a role-assignment `guid()` seed changes between deploys and orphaned assignments collide on the (principal, role, scope) triple; `-IncludeOrphans` scopes the old deleted-principal sweep, `-RemoveAll` is a hard reset; `SupportsShouldProcess`/`ConfirmImpact=High`
 - Package deploy-from-cache: `Install-CdfPackage` materialises a classic-layout deploy view so `Deploy-CdfTemplate*` deploys from the cache; `settings` is the canonical config-package manifest key (`configs` accepted as a back-compat alias); the resolved registry source is logged (PR #79)
 - `Write-Verbose` notice when a `CDF_SERVICE_*` env-var override is in effect (PR #77)
 - Template-bundled pre-/post-deploy hook scripts for all `Deploy-CdfTemplate*` scopes (Platform/Application/Domain/Service), as `hooks/{pre,post}-deploy.ps1` (#72)
@@ -28,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Select-AzSubscription` replaced with the supported `Set-AzContext`, for Az PowerShell 16.0 (PR #75)
 - Module loader and release packaging now exclude `*.Tests.ps1`, so co-located tests are neither imported at runtime nor published to the gallery (PR #67)
 - `Get-Config` resolves its config schema via `$PSScriptRoot` (works under module import and dot-source) and no longer hard-fails when the module is not formally loaded (PR #71)
+
+### Removed
+
+- `Remove-OrphanRoleAssignments` — removed (hardcoded tenant-specific values, not reusable); use the scope-targeted `Remove-CdfRoleAssignments -IncludeOrphans` instead.
 
 ### Fixed
 
