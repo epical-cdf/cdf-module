@@ -62,7 +62,8 @@ Function Publish-Config {
         $inlineRegistries = $pkgManifest.registries
     }
     if ($Registry -and $Registry -match '\.') {
-        $regConfig = @{ type = 'acr'; endpoint = $Registry }
+        # Literal endpoint — route by host (GHCR -> oci, ACR -> acr) so GHCR isn't mis-typed as ACR.
+        $regConfig = Get-CdfRegistryConfigFromEndpoint -Endpoint $Registry
     }
     else {
         $regName = if ($Registry) { $Registry } else { 'default' }

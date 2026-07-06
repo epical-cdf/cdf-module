@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Registry endpoint routing: a literal `-Registry` endpoint is now typed by host (`Get-CdfRegistryConfigFromEndpoint`) — `ghcr.io` / `*.pkg.github.com` → `oci`, `*.azurecr.io` (and anything else, for back-compat) → `acr`. Previously any dotted endpoint was assumed ACR, so `Install-CdfPackage`/`Publish-Cdf*` against `ghcr.io/...` tried an Azure token (`Get-AzAccessToken`) and failed. Applies to `Publish-CdfTemplate`, `Publish-CdfConfig`, `Install-CdfPackage`
 - Service name precedence restored to explicit `-ServiceName` > `$env:CDF_SERVICE_NAME` > cdf-config `ServiceDefaults` — a `BoundParameters` check was discarding the env override (PR #77, completes #76)
 - `Get-AzAccessToken` SecureString token handled for Az 14.0+/16.0: bearer-header and registry-login sites convert via a version-tolerant helper (was emitting `System.Security.SecureString`) (PR #75, #74)
 - Module installs without `-AcceptLicense`: `RequireLicenseAcceptance` disabled (the Apache-2.0 license added in #22 is informational, not an acceptance gate)

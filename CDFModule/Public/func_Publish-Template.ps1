@@ -61,8 +61,8 @@ Function Publish-Template {
         $inlineRegistries = $pkgManifest.registries
     }
     if ($Registry -and $Registry -match '\.') {
-        # Literal endpoint (e.g. ghcr.io/org or myacr.azurecr.io) — assume ACR for backwards compat
-        $regConfig = @{ type = 'acr'; endpoint = $Registry }
+        # Literal endpoint (e.g. ghcr.io/org or myacr.azurecr.io) — route by host (GHCR -> oci, ACR -> acr).
+        $regConfig = Get-CdfRegistryConfigFromEndpoint -Endpoint $Registry
     }
     else {
         $regName = if ($Registry) { $Registry } else { 'default' }
