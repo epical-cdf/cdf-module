@@ -203,6 +203,19 @@ class CdfOciRegistryProvider : CdfRegistryProvider {
     }
 }
 
+# Infer a registry config from a literal endpoint passed via -Registry (the convenience path, distinct
+# from a named registry). Route by host so a GHCR/OCI endpoint is NOT mis-typed as ACR — which would try
+# an Azure token (Get-AzAccessToken) and fail against GitHub. *.azurecr.io -> acr; ghcr.io /
+# *.pkg.github.com -> oci (token read from CDF_REGISTRY_TOKEN); anything else -> acr for backwards compat.
+Function Get-CdfRegistryConfigFromEndpoint {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string]$Endpoint)
+    if ($Endpoint -match '(?i)^ghcr\.io([/:]|$)' -or $Endpoint -match '(?i)\.pkg\.github\.com') {
+        return @{ type = 'oci'; endpoint = $Endpoint; username = 'cdf'; passwordEnvVar = 'CDF_REGISTRY_TOKEN' }
+    }
+    return @{ type = 'acr'; endpoint = $Endpoint }
+}
+
 # Factory function to create a registry provider from a registry config entry
 Function New-CdfRegistryProvider {
     [CmdletBinding()]
