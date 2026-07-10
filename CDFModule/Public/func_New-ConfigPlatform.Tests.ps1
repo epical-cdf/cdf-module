@@ -29,14 +29,14 @@ Describe 'New-ConfigPlatform' {
         It 'Should create new runtime config' {
             Mock Write-Error {}
             { New-ConfigPlatform -TemplateName blank -TemplateVersion v1 } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
         It 'Should return config' {
             Mock Write-Error {}
             $config = Get-ConfigPlatform
             $config | Should -Not -BeNullOrEmpty
             $config.Platform | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
     }
 
@@ -74,7 +74,7 @@ Describe 'New-ConfigPlatform' {
     #             $config.Platform.ResourceNames | Should -BeNullOrEmpty
     #             $config.Platform.NetworkConfig | Should -BeNullOrEmpty
     #             $config.Platform.AccessControl | Should -BeNullOrEmpty
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
     #         }
     #         It 'Should return correct config from deployment' {
     #             Mock Write-Error {}
@@ -93,9 +93,9 @@ Describe 'New-ConfigPlatform' {
     #             $config.Platform.NetworkConfig | Should -BeNullOrEmpty
     #             $config.Platform.AccessControl | Should -BeNullOrEmpty
 
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-    #             Assert-MockCalled Get-AzureContext -Scope It -Exactly -Times 1
-    #             Assert-MockCalled Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Get-AzureContext -Scope It -Exactly -Times 1
+    #             Should -Invoke Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
     #         }
 
     #         It 'Should write error configuration not complete' {
@@ -110,7 +110,7 @@ Describe 'New-ConfigPlatform' {
     #             {
     #                 Get-ConfigPlatform -Deployed -Region westeurope -PlatformId test -InstanceId 01 -EnvDefinitionId local
     #             } | Should -Not -Throw
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 1
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 1
     #         }
 
     #         It 'Should return from file with warning on unsuccessful deployment status' {
@@ -126,8 +126,8 @@ Describe 'New-ConfigPlatform' {
     #             {
     #                 Get-ConfigPlatform -Deployed -Region westeurope -PlatformId test -InstanceId 01 -EnvDefinitionId local
     #             } | Should -Not -Throw
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-    #             Assert-MockCalled Write-Warning -Scope It -Exactly -Times 2
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Write-Warning -Scope It -Exactly -Times 2
     #         }
     #     }
 
@@ -184,7 +184,7 @@ Describe 'New-ConfigPlatform' {
     #             $config.Platform.AccessControl.serviceBusRBAC | Should -BeNullOrEmpty
     #             $config.Platform.AccessControl.containerRegistryRBAC  | Should -BeNullOrEmpty
 
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
     #         }
 
     #         It 'Should return correct config from files for uat/westeurope' {
@@ -233,7 +233,7 @@ Describe 'New-ConfigPlatform' {
     #             $config.Platform.AccessControl.serviceBusRBAC | Should -BeNullOrEmpty
     #             $config.Platform.AccessControl.containerRegistryRBAC  | Should -BeNullOrEmpty
 
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
     #         }
 
     #         It 'Should return correct config from deployment' {
@@ -257,10 +257,10 @@ Describe 'New-ConfigPlatform' {
 
     #             # Write-Verbose "Loading enterprise spoke network configuration"
 
-    #             Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 4
-    #             Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-    #             Assert-MockCalled Get-AzureContext -Scope It -Exactly -Times 1
-    #             Assert-MockCalled Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
+    #             Should -Invoke Write-Verbose -Scope It -Exactly -Times 4
+    #             Should -Invoke Write-Error -Scope It -Exactly -Times 0
+    #             Should -Invoke Get-AzureContext -Scope It -Exactly -Times 1
+    #             Should -Invoke Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
     #         }
     #     }
 }

@@ -37,7 +37,7 @@ Describe 'New-ConfigApplication' {
                 New-ConfigPlatform -TemplateName blank -TemplateVersion v1
                 Get-ConfigPlatform | New-ConfigApplication -TemplateName blank -TemplateVersion v1
             } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
         It 'Should return config' {
             Mock Write-Error {}
@@ -45,7 +45,7 @@ Describe 'New-ConfigApplication' {
             $config | Should -Not -BeNullOrEmpty
             $config.Platform | Should -Not -BeNullOrEmpty
             $config.Application | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
     }
 

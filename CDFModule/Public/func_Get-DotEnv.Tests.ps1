@@ -27,9 +27,9 @@ Describe 'Get-DotEnv' {
             $dotenv["TEST_TOKEN"] | Should -BeExactly "This {TOKEN} should be 'word'"
         } | Should -Not -Throw
 
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 8 -ParameterFilter { $Message.StartsWith('Adding:') }
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping empty line:') }
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping line without assigmment:') }
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping line with comment:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 8 -ParameterFilter { $Message.StartsWith('Adding:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping empty line:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping line without assigmment:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Skipping line with comment:') }
     }
 }
