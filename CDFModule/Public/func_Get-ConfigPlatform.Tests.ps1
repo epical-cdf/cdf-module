@@ -27,36 +27,36 @@ Describe 'Get-ConfigPlatform' {
             Mock Write-Error {}
             Remove-Item Env:/CDF_REGION
             { Get-ConfigPlatform } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'Region' or environment variable 'CDF_REGION'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'Region' or environment variable 'CDF_REGION'" }
         }
         It 'Should require PlatformId' {
             Mock Write-Error {}
             Remove-Item Env:/CDF_PLATFORM_ID
             { Get-ConfigPlatform } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformId' or environment variable 'CDF_PLATFORM_ID'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformId' or environment variable 'CDF_PLATFORM_ID'" }
         }
         It 'Should require InstanceId' {
             Mock Write-Error {}
             Remove-Item Env:/CDF_PLATFORM_INSTANCE
             { Get-ConfigPlatform } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'InstanceId' or environment variable 'CDF_PLATFORM_INSTANCE'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'InstanceId' or environment variable 'CDF_PLATFORM_INSTANCE'" }
         }
         It 'Should require EnvDefinitionId' {
             Mock Write-Error {}
             Remove-Item Env:/CDF_PLATFORM_ENV_ID
             { Get-ConfigPlatform } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'EnvDefinitionId' or environment variable 'CDF_PLATFORM_ENV_ID'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'EnvDefinitionId' or environment variable 'CDF_PLATFORM_ENV_ID'" }
         }
         It 'Should not throw' {
             Mock Write-Error {}
             { Get-ConfigPlatform } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
         It 'Should return config' {
             Mock Write-Error {}
             $config = Get-ConfigPlatform
             $config | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
     }
 
@@ -71,27 +71,27 @@ Describe 'Get-ConfigPlatform' {
         It 'Should require Region' {
             Mock Write-Error {}
             { Get-ConfigPlatform -PlatformId test -InstanceId 01 -EnvDefinitionId local } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'Region' or environment variable 'CDF_REGION'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'Region' or environment variable 'CDF_REGION'" }
         }
         It 'Should require PlatformId' {
             Mock Write-Error {}
             { Get-ConfigPlatform  -Region westeurope -InstanceId 01 -EnvDefinitionId local } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformId' or environment variable 'CDF_PLATFORM_ID'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformId' or environment variable 'CDF_PLATFORM_ID'" }
         }
         It 'Should require PlatformInstance' {
             Mock Write-Error {}
             { Get-ConfigPlatform -Region westeurope -PlatformId test -EnvDefinitionId local } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformInstance' or environment variable 'CDF_PLATFORM_INSTANCE'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'PlatformInstance' or environment variable 'CDF_PLATFORM_INSTANCE'" }
         }
         It 'Should require EnvDefinitionId' {
             Mock Write-Error {}
             { Get-ConfigPlatform -Region westeurope -PlatformId test -InstanceId 01 } | Should -Throw -ExpectedMessage 'Missing required CDF parameters'
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'EnvDefinitionId' or environment variable 'CDF_PLATFORM_ENV_ID'" }
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1 -ParameterFilter { "Missing required CDF Parameter 'EnvDefinitionId' or environment variable 'CDF_PLATFORM_ENV_ID'" }
         }
         It 'Should not throw' {
             Mock Write-Error {}
             { Get-ConfigPlatform -Region westeurope -PlatformId test -InstanceId 01 -EnvDefinitionId local } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
     }
 
@@ -129,7 +129,7 @@ Describe 'Get-ConfigPlatform' {
             $config.Platform.ResourceNames | Should -BeNullOrEmpty
             $config.Platform.NetworkConfig | Should -BeNullOrEmpty
             $config.Platform.AccessControl | Should -BeNullOrEmpty
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
         It 'Should return correct config from deployment' {
             Mock Write-Error {}
@@ -148,9 +148,9 @@ Describe 'Get-ConfigPlatform' {
             $config.Platform.NetworkConfig | Should -BeNullOrEmpty
             $config.Platform.AccessControl | Should -BeNullOrEmpty
 
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-            Assert-MockCalled Get-AzureContext -Scope It -Exactly -Times 1
-            Assert-MockCalled Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Get-AzureContext -Scope It -Exactly -Times 1
+            Should -Invoke Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
         }
 
         It 'Should write error configuration not complete' {
@@ -165,7 +165,7 @@ Describe 'Get-ConfigPlatform' {
             {
                 Get-ConfigPlatform -Deployed -Region westeurope -PlatformId test -InstanceId 01 -EnvDefinitionId local
             } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1
+            Should -Invoke Write-Error -Scope It -Exactly -Times 1
         }
 
         It 'Should return from file with warning on unsuccessful deployment status' {
@@ -181,8 +181,8 @@ Describe 'Get-ConfigPlatform' {
             {
                 Get-ConfigPlatform -Deployed -Region westeurope -PlatformId test -InstanceId 01 -EnvDefinitionId local
             } | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-            Assert-MockCalled Write-Warning -Scope It -Exactly -Times 2
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Warning -Scope It -Exactly -Times 2
         }
     }
 
@@ -239,7 +239,7 @@ Describe 'Get-ConfigPlatform' {
             $config.Platform.AccessControl.serviceBusRBAC | Should -BeNullOrEmpty
             $config.Platform.AccessControl.containerRegistryRBAC  | Should -BeNullOrEmpty
 
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
 
         It 'Should return correct config from files for uat/westeurope' {
@@ -288,7 +288,7 @@ Describe 'Get-ConfigPlatform' {
             $config.Platform.AccessControl.serviceBusRBAC | Should -BeNullOrEmpty
             $config.Platform.AccessControl.containerRegistryRBAC  | Should -BeNullOrEmpty
 
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
 
         It 'Should return correct config from deployment' {
@@ -312,10 +312,10 @@ Describe 'Get-ConfigPlatform' {
 
             # Write-Verbose "Loading enterprise spoke network configuration"
 
-            Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 4
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
-            Assert-MockCalled Get-AzureContext -Scope It -Exactly -Times 1
-            Assert-MockCalled Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
+            Should -Invoke Write-Verbose -Scope It -Exactly -Times 4
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Get-AzureContext -Scope It -Exactly -Times 1
+            Should -Invoke Get-AzSubscriptionDeployment -Scope It -Exactly -Times 1
         }
     }
 }
