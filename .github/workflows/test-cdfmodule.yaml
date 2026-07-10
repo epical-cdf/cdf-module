@@ -36,7 +36,8 @@ jobs:
 
       - name: Install Pester
         shell: pwsh
-        run: Install-Module Pester -MinimumVersion 5.5.0 -Force -Scope CurrentUser
+        # Pin to Pester 5.x: Pester 6 dropped the legacy Assert-MockCalled command the tests rely on.
+        run: Install-Module Pester -MinimumVersion 5.5.0 -MaximumVersion 5.999.999 -Force -Scope CurrentUser
 
       - name: Run Pester
         shell: pwsh
