@@ -2,8 +2,8 @@
 .SYNOPSIS
     Runs the CDFModule Pester test suite.
 .DESCRIPTION
-    Thin wrapper around Pester 5 used both locally and in CI. Discovers
-    co-located *.Tests.ps1 files under the module path.
+    Thin wrapper around Pester (5.5+ or 6) used both locally and in CI.
+    Discovers co-located *.Tests.ps1 files under the module path.
 .EXAMPLE
     ./build/Invoke-Tests.ps1
 .EXAMPLE

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Test suite migrated from the deprecated Pester v4 `Assert-MockCalled` to `Should -Invoke`; CI now runs on Pester 6 (the unbounded 5.x install began pulling Pester 6.0.0, which removed `Assert-MockCalled`)
 - `Select-AzSubscription` replaced with the supported `Set-AzContext`, for Az PowerShell 16.0 (PR #75)
 - Module loader and release packaging now exclude `*.Tests.ps1`, so co-located tests are neither imported at runtime nor published to the gallery (PR #67)
 - `Get-Config` resolves its config schema via `$PSScriptRoot` (works under module import and dot-source) and no longer hard-fails when the module is not formally loaded (PR #71)

@@ -34,7 +34,7 @@ TEST_TOKEN=This {TOKEN} should be 'word'
 '@
         } | Should -Not -Throw
 
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 0
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 0
     }
 
     It 'Should convert 2x2 name-value pair array' {
@@ -46,7 +46,7 @@ Name2=Value2
 '@
         } | Should -Not -Throw
 
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { "Is array is determined to be key-value-pairs: YES" }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { "Is array is determined to be key-value-pairs: YES" }
     }
 
     It 'Should convert separate name and value column array' {
@@ -62,6 +62,6 @@ Name4=Value4
 '@
         } | Should -Not -Throw
 
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { "Is array is determined to be key-value-pairs: NO" }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { "Is array is determined to be key-value-pairs: NO" }
     }
 }

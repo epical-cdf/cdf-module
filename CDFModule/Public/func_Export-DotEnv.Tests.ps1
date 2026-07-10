@@ -31,7 +31,7 @@ Describe 'Export-DotEnv' {
             Get-Content $repoRoot/output/Get-DotEnv.env | Should -Be "UNITTEST=RESULT"
         } | Should -Not -Throw
 
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Reading:') }
-        Assert-MockCalled Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Writing:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Reading:') }
+        Should -Invoke Write-Verbose -Scope It -Exactly -Times 1 -ParameterFilter { $Message.StartsWith('Writing:') }
     }
 }
