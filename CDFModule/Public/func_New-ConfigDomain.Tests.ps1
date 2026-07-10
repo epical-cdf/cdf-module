@@ -43,7 +43,7 @@ Describe 'New-ConfigDomain' {
             $cfgApplication = $cfgPlatform | Get-ConfigApplication
             $cfgApplication | New-ConfigDomain -TemplateName 'blank' -TemplateVersion 'v1'
             #} | Should -Not -Throw
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
         It 'Should return config' {
             Mock Write-Error {}
@@ -54,7 +54,7 @@ Describe 'New-ConfigDomain' {
             $config.Platform | Should -Not -BeNullOrEmpty
             $config.Application | Should -Not -BeNullOrEmpty
             $config.Domain | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Write-Error -Scope It -Exactly -Times 0
+            Should -Invoke Write-Error -Scope It -Exactly -Times 0
         }
     }
 

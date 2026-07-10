@@ -80,7 +80,7 @@ Describe 'Get-TokenValues' {
                 $tokens['Domain.Config.DomainName'] | Should -BeExactly $cdfConfig.Domain.Config.domainName
 
             } | Should -Not -Throw
-            Assert-MockCalled Get-AzContext -Scope It -Exactly -Times 1
+            Should -Invoke Get-AzContext -Scope It -Exactly -Times 1
         }
 
         It 'Should generate tokens for deployment config' {
@@ -154,7 +154,7 @@ Describe 'Get-TokenValues' {
                 $tokens['Service.Config.ServiceTemplate'] | Should -Not -BeNullOrEmpty
                 $tokens['Service.Config.ServiceTemplate'] | Should -Be -ExpectedValue  $cdfConfig.Service.Config.serviceTemplate
             } | Should -Not -Throw
-            Assert-MockCalled Get-AzContext -Scope It -Exactly -Times 1
+            Should -Invoke Get-AzContext -Scope It -Exactly -Times 1
         }
 
         It 'Should generate tokens for Old Apim ' {
@@ -224,7 +224,7 @@ Describe 'Get-TokenValues' {
                 $tokens['GITHUB_RUN_NUMBER'] | Should -BeExactly  'local'
 
             } | Should -Not -Throw
-            Assert-MockCalled Get-AzContext -Scope It -Exactly -Times 1
+            Should -Invoke Get-AzContext -Scope It -Exactly -Times 1
         }
 
         It 'Should generate tokens for aliases ' {
@@ -329,7 +329,7 @@ Describe 'Get-TokenValues' {
             $tokens['BuildRun'] | Should -BeExactly $env:GITHUB_RUN_ID
             #} | Should -Not -Throw
 
-            Assert-MockCalled Get-AzContext -Scope It -Exactly -Times 0
+            Should -Invoke Get-AzContext -Scope It -Exactly -Times 0
         }
     }
 
@@ -358,7 +358,7 @@ Describe 'Get-TokenValues' {
                 $tokens['BuildRun'] | Should -BeExactly $env:BUILD_BUILDNUMBER
             } | Should -Not -Throw
 
-            Assert-MockCalled Get-AzContext -Scope It -Exactly -Times 0
+            Should -Invoke Get-AzContext -Scope It -Exactly -Times 0
         }
 
     }
